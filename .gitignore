@@ -1,0 +1,31 @@
+# Python
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints
+.mypy_cache/
+.pytest_cache/
+.vscode/ # You might want to include this if you have user-specific settings
+
+# Django
+db.sqlite3 # If you were using SQLite, but good to include
+media/ # User-uploaded files
+
+# Node.js / React
+node_modules/
+build/
+dist/
+.env.local
+.env.*.local
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS and IDE specific
+.DS_Store
+Thumbs.db
+*.suo
+*.user
+*.userosf
+*.userprefs
