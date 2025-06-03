@@ -1,24 +1,23 @@
-"""
-URL configuration for itsm_core project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
 # itsm_project/itsm_core/urls.py
 from django.contrib import admin
-from django.urls import path, include # Import include
+from django.urls import path, include
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/', include('api.urls')), # Add this line
+    # DRF authentication (optional for now, but good to have the path)
+    path('api-auth/', include('rest_framework.urls')), 
+    
+    # Core API endpoints for our ITSM apps
+    # Include urls from the assets app
+    # Include urls from the service_requests app
+    path('api/service-requests/', include('service_requests.urls')),
+    # Include urls from the security_access app (for User API, etc.)
+    path('api/security-access/', include('security_access.urls')), 
+    
+    # You will add paths for other modules here as we develop them:
+    # path('api/incidents/', include('incidents.urls')),
+    # path('api/changes/', include('changes.urls')),
+    # path('api/configs/', include('configs.urls')),
+    # path('api/workflows/', include('workflows.urls')),
+    # path('api/reports-analytics/', include('reports_analytics.urls')),
 ]

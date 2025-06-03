@@ -1,0 +1,49 @@
+### Get all Service Requests
+GET http://127.0.0.1:8000/api/service-requests/requests/
+Accept: application/json
+
+### Create a new Service Request
+# IMPORTANT: Replace <user_id> with an actual ID of a User from your Django Admin.
+# You can create one via `python manage.py createsuperuser` and log into /admin/.
+POST http://127.0.0.1:8000/api/service-requests/requests/
+Content-Type: application/json
+
+{
+    "title": "New Software Installation Request",
+    "description": "I need MS Office 365 installed on my new laptop.",
+    "requested_by_id": 1,
+    "assigned_to_id": null,
+    "category": "software",
+    "priority": "medium"
+}
+
+### Create another Service Request
+POST http://127.0.0.1:8000/api/service-requests/requests/
+Content-Type: application/json
+
+{
+    "title": "Guest Wi-Fi Access for Conference",
+    "description": "Please provide temporary guest Wi-Fi access for 50 attendees for the 'Future Tech' conference.",
+    "requested_by_id": 1,
+    "assigned_to_id": 1,
+    "category": "network",
+    "priority": "high"
+}
+
+### Get a single Service Request by ID (Replace <request_id> with an actual ID from your POST response)
+GET http://127.0.0.1:8000/api/service-requests/requests/SR-AA-0001/
+Accept: application/json
+
+### Update a Service Request (Replace <request_id> and modify fields as needed)
+PATCH http://127.0.0.1:8000/api/service-requests/requests/SR-AA-0001/
+Content-Type: application/json
+
+{
+    "status": "in_progress",
+    "assigned_to_id": 1,
+    "resolution_notes": "Assigned to IT Team Lead."
+}
+
+### Delete a Service Request (Replace <request_id>)
+# DELETE http://127.0.0.1:8000/api/service-requests/requests/SR-AA-0001/
+# Accept: application/json
