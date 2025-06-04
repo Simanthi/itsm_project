@@ -7,7 +7,10 @@ urlpatterns = [
     # DRF authentication (optional for now, but good to have the path)
     path('api-auth/', include('rest_framework.urls')), 
     
+
     # Core API endpoints for our ITSM apps
+    # Include urls from the core_api app (for general endpoints like 'hello')
+    path('api/', include('core_api.urls')), # <--- ADD THIS LINE HERE
     # Include urls from the assets app
     # Include urls from the service_requests app
     path('api/service-requests/', include('service_requests.urls')),

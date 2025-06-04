@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'workflows',
     'reports_analytics',
     'api',
+    'core_api',
 ]
 
 MIDDLEWARE = [

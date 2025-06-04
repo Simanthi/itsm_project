@@ -1,55 +1,61 @@
-// itsm_project/itsm_frontend/src/App.tsx
-import { useState, useEffect } from 'react';
-import reactLogo from './assets/react.svg';
-import viteLogo from '/vite.svg';
-import './App.css';
+// itsm_frontend/src/App.tsx
+import React from 'react'; // Removed useState, useEffect as AuthContext handles
+import { Routes, Route, Navigate } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
+
+import theme from './theme';
+import LoginPage from './pages/LoginPage';
+import HomePage from './pages/HomePage';
+import { useAuth } from './context/AuthContext'; // <--- Import useAuth
+
+// Placeholder components for other modules (create these files later)
+const ServiceRequestsPage = () => <HomePage />; // For now, just render HomePage content
+const AssetsPage = () => <HomePage />;
+const SecurityAccessPage = () => <HomePage />;
+const IncidentsPage = () => <HomePage />;
+const ChangesPage = () => <HomePage />;
+const ConfigsPage = () => <HomePage />;
+const WorkflowsPage = () => <HomePage />;
+const ReportsPage = () => <HomePage />;
+
 
 function App() {
-  const [message, setMessage] = useState('');
-  const [error, setError] = useState('');
+  const { isAuthenticated } = useAuth(); // <--- Get isAuthenticated from AuthContext
+  console.log('App.tsx - isAuthenticated from Context:', isAuthenticated); // Debugging log
 
-  useEffect(() => {
-    fetch('http://localhost:8000/api/hello/') // Target your Django API
-      .then(response => {
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-        return response.json();
-      })
-      .then(data => {
-        setMessage(data.message);
-        console.log(data); // Log the full API response
-      })
-      .catch(error => {
-        console.error("Error fetching data:", error);
-        setError("Failed to fetch message from Django API.");
-      });
-  }, []); // Empty dependency array means this runs once on mount
+  // Helper component for protected routes
+  const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+    if (!isAuthenticated) {
+      return <Navigate to="/login" replace />;
+    }
+    return <>{children}</>;
+  };
 
   return (
-    <>
-    <div>
-<a href="https://vitejs.dev" target="_blank">
-<img src={viteLogo} className="logo" alt="Vite logo" />
-</a>
-<a href="https://react.dev" target="_blank">
-<img src={reactLogo} className="logo react" alt="React logo" />
-</a>
-</div>
-<h1>Vite + React</h1>
-<div className="card">
-{message ? (
-<p>Message from Django: <strong>{message}</strong></p>
-) : error ? (
-<p style={{ color: 'red' }}>Error: {error}</p>
-) : (
-<p>Loading message from Django...</p>
-)}
-</div>
-<p className="read-the-docs">
-Click on the Vite and React logos to learn more
-</p>
-</>
-);
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <Routes>
+        {/* Public route for login page */}
+        <Route path="/login" element={<LoginPage />} />
+
+        {/* Protected routes */}
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
+        <Route path="/service-requests" element={<ProtectedRoute><ServiceRequestsPage /></ProtectedRoute>} />
+        <Route path="/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
+        <Route path="/security-access" element={<ProtectedRoute><SecurityAccessPage /></ProtectedRoute>} />
+        <Route path="/incidents" element={<ProtectedRoute><IncidentsPage /></ProtectedRoute>} />
+        <Route path="/changes" element={<ProtectedRoute><ChangesPage /></ProtectedRoute>} />
+        <Route path="/configs" element={<ProtectedRoute><ConfigsPage /></ProtectedRoute>} />
+        <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
+        <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+
+
+        {/* Catch-all for any unmatched routes */}
+        <Route path="*" element={<Navigate to="/login" replace />} />
+      </Routes>
+    </ThemeProvider>
+  );
 }
-    export default App;
+
+export default App;
