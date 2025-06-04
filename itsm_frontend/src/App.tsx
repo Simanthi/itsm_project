@@ -1,30 +1,32 @@
 // itsm_frontend/src/App.tsx
-import React from 'react'; // Removed useState, useEffect as AuthContext handles
+import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
+//import { Box, Typography } from '@mui/material'; // Also need Box and Typography for placeholders
 
 import theme from './theme';
 import LoginPage from './pages/LoginPage';
-import HomePage from './pages/HomePage';
-import { useAuth } from './context/AuthContext'; // <--- Import useAuth
+import HomePage from './pages/HomePage'; // This is now your layout component
 
-// Placeholder components for other modules (create these files later)
-const ServiceRequestsPage = () => <HomePage />; // For now, just render HomePage content
-const AssetsPage = () => <HomePage />;
-const SecurityAccessPage = () => <HomePage />;
-const IncidentsPage = () => <HomePage />;
-const ChangesPage = () => <HomePage />;
-const ConfigsPage = () => <HomePage />;
-const WorkflowsPage = () => <HomePage />;
-const ReportsPage = () => <HomePage />;
+// --- Import all your new module pages ---
+import ServiceRequestsPage from './pages/ServiceRequestsPage';
+import DashboardPage from './pages/DashboardPage';
+import AssetsPage from './pages/AssetsPage';
+import SecurityAccessPage from './pages/SecurityAccessPage';
+import IncidentManagementPage from './pages/IncidentManagementPage';
+import ChangeManagementPage from './pages/ChangeManagementPage';
+import ConfigurationManagementPage from './pages/ConfigurationManagementPage';
+import ApprovalWorkflowPage from './pages/ApprovalWorkflowPage';
+import ReportsAnalyticsPage from './pages/ReportsAnalyticsPage';
 
+import { useAuth } from './context/AuthContextDefinition'; // <--- Updated import for useAuth
 
 function App() {
-  const { isAuthenticated } = useAuth(); // <--- Get isAuthenticated from AuthContext
-  console.log('App.tsx - isAuthenticated from Context:', isAuthenticated); // Debugging log
+  const { isAuthenticated } = useAuth();
+  console.log('App.tsx - isAuthenticated from Context:', isAuthenticated);
 
-  // Helper component for protected routes
+  // ProtectedRoute component remains the same
   const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
     if (!isAuthenticated) {
       return <Navigate to="/login" replace />;
@@ -39,19 +41,21 @@ function App() {
         {/* Public route for login page */}
         <Route path="/login" element={<LoginPage />} />
 
-        {/* Protected routes */}
-        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>} />
-        <Route path="/service-requests" element={<ProtectedRoute><ServiceRequestsPage /></ProtectedRoute>} />
-        <Route path="/assets" element={<ProtectedRoute><AssetsPage /></ProtectedRoute>} />
-        <Route path="/security-access" element={<ProtectedRoute><SecurityAccessPage /></ProtectedRoute>} />
-        <Route path="/incidents" element={<ProtectedRoute><IncidentsPage /></ProtectedRoute>} />
-        <Route path="/changes" element={<ProtectedRoute><ChangesPage /></ProtectedRoute>} />
-        <Route path="/configs" element={<ProtectedRoute><ConfigsPage /></ProtectedRoute>} />
-        <Route path="/workflows" element={<ProtectedRoute><WorkflowsPage /></ProtectedRoute>} />
-        <Route path="/reports" element={<ProtectedRoute><ReportsPage /></ProtectedRoute>} />
+        {/* Parent Protected Route for the main layout (HomePage) */}
+        <Route path="/" element={<ProtectedRoute><HomePage /></ProtectedRoute>}>
+          {/* Nested Routes - these will render inside HomePage's <Outlet /> */}
+          <Route index element={<DashboardPage />} /> {/* Default content for '/' */}
+          <Route path="service-requests" element={<ServiceRequestsPage />} />
+          <Route path="assets" element={<AssetsPage />} />
+          <Route path="security-access" element={<SecurityAccessPage />} />
+          <Route path="incidents" element={<IncidentManagementPage />} />
+          <Route path="changes" element={<ChangeManagementPage />} />
+          <Route path="configs" element={<ConfigurationManagementPage />} />
+          <Route path="workflows" element={<ApprovalWorkflowPage />} />
+          <Route path="reports" element={<ReportsAnalyticsPage />} />
+        </Route>
 
-
-        {/* Catch-all for any unmatched routes */}
+        {/* Catch-all for any unmatched routes outside the protected area, redirects to login */}
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     </ThemeProvider>

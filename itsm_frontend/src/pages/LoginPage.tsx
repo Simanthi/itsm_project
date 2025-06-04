@@ -13,7 +13,7 @@ import {
   Alert, // For error messages
 } from '@mui/material';
 import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
-import { useAuth } from '../context/AuthContext'; // <--- Import useAuth hook
+import { useAuth } from '../context/AuthContextDefinition'; // <--- Update this line
 
 // Remove LoginPageProps interface as onLoginSuccess will be handled by context
 // interface LoginPageProps {
@@ -63,9 +63,9 @@ function LoginPage(/* Remove { onLoginSuccess }: LoginPageProps */) {
   };
 
   return (
-    <Container component="main" maxWidth="xs" sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-      <Paper elevation={6} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%' }}>
-        <Avatar sx={{ m: 1, bgcolor: 'primary.main' }}>
+    <Container component="main" maxWidth="xs" sx={{ height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', bgcolor: 'primary.dark' }}>
+      <Paper elevation={6} sx={{ p: 4, display: 'flex', flexDirection: 'column', alignItems: 'center', width: '100%', bgcolor: 'primary.dark'}}>
+        <Avatar sx={{ m: 1, bgcolor: 'primary.dark' }}>
           <LockOutlinedIcon />
         </Avatar>
         <Typography component="h1" variant="h5" sx={{ mb: 3 }}>

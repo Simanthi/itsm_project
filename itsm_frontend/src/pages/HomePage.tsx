@@ -1,6 +1,6 @@
 // itsm_frontend/src/pages/HomePage.tsx
 import React from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, Outlet, useLocation } from 'react-router-dom';
 import {
   AppBar,
   Toolbar,
@@ -15,7 +15,7 @@ import {
   Avatar,
   IconButton,
   Divider,
-  Button, // <--- Import Button for Logout
+  Button,
 } from '@mui/material';
 
 // --- Icon Imports (ensure all these are present) ---
@@ -33,30 +33,28 @@ import AccountCircle from '@mui/icons-material/AccountCircle';
 import SettingsBrightnessIcon from '@mui/icons-material/SettingsBrightness';
 import LogoutIcon from '@mui/icons-material/Logout';
 
-import { useAuth } from '../context/AuthContext'; // Make sure this path is correct: ../context/AuthContext
+import { useAuth } from '../context/AuthContextDefinition';
 
-const drawerWidth = 240;
+const drawerWidth = 250;
 
-
-// ... (moduleLinks definition remains the same)
 const moduleLinks = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Service Requests', icon: <RequestQuoteIcon />, path: '/service-requests' },
   { text: 'Manage Assets', icon: <DevicesOtherIcon />, path: '/assets' },
   { text: 'Security & Access', icon: <SecurityIcon />, path: '/security-access' },
-  { text: 'Incident Management', icon: <BugReportIcon />, path: '/incidents' },
-  { text: 'Change Management', icon: <SwapHorizIcon />, path: '/changes' },
-  { text: 'Manage Configuration', icon: <SettingsSuggestIcon />, path: '/configs' },
-  { text: 'Approval Workflow', icon: <ApprovalIcon />, path: '/workflows' },
+  { text: 'Manage Incident', icon: <BugReportIcon />, path: '/incidents' },
+  { text: 'Manage Changes', icon: <SwapHorizIcon />, path: '/changes' },
+  { text: 'Manage Configs', icon: <SettingsSuggestIcon />, path: '/configs' },
+  { text: 'Manage Workflows', icon: <ApprovalIcon />, path: '/workflows' },
   { text: 'Reports & Analytics', icon: <AnalyticsIcon />, path: '/reports' },
 ];
-
 
 function HomePage() {
   const [mobileOpen, setMobileOpen] = React.useState(false);
   const [isClosing, setIsClosing] = React.useState(false);
-  const { logout } = useAuth(); // <--- Get logout function from context
-  const navigate = useNavigate(); // Still needed for programmatic navigation after logout
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleDrawerClose = () => {
     setIsClosing(true);
@@ -74,26 +72,49 @@ function HomePage() {
   };
 
   const handleLogout = () => {
-    logout(); // Call context logout, which clears token from localStorage
-    navigate('/login'); // Redirect to login page after logout
+    logout();
+    navigate('/login');
   };
+
+  const currentModule = moduleLinks.find(
+    (link) => {
+      if (link.path === '/') {
+        return location.pathname === '/';
+      }
+      return location.pathname.startsWith(link.path);
+    }
+  ) || { text: 'ITSM Connect', icon: null }; // <--- IMPORTANT: Add 'icon: null' for the default case
+
 
   const drawer = (
     <Box sx={{ p: 2 }}>
-      <Typography variant="h6" sx={{ my: 2, textAlign: 'center', color: 'primary.main' }}>
-        ITSM Connect
-      </Typography>
+      {/* Company Logo and Text Container */}
+      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
+        <img
+          src="/images/sblt_fav_icon.png"
+          alt="SBLT Logo"
+          style={{ maxWidth: '100px', height: 'auto', marginBottom: '8px' }}
+        />
+        <Typography variant="h6" sx={{ textAlign: 'center', color: 'primary.main' }}>
+          ITSM Connect
+        </Typography>
+      </Box>
       <Divider />
       <List>
-        {moduleLinks.map((item) => ( // <--- moduleLinks is now accessible here
+        {moduleLinks.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
               component={Link}
               to={item.path}
+              selected={
+                  item.path === '/'
+                    ? location.pathname === '/'
+                    : location.pathname.startsWith(item.path)
+              }
             >
-            <ListItemIcon sx={{ color: 'text.secondary', minWidth: '30px' }}> {/* <--- ADD/CHANGE minWidth */}
-              {item.icon}
-            </ListItemIcon>
+              <ListItemIcon sx={{ color: 'text.secondary', minWidth: '40px' }}>
+                {item.icon}
+              </ListItemIcon>
               <ListItemText primary={item.text} />
             </ListItemButton>
           </ListItem>
@@ -109,7 +130,6 @@ function HomePage() {
         position="fixed"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          
           ml: { sm: `${drawerWidth}px` },
         }}
       >
@@ -124,16 +144,24 @@ function HomePage() {
             <MenuIcon />
           </IconButton>
 
-          <Typography
-            variant="h6"
-            noWrap
-            component="div"
-            sx={{ flexGrow: 1, display: { xs: 'none', sm: 'block' } }}
-          >
-            IT Service Management
-          </Typography>
+          {/* --- MODIFIED SECTION: Display Icon and Text together --- */}
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+            {currentModule.icon && ( // Only render icon if it exists
+              <Box sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}>
+                {currentModule.icon}
+              </Box>
+            )}
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+            >
+              {currentModule.text}
+            </Typography>
+          </Box>
+          {/* --- END MODIFIED SECTION --- */}
 
-          <Box sx={{ flexGrow: 1 }} />
+          <Box sx={{ flexGrow: 1 }} /> {/* This pushes elements to the right */}
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
             <Typography variant="body1" sx={{ mr: 2 }}>
               Welcome, John Doe!
@@ -141,10 +169,9 @@ function HomePage() {
             <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
               <AccountCircle />
             </Avatar>
-            <IconButton color="inherit" sx={{ mr: 1 }}> {/* Added margin for spacing */}
+            <IconButton color="inherit" sx={{ mr: 1 }}>
               <SettingsBrightnessIcon />
             </IconButton>
-            {/* --- LOGOUT BUTTON --- */}
             <Button
               color="inherit"
               onClick={handleLogout}
@@ -195,18 +222,13 @@ function HomePage() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 3,
+          p: 1,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: '56px', sm: '64px' }
+          
         }}
       >
         <Toolbar />
-        <Typography paragraph>
-          Your dashboard content will go here.
-        </Typography>
-        <Typography paragraph>
-          This is where you'll display key metrics, quick links, and an overview of your ITSM system.
-        </Typography>
+        <Outlet />
       </Box>
     </Box>
   );
