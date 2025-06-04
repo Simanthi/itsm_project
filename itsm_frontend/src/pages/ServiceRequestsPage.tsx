@@ -37,6 +37,11 @@ const mockServiceRequests: ServiceRequest[] = [
   { id: 'SR003', title: 'Network access issue', description: 'Cannot connect to company shared drive.', status: 'Resolved', requestedBy: 'Charlie Brown', requestedDate: '2024-05-29' },
   { id: 'SR004', title: 'New employee onboarding', description: 'Setup account for new hire, Jane Doe.', status: 'Closed', requestedBy: 'David Lee', requestedDate: '2024-05-30' },
   { id: 'SR005', title: 'Printer troubleshooting', description: 'Office printer is offline in room 305.', status: 'Open', requestedBy: 'Eve Davis', requestedDate: '2024-06-01' },
+  { id: 'SR001', title: 'Laptop repair', description: 'My laptop screen is cracked.', status: 'Open', requestedBy: 'Alice Johnson', requestedDate: '2024-05-28' },
+  { id: 'SR002', title: 'Software installation', description: 'Need Photoshop installed on my new PC.', status: 'In Progress', requestedBy: 'Bob Smith', requestedDate: '2024-05-29' },
+  { id: 'SR003', title: 'Network access issue', description: 'Cannot connect to company shared drive.', status: 'Resolved', requestedBy: 'Charlie Brown', requestedDate: '2024-05-29' },
+  { id: 'SR004', title: 'New employee onboarding', description: 'Setup account for new hire, Jane Doe.', status: 'Closed', requestedBy: 'David Lee', requestedDate: '2024-05-30' },
+  { id: 'SR005', title: 'Printer troubleshooting', description: 'Office printer is offline in room 305.', status: 'Open', requestedBy: 'Eve Davis', requestedDate: '2024-06-01' },
 ];
 
 
@@ -151,7 +156,7 @@ function ServiceRequestsPage() {
       </Box>
 
       <TableContainer component={Paper}>
-        <Table sx={{ minWidth: 650 }} aria-label="service requests table">
+        <Table sx={{ minWidth: 650 , maxWidth:1000}} aria-label="service requests table">
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
