@@ -5,7 +5,7 @@
 
   color-scheme: light dark;
   color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+  background-color: #242424; /* This is the background pattern you're seeing */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
@@ -22,12 +22,27 @@ a:hover {
   color: #535bf2;
 }
 
-body {
+/* Add or adjust this section */
+html, body, #root { /* Target html, body, and your React app's root div */
   margin: 0;
-  display: flex;
-  place-items: center;
+  padding: 0;
+  width: 100%;      /* Ensure they take full width */
+  height: 100%;     /* Ensure they take full height */
+  /* If you still have an outer scrollbar that is not desired, consider: */
+  /* overflow: hidden; */
+}
+
+body {
+  /* REMOVE THESE LINES: */
+  /* display: flex; */
+  /* place-items: center; */
+
   min-width: 320px;
-  min-height: 100vh;
+  min-height: 100vh; /* Keep this to ensure body is at least full height */
+
+  /* If you want the background color from :root applied to body, you don't need this line. */
+  /* If you want a different background for the entire page behind your app, define it here. */
+  /* background-color: #242424; */
 }
 
 h1 {

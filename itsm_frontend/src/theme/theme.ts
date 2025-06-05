@@ -6,6 +6,19 @@ import { createTheme } from '@mui/material';
 const baseTypography = {
   //fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   fontFamily: '"Segoe UI"',
+    h1: {
+    fontSize: '20px',
+    fontWeight: 'bold',
+          },
+        h2: {
+    fontSize: '30px',
+    fontWeight: 'bold',
+        
+      },
+      h3: {
+    fontSize: '15px',
+    fontWeight: 'bold',
+          },
   h6: {
     fontSize: '16px',
   },
@@ -13,7 +26,10 @@ const baseTypography = {
     fontSize: '16px',
   },
   body2: {
-    fontSize: '16px',
+    fontSize: '14px',
+  },
+  th1: {
+    fontSize: '15px',
   },
 };
 
@@ -40,6 +56,7 @@ export const lightTheme = createTheme({
     text: {
       primary: 'rgb(33, 43, 54)',   // Dark text on light background
       secondary: 'rgb(99, 115, 129)', // Muted text on light background
+
     },
   },
   typography: baseTypography,
@@ -49,14 +66,13 @@ export const lightTheme = createTheme({
       // REMOVE defaultProps: { variant: 'body2' }
       styleOverrides: {
         root: {
+          
+          fontSize: baseTypography.body2.fontSize,
           // Apply the font size directly here for all TableCell components
-          fontSize: '14px', // Matches your body2 font size
-          // Or, if you want to use the 'body2' definition from typography, you could do:
-          // fontSize: baseTypography.body2.fontSize,
         },
         head: {
           // <--- ADD THIS SECTION FOR TABLE HEADERS
-          fontSize: '15px', // Example: Slightly smaller than body for header, or '18px' for larger
+          fontSize: baseTypography.th1.fontSize,
           fontWeight: 'bold',  // Example: Make headers bold
           color: 'primary.main', // Example: Use your primary theme color for headers
           
@@ -90,7 +106,7 @@ export const darkTheme = createTheme({
     primary: {
       main: 'rgb(144, 202, 249)',   // Light blue for primary elements
       light: 'rgb(227, 242, 253)',
-      dark: 'rgb(66, 165, 245)',
+      dark: 'rgb(108, 4, 129)',
       contrastText: 'rgb(0, 0, 0)', // Black
     },
     secondary: {
@@ -101,12 +117,16 @@ export const darkTheme = createTheme({
     },
     background: {
       default: 'rgb(18, 18, 18)',   // Very dark grey/black
-      paper: 'rgb(0, 0, 0)',     // Slightly lighter dark grey for cards, drawers
+      paper: 'rgba(0, 0, 0, 0.61)',     // Slightly lighter dark grey for cards, drawers
     },
     text: {
       primary: 'rgb(255, 255, 255)', // White text on dark background
       secondary: 'rgb(176, 176, 176)', // Light grey secondary text on dark background
     },
+  },
+  shape: {
+    borderRadius: 3, // Consistent border radius for all components
+    // You can adjust this value to change the roundness of corners
   },
   typography: baseTypography,
   components: {
@@ -114,14 +134,13 @@ export const darkTheme = createTheme({
       // REMOVE defaultProps: { variant: 'body2' }
       styleOverrides: {
         root: {
+          
+          fontSize: baseTypography.body2.fontSize,
           // Apply the font size directly here for all TableCell components
-          fontSize: '14px', // Matches your body2 font size
-          // Or, if you want to use the 'body2' definition from typography, you could do:
-          // fontSize: baseTypography.body2.fontSize,
         },
         head: {
           // <--- ADD THIS SECTION FOR TABLE HEADERS
-          fontSize: '15px', // Example: Slightly smaller than body for header, or '18px' for larger
+          fontSize: baseTypography.th1.fontSize,
           fontWeight: 'bold',  // Example: Make headers bold
           color: 'primary.main', // Example: Use your primary theme color for headers
           // You can also adjust padding, background, etc.
@@ -133,7 +152,7 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-selected': {
-            backgroundColor: 'rgba(144, 202, 249, 0.16)', // Dark blue for selected nav item (with transparency)
+            backgroundColor: 'rgba(108, 0, 151, 0.57)', // Dark blue for selected nav item (with transparency)
           },
           '&.Mui-selected:hover': {
             backgroundColor: 'rgba(144, 202, 249, 0.24)',

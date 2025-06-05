@@ -167,7 +167,7 @@ function HomePage() {
               </Box>
             )}
             <Typography
-              variant="h6"
+              variant="h1"
               noWrap
               component="div"
               color="inherit"
@@ -224,6 +224,7 @@ function HomePage() {
         </Drawer>
         <Drawer
           variant="permanent"
+          elevation={16}
           sx={{
             display: { xs: 'none', sm: 'block' },
             '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
@@ -240,8 +241,9 @@ function HomePage() {
         sx={{
           flexGrow: 1,
           p: 0,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: '0px', sm: '0px' }
+          //width: { sm: `calc(100% - ${drawerWidth}px)` },
+          mt: { xs: '0px', sm: '0px' },
+          backgroundColor: theme.palette.background.paper,
         }}
       >
         <Toolbar />
