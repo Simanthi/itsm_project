@@ -1,48 +1,44 @@
+/* src/index.css */
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
   font-weight: 400;
 
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424; /* This is the background pattern you're seeing */
+  color: rgba(255, 255, 255, 0.87); /* Existing color rgba(255, 255, 255, 0.87) */
+  background-color: rgba(36, 36, 36, 1); /* #242424 */
 
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
 }
 
 a {
   font-weight: 500;
-  color: #646cff;
+  color: rgba(100, 108, 255, 1); /* #646cff */
   text-decoration: inherit;
 }
 a:hover {
-  color: #535bf2;
+  color: rgba(83, 91, 242, 1); /* #535bf2 */
 }
 
-/* Add or adjust this section */
-html, body, #root { /* Target html, body, and your React app's root div */
+/* --- CRITICAL GLOBAL STYLES FOR LAYOUT --- */
+/* These ensure html, body, and #root take up the full viewport and don't scroll themselves */
+html,
+body,
+#root {
   margin: 0;
   padding: 0;
-  width: 100%;      /* Ensure they take full width */
-  height: 100%;     /* Ensure they take full height */
-  /* If you still have an outer scrollbar that is not desired, consider: */
-  /* overflow: hidden; */
+  width: 100%;
+  height: 100%;
+  overflow: hidden; /* This prevents the entire page from scrolling */
 }
 
 body {
-  /* REMOVE THESE LINES: */
-  /* display: flex; */
-  /* place-items: center; */
-
   min-width: 320px;
-  min-height: 100vh; /* Keep this to ensure body is at least full height */
-
-  /* If you want the background color from :root applied to body, you don't need this line. */
-  /* If you want a different background for the entire page behind your app, define it here. */
-  /* background-color: #242424; */
 }
 
 h1 {
@@ -57,12 +53,12 @@ button {
   font-size: 1em;
   font-weight: 500;
   font-family: inherit;
-  background-color: #1a1a1a;
+  background-color: rgba(26, 26, 26, 1); /* #1a1a1a */
   cursor: pointer;
   transition: border-color 0.25s;
 }
 button:hover {
-  border-color: #646cff;
+  border-color: rgba(100, 108, 255, 1); /* #646cff */
 }
 button:focus,
 button:focus-visible {
@@ -71,13 +67,13 @@ button:focus-visible {
 
 @media (prefers-color-scheme: light) {
   :root {
-    color: #213547;
-    background-color: #ffffff;
+    color: rgba(33, 53, 71, 1); /* #213547 */
+    background-color: rgba(255, 255, 255, 1); /* #ffffff */
   }
   a:hover {
-    color: #747bff;
+    color: rgba(116, 123, 255, 1); /* #747bff */
   }
   button {
-    background-color: #f9f9f9;
+    background-color: rgba(249, 249, 249, 1); /* #f9f9f9 */
   }
 }

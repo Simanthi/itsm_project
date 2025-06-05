@@ -1,9 +1,9 @@
 // itsm_frontend/src/pages/HomePage.tsx
-import React from 'react';
-import {  Link, Outlet, useLocation } from 'react-router-dom'; // <--- Remove useNavigate here
+import React, { useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import {
   AppBar,
-  Toolbar,
+  Toolbar, // Make sure Toolbar is imported
   Typography,
   Box,
   Drawer,
@@ -39,8 +39,11 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import { useAuth } from '../context/AuthContext';
 import { useThemeContext } from '../context/ThemeContext';
 
-const drawerWidth = 260; // Your chosen drawer width
+const drawerWidth = 260;
+// Standard AppBar height in Material-UI is 64px for desktop
+const appBarHeight = 64;
 
+// Original module links - dummy menus removed
 const moduleLinks = [
   { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
   { text: 'Service Requests', icon: <RequestQuoteIcon />, path: '/service-requests' },
@@ -54,10 +57,9 @@ const moduleLinks = [
 ];
 
 function HomePage() {
-  const [mobileOpen, setMobileOpen] = React.useState(false);
-  const [isClosing, setIsClosing] = React.useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [isClosing, setIsClosing] = useState(false);
   const { logout, user } = useAuth();
-  // const navigate = useNavigate(); // <--- REMOVE THIS LINE
   const location = useLocation();
   const theme = useTheme();
   const { toggleColorMode } = useThemeContext();
@@ -79,7 +81,6 @@ function HomePage() {
 
   const handleLogout = () => {
     logout();
-    // navigate('/login'); // <--- REMOVE OR COMMENT OUT THIS LINE (logout already navigates)
   };
 
   const currentModule = moduleLinks.find(
@@ -93,20 +94,29 @@ function HomePage() {
 
 
   const drawer = (
-    <Box sx={{ p: 1 }}>
-      {/* Company Logo and Text Container */}
-      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', mb: 1 }}>
+    // This Box no longer has padding-top. The Toolbar inside will handle vertical alignment.
+    <Box>
+      {/* New Toolbar for the Drawer header, aligning with AppBar's height */}
+      <Toolbar sx={{
+        display: 'flex',
+        flexDirection: 'row', // Stack logo and text vertically
+        alignItems: 'center',
+        justifyContent: 'center', // Center content vertically within the Toolbar
+        padding: '20px', // Vertical padding only, horizontal padding for logo adjusted via img style
+        height: `${appBarHeight}px`, // Ensure it matches AppBar height
+        boxSizing: 'border-box' // Include padding in the height calculation
+      }}>
         <img
           src="/images/sblt_fav_icon.png"
           alt="SBLT Logo"
-          style={{ maxWidth: '100px', height: 'auto', marginBottom: '8px' }}
+          style={{ maxWidth: '95px', height: 'auto', marginBottom: '4px', marginTop: '4px'}} // Adjusted size for better fit
         />
-        <Typography variant="h6" sx={{ textAlign: 'center', color: 'primary.main' }}>
+        <Typography variant="h6" sx={{ textAlign: 'center', color: 'primary.main', fontSize: '14px', padding: '8px'}}> {/* Adjusted font size */}
           IT Service Management
         </Typography>
-      </Box>
+      </Toolbar>
       <Divider />
-      <List>
+      <List sx={{ padding: '8px' }}> {/* Add padding to the list for spacing */}
         {moduleLinks.map((item) => (
           <ListItem key={item.text} disablePadding>
             <ListItemButton
@@ -138,15 +148,19 @@ function HomePage() {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    // Outermost Box: The root flex container for the entire page layout.
+    // It takes up the full viewport height and width.
+    <Box sx={{ display: 'flex', height: '100vh', width: '100%', boxSizing: 'border-box' }}>
       {/* App Bar (Top Navigation) */}
       <AppBar
         position="fixed"
         color="transparent"
         sx={{
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
+          marginLeft: { sm: `${drawerWidth}px` },
           backgroundColor: theme.palette.background.paper,
+          zIndex: (theme) => theme.zIndex.drawer + 1,
+          boxShadow: theme.shadows[1],
         }}
       >
         <Toolbar>
@@ -155,19 +169,19 @@ function HomePage() {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ marginRight: '16px', display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
 
-          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: 1 }}>
+          <Box sx={{ flexGrow: 1, display: { xs: 'none', sm: 'flex' }, alignItems: 'center', gap: '8px' }}>
             {currentModule.icon && (
               <Box sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}>
                 {currentModule.icon}
               </Box>
             )}
             <Typography
-              variant="h1"
+              variant="h6"
               noWrap
               component="div"
               color="inherit"
@@ -178,15 +192,13 @@ function HomePage() {
 
           <Box sx={{ flexGrow: 1 }} />
           <Box sx={{ display: 'flex', alignItems: 'center' }}>
-            {/* Display user name from auth context */}
-            <Typography variant="body1" sx={{ mr: 2 }} color="inherit">
+            <Typography variant="body1" sx={{ marginRight: '16px' }} color="inherit">
               Welcome, {user ? user.name : 'Guest'}!
             </Typography>
-            <Avatar sx={{ bgcolor: 'secondary.main', mr: 2 }}>
+            <Avatar sx={{ bgcolor: 'secondary.main', marginRight: '16px' }}>
               <AccountCircle />
             </Avatar>
-            {/* Theme Toggle Button */}
-            <IconButton color="inherit" sx={{ mr: 1 }} onClick={toggleColorMode}>
+            <IconButton color="inherit" sx={{ marginRight: '8px' }} onClick={toggleColorMode}>
               {theme.palette.mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
             </IconButton>
             <Button
@@ -204,30 +216,44 @@ function HomePage() {
       {/* Side Drawer (Navigation Menu) */}
       <Box
         component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 }, height: '100%' }}
         aria-label="mailbox folders"
       >
+        {/* Temporary Drawer for Mobile */}
         <Drawer
           variant="temporary"
           open={mobileOpen}
           onTransitionEnd={handleDrawerTransitionEnd}
           onClose={handleDrawerClose}
           ModalProps={{
-            keepMounted: true,
+            keepMounted: true, // Better performance on mobile
           }}
           sx={{
             display: { xs: 'block', sm: 'none' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              height: '100%', // Ensure it fills the viewport height
+              overflowY: 'auto', // Allow scrolling within the mobile drawer
+            },
           }}
         >
           {drawer}
         </Drawer>
+
+        {/* Permanent Drawer for Desktop */}
         <Drawer
           variant="permanent"
           elevation={16}
           sx={{
             display: { xs: 'none', sm: 'block' },
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            '& .MuiDrawer-paper': {
+              boxSizing: 'border-box',
+              width: drawerWidth,
+              height: `100%`, // The paper should take 100% of the nav box's height
+              overflowY: 'auto', // Allow scrolling within the desktop drawer content
+              backgroundColor: theme.palette.background.paper,
+            },
           }}
           open
         >
@@ -235,19 +261,35 @@ function HomePage() {
         </Drawer>
       </Box>
 
-      {/* Main Content Area */}
+      {/* Main Content Area: This Box will contain the content that scrolls.
+          It fills the remaining space after the AppBar and Drawer. */}
       <Box
         component="main"
         sx={{
-          flexGrow: 1,
-          p: 0,
-          //width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: { xs: '0px', sm: '0px' },
-          backgroundColor: theme.palette.background.paper,
+          flexGrow: 1, // Takes up remaining horizontal space
+          display: 'flex',
+          flexDirection: 'column', // Stack children vertically (your page content)
+          backgroundColor: theme.palette.background.default,
+          boxSizing: 'border-box',
+          // This Box correctly occupies the space *next to* the drawer and *below* the app bar.
+          marginTop: `${appBarHeight}px`, // Push content down by AppBar height
+          height: `calc(100vh - ${appBarHeight}px)`, // Take remaining viewport height after AppBar
+          overflowY: 'auto', // This is the primary scroll area for the entire page content
+          minHeight: 0, // Important for flex item with overflow to allow shrinking
         }}
       >
-        <Toolbar />
-        <Outlet />
+        {/* This Box directly contains the Outlet content (your pages like ServiceRequestsPage).
+            It will now be constrained by its parent and scroll if needed. */}
+        <Box
+          sx={{
+            flexGrow: 1, // Allow content to fill available space within this main content area
+            padding: '24px', // Page-level padding
+            boxSizing: 'border-box',
+            minHeight: 0, // Crucial for flex item in column layout to allow shrinking and thus overflow
+          }}
+        >
+          <Outlet />
+        </Box>
       </Box>
     </Box>
   );

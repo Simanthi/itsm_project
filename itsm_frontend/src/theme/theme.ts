@@ -117,7 +117,7 @@ export const darkTheme = createTheme({
     },
     background: {
       default: 'rgb(18, 18, 18)',   // Very dark grey/black
-      paper: 'rgba(0, 0, 0, 0.61)',     // Slightly lighter dark grey for cards, drawers
+      paper: 'rgba(0, 0, 0, 0.55)',     // Slightly lighter dark grey for cards, drawers
     },
     text: {
       primary: 'rgb(255, 255, 255)', // White text on dark background

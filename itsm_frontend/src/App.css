@@ -1,21 +1,19 @@
-#root {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 1rem;
-  text-align: center;
-}
+/* src/App.css */
+
+/* This file should ideally only contain component-specific styles or be empty. */
+/* Ensure NO #root styles here, as they are handled in index.css */
 
 .logo {
-  height: 6em;
-  padding: 1.5em;
+  height: 96px; /* 6em = 96px (assuming 16px base font) */
+  padding: 24px; /* 1.5em = 24px */
   will-change: filter;
   transition: filter 300ms;
 }
 .logo:hover {
-  filter: drop-shadow(0 0 2em #646cffaa);
+  filter: drop-shadow(0 0 2em rgba(100, 108, 255, 0.67)); /* #646cffaa */
 }
 .logo.react:hover {
-  filter: drop-shadow(0 0 2em #61dafbaa);
+  filter: drop-shadow(0 0 2em rgba(97, 218, 251, 0.67)); /* #61dafbaa */
 }
 
 @keyframes logo-spin {
@@ -34,9 +32,9 @@
 }
 
 .card {
-  padding: 2em;
+  padding: 32px; /* 2em = 32px */
 }
 
 .read-the-docs {
-  color: #888;
+  color: rgba(136, 136, 136, 1); /* #888 */
 }

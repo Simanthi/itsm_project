@@ -58,7 +58,7 @@ function LoginPage() {
   return (
     <Container
       component="main"
-      maxWidth="xs"
+      maxWidth="sm"
       
       sx={{
         height: '100vh',
@@ -66,22 +66,24 @@ function LoginPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        bgcolor: theme.palette.primary.dark,
+        bgcolor: theme.palette.background.default,
         borderRadius: theme.shape.borderRadius,
+        
       }}
     >
       
       <Paper
-        elevation={10}
+        elevation={10} 
         sx={{
           paddingBottom: 3,
           paddingTop: 3,
-          paddingLeft: 6,
-          paddingRight: 6,
+          paddingLeft: 4,
+          paddingRight: 4,
           display: 'flex',
           flexDirection: 'column',
           alignItems: 'center',
           width: '80%',
+          height: '80%',
           bgcolor: theme.palette.background.paper,
           borderRadius: theme.shape.borderRadius,
         }}
@@ -107,7 +109,7 @@ function LoginPage() {
         sx={{
           mb: 3,
           textAlign: 'center',
-          color: theme.palette.primary.light,
+          color: theme.palette.text.secondary,
         }}
       >
         Login
@@ -247,7 +249,7 @@ function LoginPage() {
           />
           <Button
             type="submit"
-            fullWidth
+            
             variant="contained"
             sx={{ mt: 3, mb: 2, py: 1.5 }}
             disabled={loading}
