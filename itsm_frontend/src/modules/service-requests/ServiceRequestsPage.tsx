@@ -72,7 +72,7 @@ function ServiceRequestsPage() {
     setSelectedRequestIds([]);
   };
 
-  const handleClick = (event: React.MouseEvent<unknown>, id: string) => {
+  const handleClick = (_event: React.MouseEvent<unknown>, id: string) => {
     const selectedIndex = selectedRequestIds.indexOf(id);
     let newSelected: string[] = [];
 
