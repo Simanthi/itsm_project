@@ -1,5 +1,5 @@
 // itsm_frontend/src/pages/HomePage.tsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import {
   AppBar as MuiAppBar,
   Box, Toolbar, IconButton, Typography, Drawer, List, ListItem,
