@@ -12,7 +12,7 @@ import {
   useTheme,
 } from '@mui/material';
 
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../../context/AuthContext';
 
 function LoginPage() {
   const [username, setUsername] = useState('');

@@ -13,7 +13,7 @@ function NotFoundPage() {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh', // Take full viewport height
+        height: '100%', // Changed from minHeight: '100vh'
         textAlign: 'center',
         p: 3,
       }}
