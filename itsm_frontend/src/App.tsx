@@ -25,6 +25,7 @@ import ChangeManagementPage from './modules/changes/ChangeManagementPage';
 import ConfigurationManagementPage from './modules/configs/ConfigurationManagementPage';
 import ApprovalWorkflowPage from './modules/workflows/ApprovalWorkflowPage';
 import ReportsAnalyticsPage from './modules/reports/ReportsAnalyticsPage';
+import ServiceRequestPrintView from './modules/service-requests/components/ServiceRequestPrintView';
 
 function AppContent() {
   return (
@@ -41,6 +42,8 @@ function AppContent() {
           <Route path="service-requests/new" element={<NewServiceRequestPage />} /> {/* <--- ADD THIS LINE */}
           {/* NEW: Route for editing an existing service request */}
           <Route path="service-requests/edit/:id" element={<NewServiceRequestPage />} />
+          {/* NEW: Route for the print preview page */}
+          <Route path="service-requests/print-preview" element={<ServiceRequestPrintView/>} /> {/* <--- NEW ROUTE */}
           <Route path="assets" element={<AssetsPage />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />

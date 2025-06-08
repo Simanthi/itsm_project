@@ -67,7 +67,6 @@ function ServiceRequestsPage() {
   const handleEdit = () => {
     if (selectedRequestIds.length === 1) {
       const requestIdToEdit = selectedRequestIds[0];
-      // Navigate to the edit page, passing the ID in the URL
       navigate(`/service-requests/edit/${requestIdToEdit}`);
     } else {
       alert('Please select exactly one request to edit.');
@@ -76,8 +75,8 @@ function ServiceRequestsPage() {
 
   const handlePrintPreview = () => {
     if (selectedRequestIds.length > 0) {
-      console.log('Print Preview clicked for IDs:', selectedRequestIds);
-      // Implement print preview logic
+      // Navigate to the print preview page, passing the selected IDs as state
+      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds } });
     } else {
       alert('Please select at least one request to print preview.');
     }
@@ -86,7 +85,9 @@ function ServiceRequestsPage() {
   const handlePrint = () => {
     if (selectedRequestIds.length > 0) {
       console.log('Print Request clicked for IDs:', selectedRequestIds);
-      // Implement print logic
+      // For a direct print without preview, you could implement specific logic here.
+      // Or, you might navigate to the print preview page with an additional flag to auto-trigger print.
+      // For now, let's keep it separate or let the print preview handle the actual print.
     } else {
       alert('Please select at least one request to print.');
     }

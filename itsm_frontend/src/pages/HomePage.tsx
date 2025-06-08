@@ -152,6 +152,7 @@ function HomePage() {
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <StyledAppBar
+        id="app-bar" // <<< ADD THIS ID
         position="fixed"
         open={open}
       >
@@ -190,7 +191,11 @@ function HomePage() {
           )}
         </Toolbar>
       </StyledAppBar>
-      <StyledDrawer variant="permanent" open={open}>
+      <StyledDrawer
+        id="side-drawer-desktop" // <<< ADD THIS ID for the permanent drawer
+        variant="permanent"
+        open={open}
+      >
         <Toolbar sx={{
           display: 'flex',
           flexDirection: 'row',
@@ -202,10 +207,9 @@ function HomePage() {
           borderStyle: 'hidden',
           flexShrink: 0,
           [theme.breakpoints.up('sm')]: {
-            paddingLeft: open ? '16px' : '0px', // Re-apply your desired padding
-            paddingRight: open ? '16px' : '0px', // Re-apply your desired padding
+            paddingLeft: open ? '16px' : '0px',
+            paddingRight: open ? '16px' : '0px',
           },
-          // UNDONE: Removed the Toolbar hover effect here
         }}>
           {open && (
             <Box sx={{
@@ -246,7 +250,6 @@ function HomePage() {
               minWidth: 'auto',
               borderRadius: '4px',
               color: theme.palette.text.primary,
-              // REVERTED: Restore button's own hover background
               '&:hover': {
                 backgroundColor: theme.palette.action.hover,
               },
@@ -264,22 +267,17 @@ function HomePage() {
               },
               border: 'none',
               flexShrink: 0,
-              // MODIFIED: Explicitly center the button's content when collapsed
-              ...(!open && { // When drawer is collapsed
+              ...(!open && {
                   flexGrow: 1,
-                  //padding: '6px 0',
-                  //display: 'flex',          // Make the button itself a flex container
-                  justifyContent: 'center', // Center its children (the icon)
+                  justifyContent: 'center',
                   minWidth: '64px',
                   minHeight: '64px',
               }),
               ...(open && {
                 flexGrow: 1,
-                  //padding: '0px',  
-                  justifyContent: 'right',          // No horizontal padding for full edge-to-edge fill
+                  justifyContent: 'right',
                 minHeight:'64px',
                 minWidth: '16px',
-                  
               }),
             }}
           >
@@ -290,7 +288,7 @@ function HomePage() {
             )}
           </Button>
         </Toolbar>
-        {/* <Divider  /> */}
+        {/* <Divider /> */}
         <List sx={{ flexGrow: 1, paddingTop: '32px' }}>
           {moduleLinks.map((item) => (
             <ListItem key={item.text} sx={{ display: 'block' , paddingTop:'2px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0', }}>
@@ -313,7 +311,6 @@ function HomePage() {
                     minWidth: 0,
                     mr: open ? 1 : 'auto',
                     justifyContent: 'center',
-                    
                   }}
                 >
                   {item.icon}
