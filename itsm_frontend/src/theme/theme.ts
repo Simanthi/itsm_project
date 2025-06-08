@@ -41,7 +41,7 @@ export const lightTheme = createTheme({
       main: 'rgb(56, 104, 124)',   // Material-UI default blue
       light: 'rgb(66, 165, 245)',
       dark: 'rgb(21, 101, 192)',
-      contrastText: 'rgb(255, 255, 255)', // White
+      contrastText: 'rgb(40, 39, 39)', // White
     },
     secondary: {
       main: 'rgb(156, 39, 176)',  // Material-UI default purple
