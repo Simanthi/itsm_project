@@ -1,5 +1,5 @@
-// itsm_frontend/src/pages/ServiceRequestsPage.tsx
-import React, { useState, useEffect } from 'react';
+// itsm_frontend/src/features/serviceRequests/pages/ServiceRequestsPage.tsx
+import React, { useState } from 'react';
 import {
   Table,
   TableBody,
@@ -12,6 +12,7 @@ import {
   Button,
   Checkbox,
 } from '@mui/material';
+import { useNavigate } from 'react-router-dom';
 
 // --- Icon Imports for buttons ---
 import AddIcon from '@mui/icons-material/Add';
@@ -19,49 +20,15 @@ import EditIcon from '@mui/icons-material/Edit';
 import PrintIcon from '@mui/icons-material/Print';
 import PreviewIcon from '@mui/icons-material/Preview';
 
-
-// Define the structure of your service request data
-interface ServiceRequest {
-  id: string;
-  title: string;
-  description: string;
-  status: 'Open' | 'In Progress' | 'Resolved' | 'Closed';
-  requestedBy: string;
-  requestedDate: string;
-}
-
-// Mock Data (expanded to ensure overflow for testing)
-const mockServiceRequests: ServiceRequest[] = [
-  { id: 'SR001', title: 'Laptop repair', description: 'My laptop screen is cracked.', status: 'Open', requestedBy: 'Alice Johnson', requestedDate: '2024-05-28' },
-  { id: 'SR002', title: 'Software installation', description: 'Need Photoshop installed on my new PC.', status: 'In Progress', requestedBy: 'Bob Smith', requestedDate: '2024-05-29' },
-  { id: 'SR003', title: 'Network access issue', description: 'Cannot connect to company shared drive.', status: 'Resolved', requestedBy: 'Charlie Brown', requestedDate: '2024-05-29' },
-  { id: 'SR004', title: 'New employee onboarding', description: 'Setup account for new hire, Jane Doe.', status: 'Closed', requestedBy: 'David Lee', requestedDate: '2024-05-30' },
-  { id: 'SR005', title: 'Printer troubleshooting', description: 'Office printer is offline in room 305.', status: 'Open', requestedBy: 'Eve Davis', requestedDate: '2024-06-01' },
-  { id: 'SR006', title: 'Monitor calibration', description: 'Need color calibration for design monitor.', status: 'Open', requestedBy: 'Frank White', requestedDate: '2024-06-02' },
-  { id: 'SR007', title: 'Email configuration', description: 'Issues setting up Outlook on new laptop.', status: 'In Progress', requestedBy: 'Grace Hall', requestedDate: '2024-06-02' },
-  { id: 'SR008', title: 'System upgrade request', description: 'Requesting OS upgrade to Windows 11.', status: 'Open', requestedBy: 'Henry Green', requestedDate: '2024-06-03' },
-  { id: 'SR009', title: 'Password reset', description: 'Forgot VPN password, need a reset.', status: 'Resolved', requestedBy: 'Ivy Black', requestedDate: '2024-06-03' },
-  { id: 'SR010', title: 'Software license query', description: 'Need to check status of Adobe Acrobat license.', status: 'Closed', requestedBy: 'Jack Blue', requestedDate: '2024-06-04' },
-  { id: 'SR011', title: 'New Keyboard Request', description: 'My old keyboard is broken, need a new one.', status: 'Open', requestedBy: 'Karen Grey', requestedDate: '2024-06-04' },
-  { id: 'SR012', title: 'VPN connection issue', description: 'VPN disconnects frequently from home.', status: 'In Progress', requestedBy: 'Liam Brown', requestedDate: '2024-06-05' },
-  { id: 'SR013', title: 'Server access request', description: 'Need access to Dev server for testing.', status: 'Open', requestedBy: 'Mia Davis', requestedDate: '2024-06-05' },
-  { id: 'SR014', title: 'New Printer Setup', description: 'Setting up a new network printer in Marketing.', status: 'Closed', requestedBy: 'Noah Green', requestedDate: '2024-06-06' },
-  { id: 'SR015', title: 'Antivirus Update Failed', description: 'Antivirus definitions not updating on desktop.', status: 'Open', requestedBy: 'Olivia White', requestedDate: '2024-06-06' },
-  { id: 'SR016', title: 'Monitor Flicker', description: 'External monitor flickers constantly.', status: 'In Progress', requestedBy: 'Peter Parker', requestedDate: '2024-06-07' },
-  { id: 'SR017', title: 'Software Uninstall', description: 'Need to uninstall old CAD software.', status: 'Open', requestedBy: 'Quinn Red', requestedDate: '2024-06-07' },
-  { id: 'SR018', title: 'Headset Malfunction', description: 'My company headset mic is not working.', status: 'Resolved', requestedBy: 'Rachel Green', requestedDate: '2024-06-08' },
-  { id: 'SR019', title: 'New User Account', description: 'Setup new user account for intern.', status: 'Closed', requestedBy: 'Steve Rogers', requestedDate: '2024-06-08' },
-  { id: 'SR020', title: 'Scanner Not Working', description: 'Office scanner not recognized by PC.', status: 'Open', requestedBy: 'Tina Fey', requestedDate: '2024-06-09' },
-];
+//import { type ServiceRequest } from '../types/ServiceRequestTypes';
+import { useServiceRequests } from '../hooks/useServiceRequests';
 
 
 function ServiceRequestsPage() {
-  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
-  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
+  const navigate = useNavigate();
+  const { serviceRequests } = useServiceRequests();
 
-  useEffect(() => {
-    setServiceRequests(mockServiceRequests);
-  }, []);
+  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
 
   const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.checked) {
@@ -94,14 +61,14 @@ function ServiceRequestsPage() {
   const isSelected = (id: string) => selectedRequestIds.indexOf(id) !== -1;
 
   const handleCreateNew = () => {
-    console.log('Create New Request clicked');
-    // Implement form opening logic here (e.g., open a dialog)
+    navigate('/service-requests/new');
   };
 
   const handleEdit = () => {
     if (selectedRequestIds.length === 1) {
-      console.log('Edit Request clicked for ID:', selectedRequestIds[0]);
-      // Implement form opening logic with pre-filled data
+      const requestIdToEdit = selectedRequestIds[0];
+      // Navigate to the edit page, passing the ID in the URL
+      navigate(`/service-requests/edit/${requestIdToEdit}`);
     } else {
       alert('Please select exactly one request to edit.');
     }
@@ -126,16 +93,12 @@ function ServiceRequestsPage() {
   };
 
   return (
-    // This Box acts as the container for the Service Requests page content.
-    // It should fill the space provided by the Outlet wrapper in HomePage.
-    // It uses flexbox to arrange the buttons and the table vertically.
     <Box sx={{
-      height: '100%', // Take 100% of the height from its parent (Outlet wrapper in HomePage)
+      height: '100%',
       display: 'flex',
       flexDirection: 'column',
-      minHeight: 0, // Crucial for flex item in column layout to allow shrinking and thus overflow
+      minHeight: 0,
     }}>
-      {/* Action Buttons: Create, Edit, Print Preview, Print */}
       <Box sx={{ marginBottom: '16px', display: 'flex', gap: '8px', justifyContent: 'flex-start', flexShrink: 0 }}>
         <Button
           variant="contained"
@@ -171,11 +134,8 @@ function ServiceRequestsPage() {
         </Button>
       </Box>
 
-      {/* Table Container */}
-      {/* This TableContainer will grow to fill the remaining vertical space
-          within the ServiceRequestsPage and will handle its own scrolling. */}
       <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <Table sx={{ minWidth: 650 /* REMOVED: maxWidth: 1000 */ }} aria-label="service requests table">
+        <Table sx={{ minWidth: 650 }} aria-label="service requests table">
           <TableHead>
             <TableRow>
               <TableCell padding="checkbox">
@@ -195,6 +155,7 @@ function ServiceRequestsPage() {
             </TableRow>
           </TableHead>
           <TableBody>
+            {/* Ensure serviceRequests is not empty before mapping */}
             {serviceRequests.map((request, index) => {
               const isItemSelected = isSelected(request.id);
               return (
@@ -204,7 +165,7 @@ function ServiceRequestsPage() {
                   role="checkbox"
                   aria-checked={isItemSelected}
                   tabIndex={-1}
-                  key={`${request.id}-${index}`} // Using a combination of id and index for key, as mock IDs are not unique
+                  key={request.id}
                   selected={isItemSelected}
                   sx={{ cursor: 'pointer' }}
                 >

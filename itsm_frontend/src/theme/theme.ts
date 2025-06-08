@@ -38,7 +38,7 @@ export const lightTheme = createTheme({
   palette: {
     mode: 'light', // 'light' is a string literal, not directly referencing PaletteMode type here
     primary: {
-      main: 'rgb(25, 118, 210)',   // Material-UI default blue
+      main: 'rgb(56, 104, 124)',   // Material-UI default blue
       light: 'rgb(66, 165, 245)',
       dark: 'rgb(21, 101, 192)',
       contrastText: 'rgb(255, 255, 255)', // White
@@ -51,10 +51,10 @@ export const lightTheme = createTheme({
     },
     background: {
       default: 'rgb(200, 200, 200)', // A very light grey for main content
-      paper: 'rgb(216, 216, 216)',   // White for cards, drawers
+      paper: 'rgb(195, 194, 194)',   // White for cards, drawers
     },
     text: {
-      primary: 'rgb(33, 43, 54)',   // Dark text on light background
+      primary: 'rgb(0, 0, 0)',   // Dark text on light background
       secondary: 'rgb(99, 115, 129)', // Muted text on light background
 
     },
@@ -85,13 +85,14 @@ export const lightTheme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-selected': {
-            backgroundColor: 'rgba(25, 118, 210, 0.08)', // Light blue for selected nav item (with transparency)
+            backgroundColor: 'rgb(56, 104, 124)', // Light blue for selected nav item (with transparency)
           },
           '&.Mui-selected:hover': {
             backgroundColor: 'rgba(25, 118, 210, 0.12)',
           },
           '&:hover': {
             backgroundColor: 'rgba(0, 0, 0, 0.04)', // Light hover effect
+            color : 'rgb(6, 91, 127)',
           },
         },
       },
@@ -152,7 +153,8 @@ export const darkTheme = createTheme({
       styleOverrides: {
         root: {
           '&.Mui-selected': {
-            backgroundColor: 'rgba(108, 0, 151, 0.57)', // Dark blue for selected nav item (with transparency)
+            backgroundColor: 'rgb(144, 202, 249)', // Dark blue for selected nav item (with transparency)
+            color : 'rgb(0, 0, 0)',
           },
           '&.Mui-selected:hover': {
             backgroundColor: 'rgba(144, 202, 249, 0.24)',

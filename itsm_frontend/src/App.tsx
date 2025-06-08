@@ -4,19 +4,20 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 
 // --- Context Imports (Confirmed Paths) ---
-import { AuthProvider } from './context/AuthContext'; // Assuming AuthContext.tsx is directly in src/context/
-import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider'; // Corrected path for ThemeContextProvider
-
+import { AuthProvider } from './context/AuthContext';
+import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider';
+import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider';
 // --- Page Imports (Confirmed Paths) ---
-// LoginPage is in modules/auth
 import LoginPage from './modules/auth/LoginPage';
-// HomePage and NotFoundPage are in pages/
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 
 // --- Module-based Page Imports (Confirmed Paths) ---
 import DashboardPage from './modules/dashboard/DashboardPage';
-import ServiceRequestsPage from './modules/service-requests/ServiceRequestsPage';
+import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequestsPage';
+// NEW: Import NewServiceRequestPage
+import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage'; // <--- ADD THIS LINE
+
 import AssetsPage from './modules/assets/AssetsPage';
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
@@ -25,14 +26,7 @@ import ConfigurationManagementPage from './modules/configs/ConfigurationManageme
 import ApprovalWorkflowPage from './modules/workflows/ApprovalWorkflowPage';
 import ReportsAnalyticsPage from './modules/reports/ReportsAnalyticsPage';
 
-// Note: useThemeContext is not directly used in AppContent, so it's not imported here.
-// It's used by HomePage and other components that explicitly call it.
-
 function AppContent() {
-  // Removed the unused destructuring of mode and toggleColorMode,
-  // as it caused a 'destructured elements are unused' warning.
-  // The theme context is still provided by ThemeContextProvider for children to use.
-
   return (
     <>
       <CssBaseline />
@@ -43,9 +37,13 @@ function AppContent() {
           {/* Nested routes for module-specific pages */}
           <Route index element={<DashboardPage />} />
           <Route path="service-requests" element={<ServiceRequestsPage />} />
+          {/* NEW: Add route for creating a new service request */}
+          <Route path="service-requests/new" element={<NewServiceRequestPage />} /> {/* <--- ADD THIS LINE */}
+          {/* NEW: Route for editing an existing service request */}
+          <Route path="service-requests/edit/:id" element={<NewServiceRequestPage />} />
           <Route path="assets" element={<AssetsPage />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
-          <Route path="incidents" element={<IncidentManagementPage />} /> {/* Corrected JSX here */}
+          <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />
           <Route path="configs" element={<ConfigurationManagementPage />} />
           <Route path="workflows" element={<ApprovalWorkflowPage />} />
@@ -62,8 +60,10 @@ function App() {
   return (
     <Router>
       <AuthProvider>
-        <ThemeContextProvider> {/* Provides theme context to all children */}
-          <AppContent />
+        <ThemeContextProvider>
+          <ServiceRequestProvider> {/* <--- ADD THIS LINE */}
+            <AppContent />
+          </ServiceRequestProvider> {/* <--- ADD THIS LINE */}
         </ThemeContextProvider>
       </AuthProvider>
     </Router>
