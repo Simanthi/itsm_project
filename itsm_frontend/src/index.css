@@ -113,6 +113,9 @@ button:focus-visible {
   .MuiToolbar-root {
     display: none !important;
   }
+  .MuiButton-root { /* Hides all Material-UI buttons in print output */
+    display: none !important;
+  }
 
   /* General print improvements for readability */
   body {

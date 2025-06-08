@@ -82,16 +82,20 @@ function ServiceRequestsPage() {
     }
   };
 
+  // <<< MODIFIED: This is the function we are changing
   const handlePrint = () => {
     if (selectedRequestIds.length > 0) {
-      console.log('Print Request clicked for IDs:', selectedRequestIds);
-      // For a direct print without preview, you could implement specific logic here.
-      // Or, you might navigate to the print preview page with an additional flag to auto-trigger print.
-      // For now, let's keep it separate or let the print preview handle the actual print.
+      navigate('/service-requests/print-preview', {
+        state: {
+          selectedIds: selectedRequestIds,
+          autoPrint: true // <<< ADD THIS FLAG
+        }
+      });
     } else {
       alert('Please select at least one request to print.');
     }
   };
+  // >>> END MODIFICATION
 
   return (
     <Box sx={{
@@ -128,7 +132,7 @@ function ServiceRequestsPage() {
         <Button
           variant="outlined"
           startIcon={<PrintIcon />}
-          onClick={handlePrint}
+          onClick={handlePrint} // This button will now auto-trigger print
           disabled={selectedRequestIds.length === 0}
         >
           Print Request
