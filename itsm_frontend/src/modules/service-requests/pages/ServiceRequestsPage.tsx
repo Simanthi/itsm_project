@@ -11,6 +11,7 @@ import {
   Box,
   Button,
   Checkbox,
+  Typography,
 } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 
@@ -20,7 +21,8 @@ import EditIcon from '@mui/icons-material/Edit';
 import PrintIcon from '@mui/icons-material/Print';
 import PreviewIcon from '@mui/icons-material/Preview';
 
-//import { type ServiceRequest } from '../types/ServiceRequestTypes';
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 
 
@@ -75,7 +77,6 @@ function ServiceRequestsPage() {
 
   const handlePrintPreview = () => {
     if (selectedRequestIds.length > 0) {
-      // Navigate to the print preview page, passing the selected IDs as state
       navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds } });
     } else {
       alert('Please select at least one request to print preview.');
@@ -84,10 +85,12 @@ function ServiceRequestsPage() {
 
   const handlePrint = () => {
     if (selectedRequestIds.length > 0) {
-      console.log('Print Request clicked for IDs:', selectedRequestIds);
-      // For a direct print without preview, you could implement specific logic here.
-      // Or, you might navigate to the print preview page with an additional flag to auto-trigger print.
-      // For now, let's keep it separate or let the print preview handle the actual print.
+      navigate('/service-requests/print-preview', {
+        state: {
+          selectedIds: selectedRequestIds,
+          autoPrint: true
+        }
+      });
     } else {
       alert('Please select at least one request to print.');
     }
@@ -99,6 +102,7 @@ function ServiceRequestsPage() {
       display: 'flex',
       flexDirection: 'column',
       minHeight: 0,
+      p: 3,
     }}>
       <Box sx={{ marginBottom: '16px', display: 'flex', gap: '8px', justifyContent: 'flex-start', flexShrink: 0 }}>
         <Button
@@ -136,8 +140,16 @@ function ServiceRequestsPage() {
       </Box>
 
       <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <Table sx={{ minWidth: 650 }} aria-label="service requests table">
-          <TableHead>
+        <Table stickyHeader sx={{ minWidth: 1000 }} aria-label="service requests table">
+          <TableHead
+            sx={{
+              '& .MuiTableCell-stickyHeader': {
+                backgroundColor: (theme) => theme.palette.primary.main, // Changed to primary.main
+                color: (theme) => theme.palette.primary.contrastText,  // Added for text readability
+                zIndex: 100,
+              },
+            }}
+          >
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
@@ -147,46 +159,72 @@ function ServiceRequestsPage() {
                   inputProps={{ 'aria-label': 'select all requests' }}
                 />
               </TableCell>
-              <TableCell>ID</TableCell>
+              <TableCell>Request ID</TableCell>
               <TableCell>Title</TableCell>
-              <TableCell>Description</TableCell>
+              <TableCell>Category</TableCell>
+              <TableCell>Priority</TableCell>
               <TableCell>Status</TableCell>
               <TableCell>Requested By</TableCell>
-              <TableCell>Requested Date</TableCell>
+              <TableCell>Created At</TableCell>
+              <TableCell>Assigned To</TableCell>
+              <TableCell>Description</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {/* Ensure serviceRequests is not empty before mapping */}
-            {serviceRequests.map((request, index) => {
-              const isItemSelected = isSelected(request.id);
-              return (
-                <TableRow
-                  hover
-                  onClick={(event) => handleClick(event, request.id)}
-                  role="checkbox"
-                  aria-checked={isItemSelected}
-                  tabIndex={-1}
-                  key={request.id}
-                  selected={isItemSelected}
-                  sx={{ cursor: 'pointer' }}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox
-                      checked={isItemSelected}
-                      inputProps={{ 'aria-labelledby': `sr-checkbox-${request.id}-${index}` }}
-                    />
-                  </TableCell>
-                  <TableCell component="th" scope="row" id={`sr-checkbox-${request.id}-${index}`}>
-                    {request.id}
-                  </TableCell>
-                  <TableCell>{request.title}</TableCell>
-                  <TableCell>{request.description}</TableCell>
-                  <TableCell>{request.status}</TableCell>
-                  <TableCell>{request.requestedBy}</TableCell>
-                  <TableCell>{request.requestedDate}</TableCell>
-                </TableRow>
-              );
-            })}
+            {serviceRequests.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={10} sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="subtitle1" color="text.secondary">
+                    No service requests found.
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Click "Create New Request" to add one.
+                  </Typography>
+                </TableCell>
+              </TableRow>
+            ) : (
+              serviceRequests.map((request, index) => {
+                const isItemSelected = isSelected(request.id);
+                return (
+                  <TableRow
+                    hover
+                    onClick={(event) => handleClick(event, request.id)}
+                    role="checkbox"
+                    aria-checked={isItemSelected}
+                    tabIndex={-1}
+                    key={request.id}
+                    selected={isItemSelected}
+                    sx={{ cursor: 'pointer' }}
+                  >
+                    <TableCell padding="checkbox">
+                      <Checkbox
+                        checked={isItemSelected}
+                        inputProps={{ 'aria-labelledby': `sr-checkbox-${request.id}-${index}` }}
+                      />
+                    </TableCell>
+                    <TableCell component="th" scope="row" id={`sr-checkbox-${request.id}-${index}`}>
+                      {request.request_id}
+                    </TableCell>
+                    <TableCell>{request.title}</TableCell>
+                    <TableCell>
+                      {request.category.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                    </TableCell>
+                    <TableCell>
+                      {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
+                    </TableCell>
+                    <TableCell>
+                      {request.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
+                    </TableCell>
+                    <TableCell>{request.requested_by}</TableCell>
+                    <TableCell>{new Date(request.created_at).toLocaleDateString()}</TableCell>
+                    <TableCell>{request.assigned_to || 'Unassigned'}</TableCell>
+                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {request.description}
+                    </TableCell>
+                  </TableRow>
+                );
+              })
+            )}
           </TableBody>
         </Table>
       </TableContainer>

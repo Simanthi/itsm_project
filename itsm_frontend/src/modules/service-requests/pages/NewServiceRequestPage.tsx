@@ -1,8 +1,10 @@
 // itsm_frontend/src/features/serviceRequests/pages/NewServiceRequestPage.tsx
 
 import { useEffect, useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom'; // Added useParams
-import { Box, Typography, Alert, Button } from '@mui/material'; // Added Button
+import { useParams, useNavigate } from 'react-router-dom';
+import { Box, Typography, Alert, Button } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Import the back arrow icon
+
 import ServiceRequestForm from '../components/ServiceRequestForm';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
@@ -39,6 +41,11 @@ function NewServiceRequestPage() {
 
   const pageTitle = id ? `Edit Service Request: ${id}` : 'Create New Service Request';
 
+  // Function to handle navigating back to the service requests list
+  const handleBack = () => {
+    navigate('/service-requests');
+  };
+
   if (isLoading) {
     return (
       <Box sx={{ p: 4 }}>
@@ -60,9 +67,18 @@ function NewServiceRequestPage() {
 
   return (
     <Box sx={{ p: 4, height: '100%', overflow: 'auto' }}>
-      <Typography variant="h4" gutterBottom>
-        {pageTitle}
-      </Typography>
+      <Box sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 2 }}> {/* Container for button and title */}
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={handleBack}
+        >
+          Back
+        </Button>
+        <Typography variant="h4" component="h1"> {/* Use component="h1" for semantic HTML */}
+          {pageTitle}
+        </Typography>
+      </Box>
       {/* Pass initialFormData to the ServiceRequestForm */}
       <ServiceRequestForm initialData={initialFormData} />
     </Box>

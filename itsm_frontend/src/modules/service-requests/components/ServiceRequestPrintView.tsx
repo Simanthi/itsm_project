@@ -1,147 +1,195 @@
-// itsm_frontend/src/features/serviceRequests/components/ServiceRequestPrintView.tsx
-import { useEffect, useState } from 'react';
-import { Box, Typography, Paper, Grid, Divider, Button } from '@mui/material';
-import PrintIcon from '@mui/icons-material/Print';
+// itsm_frontend/src/features/serviceRequests/pages/ServiceRequestPrintView.tsx
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useServiceRequests } from '../hooks/useServiceRequests';
+import { Box, Typography, Paper, Grid, CircularProgress, Button } from '@mui/material';
+
+// Import the global ServiceRequest type from ServiceRequestTypes.ts
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
+// REMOVE THE OLD LOCAL INTERFACE DEFINITION HERE:
+// interface ServiceRequest {
+//   id: string;
+//   title: string;
+//   description: string;
+//   status: string;
+//   requestedBy: string; // This is now requested_by (number)
+//   requestedDate: string; // This is now created_at (ISO string)
+//   category: string;
+//   // ... other fields as needed for print
+// }
+
 function ServiceRequestPrintView() {
-  const location = useLocation(); // Used to get state passed during navigation
+  const location = useLocation();
   const navigate = useNavigate();
-  const { serviceRequests } = useServiceRequests();
-  const [requestsToPrint, setRequestsToPrint] = useState<ServiceRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState(true);
+  const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    // Expect selectedIds to be passed via navigation state
-    const selectedIds = location.state?.selectedIds as string[] | undefined;
+  const { selectedIds, autoPrint } = (location.state as { selectedIds: string[]; autoPrint?: boolean }) || { selectedIds: [] };
 
+  useEffect(() => {
     if (!selectedIds || selectedIds.length === 0) {
-      setError('No service requests selected for print preview.');
-      setIsLoading(false);
+      setError("No service requests selected for printing.");
+      setLoading(false);
       return;
     }
 
-    // Filter service requests from our mock data based on selected IDs
-    const foundRequests = serviceRequests.filter(req => selectedIds.includes(req.id));
+    const fetchRequests = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        // --- Replace this mock data with your actual data fetching logic ---
+        // This should fetch the details for all IDs in `selectedIds`
+        // Make sure this mock data fully matches the ServiceRequest type from ServiceRequestTypes.ts
+        const allMockData: ServiceRequest[] = [
+          {
+            id: 'SR001',
+            request_id: 'SR-PRINT-001',
+            title: 'Printer Toner Refill - Office B',
+            description: 'Toner low for LaserJet 4000 in Office B. Please refill.',
+            status: 'new', // Aligned with new status type
+            category: 'hardware', // Aligned with new category type
+            priority: 'medium', // Aligned with new priority type
+            requested_by: 'james', // User ID
+            created_at: '2023-10-26T10:00:00Z', // ISO string
+            updated_at: '2023-10-26T10:00:00Z',
+            resolution_notes: null,
+            resolved_at: null,
+            assigned_to: null,
+          },
+          {
+            id: 'SR002',
+            request_id: 'SR-PRINT-002',
+            title: 'New Laptop Request - Marketing',
+            description: 'Requesting a new laptop for new hire Jane Smith in Marketing department.',
+            status: 'pending_approval', // Aligned with new status type
+            category: 'hardware',
+            priority: 'high',
+            requested_by: 'james',
+            created_at: '2023-10-25T14:30:00Z',
+            updated_at: '2023-10-25T14:30:00Z',
+            resolution_notes: null,
+            resolved_at: null,
+            assigned_to: null,
+          },
+          {
+            id: 'SR003',
+            request_id: 'SR-PRINT-003',
+            title: 'Software Install - Photoshop',
+            description: 'Need Photoshop installed on my new workstation.',
+            status: 'closed', // Aligned with new status type
+            category: 'software',
+            priority: 'medium',
+            requested_by: 'james',
+            created_at: '2023-10-20T09:00:00Z',
+            updated_at: '2023-10-20T11:00:00Z',
+            resolution_notes: "Photoshop installed and licensed.",
+            resolved_at: '2023-10-20T11:00:00Z',
+            assigned_to: 'james',
+          }
+        ];
 
-    if (foundRequests.length === 0) {
-      setError('Selected service requests not found in the system.');
-    } else if (foundRequests.length !== selectedIds.length) {
-      // This case handles if some IDs were passed but not all were found
-      setError('Some selected service requests could not be found.');
+        const filteredRequests = allMockData.filter(req => selectedIds.includes(req.id));
+
+        if (filteredRequests.length > 0) {
+          setServiceRequestsToPrint(filteredRequests);
+        } else {
+          setError("Selected service requests not found or no data available.");
+        }
+        // --- End of mock data replacement ---
+
+      } catch (err) {
+        setError("Failed to load service request details.");
+        console.error(err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRequests();
+  }, [selectedIds]); // Re-fetch if selectedIds change
+
+  useEffect(() => {
+    if (!loading && !error && autoPrint) {
+      const printTimeout = setTimeout(() => {
+        window.print();
+      }, 500); // Give it half a second to render
+
+      return () => clearTimeout(printTimeout);
     }
-    setRequestsToPrint(foundRequests);
-    setIsLoading(false);
-  }, [location.state, serviceRequests]); // Re-run when navigation state or serviceRequests change
+  }, [loading, error, autoPrint]); // Removed navigate from dependency array as it's not used in this effect
 
-  const handlePrint = () => {
-    window.print(); // Trigger the browser's native print dialog
-  };
-
-  const handleBack = () => {
-    navigate('/service-requests'); // Navigate back to the service requests list
-  };
-
-  if (isLoading) {
+  if (loading) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h5">Loading print preview...</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
+        <CircularProgress />
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h5" color="error">Error: {error}</Typography>
-        <Button variant="contained" onClick={handleBack} sx={{ mt: 2 }}>
-          Back to Service Requests
-        </Button>
+      <Box sx={{ p: 3 }}>
+        <Typography color="error">{error}</Typography>
+        <Button variant="contained" onClick={() => navigate('/service-requests')} sx={{ mt: 2 }}>Go to Service Requests</Button>
+      </Box>
+    );
+  }
+
+  if (!serviceRequestsToPrint.length) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography>No service requests found for printing.</Typography>
+        <Button variant="contained" onClick={() => navigate('/service-requests')} sx={{ mt: 2 }}>Go to Service Requests</Button>
       </Box>
     );
   }
 
   return (
-    <Box sx={{ p: 4, '@media print': { p: 0 } }}> {/* Adjust padding for print */}
-      {/* Buttons and title for the web view, hidden during print */}
-      <Box sx={{
-        display: 'flex',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        mb: 2,
-        '@media print': { display: 'none' } // Hide this box when printing
-      }}>
-        <Typography variant="h5">Service Request(s) Print Preview</Typography>
-        <Box>
-          <Button
-            variant="contained"
-            color="primary"
-            startIcon={<PrintIcon />}
-            onClick={handlePrint}
-            sx={{ mr: 1 }}
-          >
-            Print
-          </Button>
-          <Button
-            variant="outlined"
-            onClick={handleBack}
-          >
-            Back
-          </Button>
-        </Box>
+    <Box sx={{ p: 3 }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Button variant="outlined" onClick={() => navigate('/service-requests')}>
+          Back to Service Requests
+        </Button>
+        <Button variant="contained" onClick={() => window.print()}>Print Now</Button>
       </Box>
 
-      {/* Content to be printed */}
-      {requestsToPrint.length === 0 ? (
-        <Typography variant="body1">No requests found to print based on selection.</Typography>
-      ) : (
-        requestsToPrint.map((request, index) => (
-          <Paper key={request.id} elevation={0} sx={{ // Use elevation 0 for cleaner print
-            mb: 3,
-            p: 3,
-            border: '1px solid #eee', // Light border for separation in web view
-            '@media print': {
-              border: 'none', // Remove border for print
-              boxShadow: 'none', // Remove shadow for print
-              pageBreakInside: 'avoid', // Try to keep entire request on one page
-              mb: 0, // Remove margin between items for cleaner page breaks
-              p: 0, // Remove padding for print
-              '&:not(:last-of-type)': {
-                pageBreakAfter: 'always' // Optional: force new page after each request
-              }
-            }
-          }}>
-            <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', '@media print': { color: 'black' } }}>
-              Service Request ID: {request.id} - {request.title}
-            </Typography>
-            <Grid container spacing={1}>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Requested By:</Typography>
-                <Typography variant="body1">{request.requestedBy}</Typography>
-              </Grid>
-              <Grid item xs={12} sm={6}>
-                <Typography variant="subtitle2" color="text.secondary">Requested Date:</Typography>
-                <Typography variant="body1">{request.requestedDate}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary">Status:</Typography>
-                <Typography variant="body1">{request.status}</Typography>
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="subtitle2" color="text.secondary">Description:</Typography>
-                <Typography variant="body1">{request.description}</Typography>
-              </Grid>
+      {serviceRequestsToPrint.map((request) => (
+        <Paper key={request.id} sx={{ p: 3, mb: 4, border: '1px solid #eee' }}>
+          <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
+            Service Request: {request.title} (ID: {request.request_id || request.id}) {/* Display request_id if available */}
+          </Typography>
+          <Grid container spacing={2}>
+            <Grid item xs={12} sm={6}>
+              {/* Display requested_by (ID) or provide a lookup if you implement user names */}
+              <Typography variant="body1"><strong>Requested By:</strong> {request.requested_by}</Typography>
             </Grid>
-            {index < requestsToPrint.length - 1 && (
-              // Divider for web view, replaced by page-break for print
-              <Divider sx={{ my: 3, '@media print': { display: 'none' } }} />
+            <Grid item xs={12} sm={6}>
+              {/* Display created_at formatted as a date */}
+              <Typography variant="body1"><strong>Requested Date:</strong> {new Date(request.created_at).toLocaleDateString()}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body1"><strong>Category:</strong> {request.category}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body1"><strong>Priority:</strong> {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}</Typography>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography variant="body1"><strong>Status:</strong> {request.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</Typography>
+            </Grid>
+            {request.resolution_notes && ( // Only show if resolution_notes exists
+              <Grid item xs={12}>
+                <Typography variant="body1"><strong>Resolution Notes:</strong></Typography>
+                <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{request.resolution_notes}</Typography>
+              </Grid>
             )}
-          </Paper>
-        ))
-      )}
+            <Grid item xs={12}>
+              <Typography variant="body1"><strong>Description:</strong></Typography>
+              <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{request.description}</Typography>
+            </Grid>
+          </Grid>
+        </Paper>
+      ))}
     </Box>
   );
 }

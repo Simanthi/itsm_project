@@ -74,10 +74,10 @@ export const lightTheme = createTheme({
           // <--- ADD THIS SECTION FOR TABLE HEADERS
           fontSize: baseTypography.th1.fontSize,
           fontWeight: 'bold',  // Example: Make headers bold
-          color: 'primary.main', // Example: Use your primary theme color for headers
+          color: 'primary.main',  // Example: Use your primary theme color for headers
           
           // You can also adjust padding, background, etc.
-          backgroundColor: 'rgba(25, 118, 210, 0.1)', // Example: a light primary background
+          backgroundColor: 'rgb(25, 118, 210)', // Example: a light primary background
         },
       },
     },
