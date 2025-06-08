@@ -1,5 +1,7 @@
 // itsm_frontend/src/features/serviceRequests/pages/ServiceRequestPrintView.tsx
 import React, { useEffect, useState } from 'react';
+// itsm_frontend/src/features/serviceRequests/pages/ServiceRequestPrintView.tsx
+import React, { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Grid, CircularProgress, Button } from '@mui/material';
 
@@ -20,15 +22,22 @@ import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
 function ServiceRequestPrintView() {
   const location = useLocation();
+  const location = useLocation();
   const navigate = useNavigate();
+  const [loading, setLoading] = useState(true);
+  const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
   const { selectedIds, autoPrint } = (location.state as { selectedIds: string[]; autoPrint?: boolean }) || { selectedIds: [] };
 
+  const { selectedIds, autoPrint } = (location.state as { selectedIds: string[]; autoPrint?: boolean }) || { selectedIds: [] };
+
   useEffect(() => {
     if (!selectedIds || selectedIds.length === 0) {
+      setError("No service requests selected for printing.");
+      setLoading(false);
       setError("No service requests selected for printing.");
       setLoading(false);
       return;
@@ -123,6 +132,8 @@ function ServiceRequestPrintView() {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
         <CircularProgress />
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '100%', minHeight: '300px' }}>
+        <CircularProgress />
       </Box>
     );
   }
@@ -187,6 +198,9 @@ function ServiceRequestPrintView() {
               <Typography variant="body1"><strong>Description:</strong></Typography>
               <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{request.description}</Typography>
             </Grid>
+          </Grid>
+        </Paper>
+      ))}
           </Grid>
         </Paper>
       ))}

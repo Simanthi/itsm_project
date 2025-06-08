@@ -26,7 +26,6 @@ import { useServiceRequests } from '../hooks/useServiceRequests';
 // Helper function to get initial form data, handling both new and edit modes
 const getInitialFormData = (data?: ServiceRequest): NewServiceRequestFormData => {
   if (data) {
-    // If initial data is provided (edit mode), use it
     return {
       title: data.title,
       description: data.description,
@@ -38,7 +37,6 @@ const getInitialFormData = (data?: ServiceRequest): NewServiceRequestFormData =>
       resolution_notes: data.resolution_notes || '', // Use empty string if null
     };
   }
-  // Otherwise, return default for a new request
   return {
     title: '',
     description: '',
@@ -372,6 +370,7 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
               type="submit"
               startIcon={<SendIcon />}
             >
+              {initialData?.id ? 'Save Changes' : 'Submit Request'}
               {initialData?.id ? 'Save Changes' : 'Submit Request'}
             </Button>
           </Grid>

@@ -83,6 +83,7 @@ function ServiceRequestsPage() {
     }
   };
 
+  // <<< MODIFIED: This is the function we are changing
   const handlePrint = () => {
     if (selectedRequestIds.length > 0) {
       navigate('/service-requests/print-preview', {
@@ -95,6 +96,7 @@ function ServiceRequestsPage() {
       alert('Please select at least one request to print.');
     }
   };
+  // >>> END MODIFICATION
 
   return (
     <Box sx={{
@@ -132,7 +134,7 @@ function ServiceRequestsPage() {
         <Button
           variant="outlined"
           startIcon={<PrintIcon />}
-          onClick={handlePrint}
+          onClick={handlePrint} // This button will now auto-trigger print
           disabled={selectedRequestIds.length === 0}
         >
           Print Request
