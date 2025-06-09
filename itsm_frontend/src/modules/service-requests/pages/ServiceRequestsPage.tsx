@@ -21,8 +21,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import PrintIcon from '@mui/icons-material/Print';
 import PreviewIcon from '@mui/icons-material/Preview';
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import { type ServiceRequest } from '../types/ServiceRequestTypes';
+
 import { useServiceRequests } from '../hooks/useServiceRequests';
 
 
