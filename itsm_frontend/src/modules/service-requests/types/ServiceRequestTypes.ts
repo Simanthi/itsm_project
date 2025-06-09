@@ -28,7 +28,7 @@ export type ServiceRequest = {
   status: ServiceRequestStatus;
   category: ServiceRequestCategory;
   priority: ServiceRequestPriority;
-  requested_by: string; // User ID/name of the requester
+  requested_by: string | null; // User ID/name of the requester
   created_at: string; // ISO 8601 string date
   updated_at: string; // ISO 8601 string date
   resolved_at: string | null; // ISO 8601 string date, can be null

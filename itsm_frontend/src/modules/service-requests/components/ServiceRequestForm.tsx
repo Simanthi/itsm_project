@@ -29,12 +29,12 @@ const getInitialFormData = (data?: ServiceRequest): NewServiceRequestFormData =>
     return {
       title: data.title,
       description: data.description,
-      status: data.status,
-      category: data.category,
-      priority: data.priority,
-      // Include new fields for existing data
-      assigned_to: data.assigned_to || '', // Use empty string if null
-      resolution_notes: data.resolution_notes || '', // Use empty string if null
+      status: data.status || 'new',
+      category: data.category || 'software',
+      priority: data.priority || 'medium',
+      // Explicitly ensure assigned_to is a string. If null or undefined, default to ''
+      assigned_to: data.assigned_to === null || data.assigned_to === undefined ? '' : data.assigned_to,
+      resolution_notes: data.resolution_notes || '',
     };
   }
   return {
@@ -67,9 +67,12 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
 
   useEffect(() => {
     // Re-initialize form data when initialData changes (e.g., switching between edit modes)
+    // Only update if initialData is actually different to prevent unnecessary re-renders
+    // A shallow compare might be enough, or a deep compare if initialData can change internally without ID.
+    // For now, let's assume initialData reference changes if content changes for edit mode.
     setFormData(getInitialFormData(initialData));
     setErrors({});
-  }, [initialData]);
+  }, [initialData]); // Depend on initialData changing
 
   // Validation options matching Django model choices
   const statusOptions: ServiceRequestStatus[] = ['new', 'in_progress', 'pending_approval', 'resolved', 'closed', 'cancelled'];
@@ -88,11 +91,9 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
   // Validate individual field
   const validateField = (name: keyof NewServiceRequestFormData, value: string): string => {
     let error = '';
-    // Basic required validation for title and description
     if ((name === 'title' || name === 'description') && !value.trim()) {
       error = `${name.charAt(0).toUpperCase() + name.slice(1)} is required.`;
     }
-    // Specific validation rules based on Django fields (assuming your backend has these)
     if (name === 'title') {
       if (value.trim().length < 3 && value.trim().length > 0) {
         error = 'Title must be at least 3 characters long.';
@@ -112,14 +113,11 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
     if (name === 'priority' && !priorityOptions.includes(value as ServiceRequestPriority)) {
       error = 'Invalid priority selected.';
     }
-    // Validation for Resolution Notes: Required if status is resolved/closed
     if (name === 'resolution_notes' && (formData.status === 'resolved' || formData.status === 'closed')) {
       if (!value.trim()) {
         error = 'Resolution notes are required when status is resolved or closed.';
       }
     }
-    // No specific validation for assigned_to for now if it's a TextField
-
     return error;
   };
 
@@ -127,14 +125,12 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
     const newErrors: FormErrors = {};
     let isValid = true;
 
-    // Validate all fields that are present in the form data
     (Object.keys(formData) as Array<keyof NewServiceRequestFormData>).forEach((fieldName) => {
-      // Skip validating assigned_to and resolution_notes if they are not conditionally visible
       const isAssignedToVisible = initialData?.id || formData.status !== 'new';
-      const isResolutionNotesVisible = formData.status === 'resolved' || formData.status === 'closed' || formData.status === 'cancelled'; // Changed to include cancelled
+      const isResolutionNotesVisible = formData.status === 'resolved' || formData.status === 'closed' || formData.status === 'cancelled';
       if ((fieldName === 'assigned_to' && !isAssignedToVisible) ||
           (fieldName === 'resolution_notes' && !isResolutionNotesVisible)) {
-        return; // Skip validation for hidden fields
+        return;
       }
 
       const errorMessage = validateField(fieldName, formData[fieldName] as string);
@@ -150,7 +146,6 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
-    // Type assertion to ensure name is string
     const fieldName = name as keyof NewServiceRequestFormData;
 
     setFormData((prevData) => ({
@@ -158,11 +153,9 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
       [fieldName]: value,
     }));
 
-    // Validate field on change (except for select fields which might not have `name` property on target)
-    // For Material-UI Select, `e.target` often correctly has `name` and `value`.
     setErrors((prevErrors) => ({
       ...prevErrors,
-      [fieldName]: validateField(fieldName, value as string), // Cast value to string for validation
+      [fieldName]: validateField(fieldName, value as string),
     }));
   };
 
@@ -178,11 +171,9 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
     console.log('Form data is valid. Submitting:', formData);
 
     if (initialData?.id) {
-      // In edit mode, we send the full updated object, including its ID
       const updatedRequest: ServiceRequest = {
-        ...initialData, // Keep original ID and other existing fields like request_id, created_at, requested_by
-        ...formData, // Overlay with updated form data (title, description, status, category, priority, assigned_to, resolution_notes)
-        // Explicitly cast types for safety as formData values are string initially
+        ...initialData,
+        ...formData,
         status: formData.status as ServiceRequestStatus,
         category: formData.category as ServiceRequestCategory,
         priority: formData.priority as ServiceRequestPriority,
@@ -193,11 +184,8 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
       updateServiceRequest(updatedRequest);
       console.log('Updated Service Request:', updatedRequest);
     } else {
-      // For new requests, we send only NewServiceRequestFormData
-      // Backend will handle adding requested_by, created_at, etc.
       const newRequestData: NewServiceRequestFormData = {
         ...formData,
-        // Ensure assigned_to and resolution_notes are null if empty for new requests
         assigned_to: formData.assigned_to || null,
         resolution_notes: formData.resolution_notes || null,
       };
@@ -214,7 +202,10 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
   };
 
   // Determine if 'Assigned To' should be visible (for edit mode or if status is not 'new')
-  const showAssignedTo = initialData?.id || formData.status !== 'new';
+  // AND ensure formData.assigned_to has been initialized to a string value.
+  // We use `typeof formData.assigned_to === 'string'` as an extra check.
+  const showAssignedTo = (initialData?.id || formData.status !== 'new') && typeof formData.assigned_to === 'string';
+
   // Determine if 'Resolution Notes' should be visible (when status is resolved/closed/cancelled)
   const showResolutionNotes = formData.status === 'resolved' || formData.status === 'closed' || formData.status === 'cancelled';
 
@@ -317,19 +308,18 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
             <Grid item xs={12} sm={6}>
               <TextField
                 fullWidth
-                // Using select for Assigned To, with mock options
                 select
                 label="Assigned To"
                 name="assigned_to"
-                value={formData.assigned_to || ''} // Use empty string for select if null
+                value={formData.assigned_to} // formData.assigned_to is guaranteed string by getInitialFormData
                 onChange={handleChange}
                 error={!!errors.assigned_to}
                 helperText={errors.assigned_to}
                 margin="normal"
               >
-                <MenuItem value="">Unassigned</MenuItem> {/* Option for unassigned */}
+                <MenuItem value="">Unassigned</MenuItem>
                 {mockAssignees.map((assignee) => (
-                  <MenuItem key={assignee.id} value={assignee.id}>
+                  <MenuItem key={assignee.id} value={assignee.id}> {/* assignee.id is already a string */}
                     {assignee.name}
                   </MenuItem>
                 ))}
@@ -370,7 +360,6 @@ function ServiceRequestForm({ initialData }: ServiceRequestFormProps) {
               type="submit"
               startIcon={<SendIcon />}
             >
-              {initialData?.id ? 'Save Changes' : 'Submit Request'}
               {initialData?.id ? 'Save Changes' : 'Submit Request'}
             </Button>
           </Grid>

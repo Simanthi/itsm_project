@@ -1,10 +1,10 @@
 // itsm_frontend/src/pages/HomePage.tsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   AppBar as MuiAppBar,
   Box, Toolbar, IconButton, Typography, Drawer, List, ListItem,
   ListItemButton, ListItemIcon, ListItemText, Divider, CssBaseline,
-  useTheme, Button
+  useTheme, Button, CircularProgress // <--- ADD CircularProgress
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import { css } from '@emotion/react';
@@ -26,8 +26,8 @@ import AssessmentIcon from '@mui/icons-material/Assessment';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
 
 import { styled } from '@mui/material/styles';
-import { Outlet, useLocation, Link } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../context/auth/AuthContextDefinition'; // <--- UPDATED IMPORT PATH
 import { useThemeContext } from '../context/ThemeContext/useThemeContext';
 
 
@@ -112,11 +112,48 @@ const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'ope
 
 function HomePage() {
   const location = useLocation();
-  const { logout, user } = useAuth();
+  const navigate = useNavigate();
+  const { logout, user, isAuthenticated, isLoading } = useAuth(); // <--- ADD isAuthenticated, isLoading
   const { toggleColorMode, mode } = useThemeContext();
   const theme = useTheme();
 
   const [open, setOpen] = useState(true);
+
+  // --- START ADDITION FOR AUTHENTICATION PROTECTION ---
+  useEffect(() => {
+    // If the authentication check is complete (not isLoading) and the user is NOT authenticated,
+    // redirect them to the login page.
+    if (!isLoading && !isAuthenticated) {
+      navigate('/login');
+    }
+  }, [isAuthenticated, isLoading, navigate]); // Add navigate to dependency array
+
+  // If still loading the authentication state, show a full-screen loading spinner
+  if (isLoading) {
+    return (
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '100vh',
+          width: '100vw',
+          bgcolor: 'background.default', // Use theme background color for consistency
+        }}
+      >
+        <CircularProgress />
+      </Box>
+    );
+  }
+
+  // If the authentication check is complete but the user is not authenticated,
+  // return null. The useEffect above will handle the redirection.
+  // This prevents rendering the UI briefly before the redirect occurs.
+  if (!isAuthenticated) {
+    return null;
+  }
+  // --- END ADDITION FOR AUTHENTICATION PROTECTION ---
+
 
   const handleLogout = () => {
     logout();
@@ -358,9 +395,9 @@ function HomePage() {
           boxSizing: 'border-box',
           minHeight: 0,
           backgroundColor: theme.palette.background.default,
-          marginLeft: `calc(${theme.spacing(7)} + 1px -${theme.spacing(7)})`,
+          marginLeft: `calc(${theme.spacing(7)} + 0px -${theme.spacing(7)})`,
           [theme.breakpoints.up('sm')]: {
-            marginLeft: `calc(${theme.spacing(8)} + 1px- ${theme.spacing(8)})`,
+            marginLeft: `calc(${theme.spacing(8)} + 0px- ${theme.spacing(8)})`,
           },
           transition: theme.transitions.create(['margin-left'], {
             easing: theme.transitions.easing.sharp,

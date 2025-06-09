@@ -104,7 +104,7 @@ function ServiceRequestsPage() {
       display: 'flex',
       flexDirection: 'column',
       minHeight: 0,
-      p: 3,
+      p: 0,
     }}>
       <Box sx={{ marginBottom: '16px', display: 'flex', gap: '8px', justifyContent: 'flex-start', flexShrink: 0 }}>
         <Button
@@ -149,6 +149,10 @@ function ServiceRequestsPage() {
                 backgroundColor: (theme) => theme.palette.primary.main, // Changed to primary.main
                 color: (theme) => theme.palette.primary.contrastText,  // Added for text readability
                 zIndex: 100,
+                alignContent: 'left',
+                textWrap: 'nowrap', 
+
+
               },
             }}
           >
@@ -204,7 +208,7 @@ function ServiceRequestsPage() {
                         inputProps={{ 'aria-labelledby': `sr-checkbox-${request.id}-${index}` }}
                       />
                     </TableCell>
-                    <TableCell component="th" scope="row" id={`sr-checkbox-${request.id}-${index}`}>
+                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} component="th" scope="row" id={`sr-checkbox-${request.id}-${index}` }>
                       {request.request_id}
                     </TableCell>
                     <TableCell>{request.title}</TableCell>
@@ -214,7 +218,7 @@ function ServiceRequestsPage() {
                     <TableCell>
                       {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
                     </TableCell>
-                    <TableCell>
+                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                       {request.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
                     </TableCell>
                     <TableCell>{request.requested_by}</TableCell>

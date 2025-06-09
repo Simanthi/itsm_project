@@ -24,7 +24,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-05-28T10:00:00Z", // New field, ISO string
     updated_at: "2024-05-28T10:00:00Z", // New field, ISO string
     resolved_at: null,
-    requested_by: 101, // Mock User ID
+    requested_by: 'James', // Mock User ID
     assigned_to: null,
   },
   {
@@ -39,8 +39,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-05-29T11:30:00Z",
     updated_at: "2024-05-29T11:30:00Z",
     resolved_at: null,
-    requested_by: 102,
-    assigned_to: 201, // Mock assigned user ID
+    requested_by: 'James',
+    assigned_to: 'James', // Mock assigned user ID
   },
   {
     id: "SR003",
@@ -54,8 +54,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-05-29T14:00:00Z",
     updated_at: "2024-05-29T16:00:00Z",
     resolved_at: "2024-05-29T16:00:00Z",
-    requested_by: 103,
-    assigned_to: 202,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR004",
@@ -69,8 +69,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-05-30T09:00:00Z",
     updated_at: "2024-05-30T10:00:00Z",
     resolved_at: "2024-05-30T10:00:00Z",
-    requested_by: 104,
-    assigned_to: 201,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR005",
@@ -84,7 +84,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-01T08:00:00Z",
     updated_at: "2024-06-01T08:00:00Z",
     resolved_at: null,
-    requested_by: 105,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -99,7 +99,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-02T10:00:00Z",
     updated_at: "2024-06-02T10:00:00Z",
     resolved_at: null,
-    requested_by: 106,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -114,8 +114,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-02T14:00:00Z",
     updated_at: "2024-06-02T14:00:00Z",
     resolved_at: null,
-    requested_by: 107,
-    assigned_to: 202,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR008",
@@ -129,7 +129,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-03T09:00:00Z",
     updated_at: "2024-06-03T09:00:00Z",
     resolved_at: null,
-    requested_by: 108,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -144,8 +144,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-03T11:00:00Z",
     updated_at: "2024-06-03T11:30:00Z",
     resolved_at: "2024-06-03T11:30:00Z",
-    requested_by: 109,
-    assigned_to: 201,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR010",
@@ -159,8 +159,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-04T09:00:00Z",
     updated_at: "2024-06-04T10:00:00Z",
     resolved_at: "2024-06-04T10:00:00Z",
-    requested_by: 110,
-    assigned_to: 203,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR011",
@@ -174,7 +174,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-04T13:00:00Z",
     updated_at: "2024-06-04T13:00:00Z",
     resolved_at: null,
-    requested_by: 111,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -189,8 +189,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-05T09:00:00Z",
     updated_at: "2024-06-05T09:00:00Z",
     resolved_at: null,
-    requested_by: 112,
-    assigned_to: 202,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR013",
@@ -204,7 +204,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-05T15:00:00Z",
     updated_at: "2024-06-05T15:00:00Z",
     resolved_at: null,
-    requested_by: 113,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -219,8 +219,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-06T10:00:00Z",
     updated_at: "2024-06-06T11:00:00Z",
     resolved_at: "2024-06-06T11:00:00Z",
-    requested_by: 114,
-    assigned_to: 203,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR015",
@@ -234,7 +234,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-06T14:00:00Z",
     updated_at: "2024-06-06T14:00:00Z",
     resolved_at: null,
-    requested_by: 115,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -249,8 +249,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-07T09:00:00Z",
     updated_at: "2024-06-07T09:00:00Z",
     resolved_at: null,
-    requested_by: 116,
-    assigned_to: 201,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR017",
@@ -264,7 +264,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-07T11:00:00Z",
     updated_at: "2024-06-07T11:00:00Z",
     resolved_at: null,
-    requested_by: 117,
+    requested_by: 'James',
     assigned_to: null,
   },
   {
@@ -279,8 +279,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-08T10:00:00Z",
     updated_at: "2024-06-08T10:30:00Z",
     resolved_at: "2024-06-08T10:30:00Z",
-    requested_by: 118,
-    assigned_to: 202,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR019",
@@ -294,8 +294,8 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-08T14:00:00Z",
     updated_at: "2024-06-08T15:00:00Z",
     resolved_at: "2024-06-08T15:00:00Z",
-    requested_by: 119,
-    assigned_to: 203,
+    requested_by: 'James',
+    assigned_to: 'James',
   },
   {
     id: "SR020",
@@ -309,7 +309,7 @@ const initialMockServiceRequests: ServiceRequest[] = [
     created_at: "2024-06-09T09:00:00Z",
     updated_at: "2024-06-09T09:00:00Z",
     resolved_at: null,
-    requested_by: 120,
+    requested_by: 'James',
     assigned_to: null,
   },
 ];
@@ -343,7 +343,7 @@ export const ServiceRequestProvider = ({
       created_at: now, // Mocking backend's auto_now_add
       updated_at: now, // Mocking backend's auto_now
       resolved_at: null, // Default to null for new requests
-      requested_by: 1, // Mocking a user ID (e.g., assuming user with ID 1 is logged in)
+      requested_by: null, // Mocking a user ID (e.g., assuming user with ID 1 is logged in)
       assigned_to: null, // Default to null for new requests
     };
     setServiceRequests((prevRequests) => [...prevRequests, newRequest]);
