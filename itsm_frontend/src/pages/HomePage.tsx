@@ -4,7 +4,7 @@ import {
   AppBar as MuiAppBar,
   Box, Toolbar, IconButton, Typography, Drawer, List, ListItem,
   ListItemButton, ListItemIcon, ListItemText, Divider, CssBaseline,
-  useTheme, Button, CircularProgress // <--- ADD CircularProgress
+  useTheme, Button, CircularProgress
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import { css } from '@emotion/react';
@@ -24,15 +24,13 @@ import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import ApprovalIcon from '@mui/icons-material/Approval';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
-
 import { styled } from '@mui/material/styles';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/auth/AuthContextDefinition'; // <--- UPDATED IMPORT PATH
+import { useAuth } from '../context/auth/useAuth'; // Updated import path for useAuth
 import { useThemeContext } from '../context/ThemeContext/useThemeContext';
 
-
 const drawerWidth = 240;
-const appBarHeight = 64; // Standard AppBar height for desktop
+const appBarHeight = 64;
 
 const openedMixin = (theme: Theme) => css`
   width: ${drawerWidth}px;
@@ -89,7 +87,6 @@ const StyledAppBar = styled(MuiAppBar, {
   }),
 }));
 
-
 interface StyledDrawerProps {
   open: boolean;
 }
@@ -98,9 +95,7 @@ const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'ope
   flex-shrink: 0;
   white-space: nowrap;
   box-sizing: border-box;
-
   ${({ theme, open }) => open ? openedMixin(theme) : closedMixin(theme)}
-
   & .MuiDrawer-paper {
     ${({ theme, open }) => open ? openedMixin(theme) : closedMixin(theme)}
     height: 100%;
@@ -113,23 +108,21 @@ const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'ope
 function HomePage() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout, user, isAuthenticated, isLoading } = useAuth(); // <--- ADD isAuthenticated, isLoading
+  // Destructure `user` property from `useAuth`
+  const { logout, user, isAuthenticated, loading: authLoading } = useAuth(); // Renamed loading to authLoading
   const { toggleColorMode, mode } = useThemeContext();
   const theme = useTheme();
-
   const [open, setOpen] = useState(true);
 
-  // --- START ADDITION FOR AUTHENTICATION PROTECTION ---
+  // Effect to handle redirection if not authenticated
   useEffect(() => {
-    // If the authentication check is complete (not isLoading) and the user is NOT authenticated,
-    // redirect them to the login page.
-    if (!isLoading && !isAuthenticated) {
+    if (!authLoading && !isAuthenticated) {
       navigate('/login');
     }
-  }, [isAuthenticated, isLoading, navigate]); // Add navigate to dependency array
+  }, [isAuthenticated, authLoading, navigate]);
 
-  // If still loading the authentication state, show a full-screen loading spinner
-  if (isLoading) {
+  // Show loading spinner while authentication status is being determined
+  if (authLoading) {
     return (
       <Box
         sx={{
@@ -138,7 +131,7 @@ function HomePage() {
           alignItems: 'center',
           height: '100vh',
           width: '100vw',
-          bgcolor: 'background.default', // Use theme background color for consistency
+          bgcolor: 'background.default',
         }}
       >
         <CircularProgress />
@@ -146,17 +139,14 @@ function HomePage() {
     );
   }
 
-  // If the authentication check is complete but the user is not authenticated,
-  // return null. The useEffect above will handle the redirection.
-  // This prevents rendering the UI briefly before the redirect occurs.
+  // If not authenticated after loading, render nothing (redirection is handled by useEffect)
   if (!isAuthenticated) {
     return null;
   }
-  // --- END ADDITION FOR AUTHENTICATION PROTECTION ---
-
 
   const handleLogout = () => {
     logout();
+    navigate('/login'); // Navigate to login page after logout
   };
 
   const moduleLinks = [
@@ -184,12 +174,11 @@ function HomePage() {
     }
   ) || { text: 'ITSM Connect', icon: null };
 
-
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
       <StyledAppBar
-        id="app-bar" // <<< ADD THIS ID
+        id="app-bar"
         position="fixed"
         open={open}
       >
@@ -229,7 +218,7 @@ function HomePage() {
         </Toolbar>
       </StyledAppBar>
       <StyledDrawer
-        id="side-drawer-desktop" // <<< ADD THIS ID for the permanent drawer
+        id="side-drawer-desktop"
         variant="permanent"
         open={open}
       >
@@ -279,7 +268,6 @@ function HomePage() {
               </Typography>
             </Box>
           )}
-
           <Button
             variant="text"
             onClick={() => setOpen(!open)}
@@ -325,7 +313,6 @@ function HomePage() {
             )}
           </Button>
         </Toolbar>
-        {/* <Divider /> */}
         <List sx={{ flexGrow: 1, paddingTop: '12px' }}>
           {moduleLinks.map((item) => (
             <ListItem key={item.text} sx={{ display: 'block' , paddingTop:'2px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0px', }}>
@@ -348,7 +335,6 @@ function HomePage() {
                     minWidth: 0,
                     mr: open ? 1 : 'auto',
                     justifyContent: 'center',
-                    
                   }}
                 >
                   {item.icon}
@@ -418,5 +404,4 @@ function HomePage() {
     </Box>
   );
 }
-
 export default HomePage;

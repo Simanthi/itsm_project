@@ -5,7 +5,7 @@ import { Button, Box, Typography, CircularProgress, Alert } from '@mui/material'
 import { useNavigate } from 'react-router-dom';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequests, deleteServiceRequest } from '../../../api/serviceRequestApi';
-import { useAuth } from '../../../../src/context/auth/AuthContext'; // FIX 1: Corrected useAuth import
+import { useAuth } from '../../../context/auth/useAuth'; // FIX 1: Corrected useAuth import
 
 // FIX 2: Define a local interface for valueFormatter params to resolve 'never' type
 interface DateValueFormatterParams {

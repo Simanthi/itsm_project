@@ -3,9 +3,9 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { TextField, Button, Box, Typography, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { type ServiceRequest, type NewServiceRequestData } from '../types/ServiceRequestTypes';
-import { getUserList } from '../../../api/authApi'; // Keeping path as is; check tsconfig.json if error persists
+import { getUserList } from '../../../api/authApi'; // This path needs to be correct for your project setup
 import { createServiceRequest, getServiceRequestById, updateServiceRequest } from '../../../api/serviceRequestApi';
-import { useAuth } from '../../../../src/context/auth/AuthContext'; // Adjusted path if needed, assuming it's correct from context
+import { useAuth } from '../../../context/auth/useAuth'; // Corrected import path for useAuth
 
 interface User {
   id: number;
@@ -13,8 +13,8 @@ interface User {
 }
 
 // Define options with lowercase values to match TypeScript type definitions
-const CATEGORY_OPTIONS = ['software', 'hardware', 'network'] as const;
-const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed'] as const;
+const CATEGORY_OPTIONS = ['software', 'hardware', 'network', 'information', 'other'] as const;
+const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed', 'cancelled'] as const;
 const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const;
 
 // Define a unified form state interface
@@ -39,7 +39,7 @@ const ServiceRequestForm: React.FC = () => {
     category: CATEGORY_OPTIONS[0],
     status: STATUS_OPTIONS[0],
     priority: PRIORITY_OPTIONS[1],
-    requested_by_id: 0, // This will be set by the backend based on auth, but kept for form consistency
+    requested_by_id: 0,
     assigned_to_id: null,
   });
   const [loading, setLoading] = useState<boolean>(true);
@@ -68,9 +68,9 @@ const ServiceRequestForm: React.FC = () => {
           category: request.category as typeof CATEGORY_OPTIONS[number],
           status: request.status as typeof STATUS_OPTIONS[number],
           priority: request.priority as typeof PRIORITY_OPTIONS[number],
-          requested_by_id: request.requested_by, // Map API response (number) to form state
-          assigned_to_id: request.assigned_to || null, // Map API response (number|null) to form state
-          request_id_display: request.request_id, // Store for display
+          requested_by_id: request.requested_by,
+          assigned_to_id: request.assigned_to || null,
+          request_id_display: request.request_id,
         });
       } catch (err) {
         console.error("Error fetching service request:", err);
@@ -104,7 +104,7 @@ const ServiceRequestForm: React.FC = () => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: value === '' ? null : Number(value), // Convert to number or null
+      [name]: value === '' ? null : Number(value),
     }));
   };
 
@@ -121,31 +121,28 @@ const ServiceRequestForm: React.FC = () => {
 
     try {
       if (id) {
-        // Update existing service request
         const updatePayload: Partial<ServiceRequest> = {
           title: formData.title,
           description: formData.description,
           category: formData.category,
           status: formData.status,
           priority: formData.priority,
-          assigned_to: formData.assigned_to_id, // This property name is correct for Partial<ServiceRequest>
+          assigned_to: formData.assigned_to_id,
         };
 
         await updateServiceRequest(Number(id), updatePayload, token);
         alert('Service Request updated successfully!');
       } else {
-        // Create new service request
-        const createPayload: NewServiceRequestData = {
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          status: formData.status,
-          priority: formData.priority,
-          // 'requested_by' is omitted as per NewServiceRequestData, backend typically sets it from auth
-          assigned_to: formData.assigned_to_id, // This property name is correct and optional for NewServiceRequestData
-          // 'resolution_notes' is omitted as it's optional for NewServiceRequestData and not set on form
+        const createPayload: NewServiceRequestData & { requested_by?: number; assigned_to?: number | null } = {
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            status: formData.status,
+            priority: formData.priority,
+            requested_by: formData.requested_by_id,
+            assigned_to: formData.assigned_to_id,
         };
-        await createServiceRequest(createPayload, token);
+        await createServiceRequest(createPayload as NewServiceRequestData, token);
         alert('Service Request created successfully!');
       }
       navigate('/service-requests');
@@ -203,7 +200,7 @@ const ServiceRequestForm: React.FC = () => {
         >
           {CATEGORY_OPTIONS.map((category) => (
             <MenuItem key={category} value={category}>
-              {category.charAt(0).toUpperCase() + category.slice(1)} {/* Display in Title Case */}
+              {category.charAt(0).toUpperCase() + category.slice(1)}
             </MenuItem>
           ))}
         </TextField>
@@ -220,7 +217,7 @@ const ServiceRequestForm: React.FC = () => {
         >
           {STATUS_OPTIONS.map((status) => (
             <MenuItem key={status} value={status}>
-              {status.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')} {/* Display as 'In Progress' etc. */}
+              {status.replace(/_/g, ' ').split(' ').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
             </MenuItem>
           ))}
         </TextField>
@@ -236,14 +233,14 @@ const ServiceRequestForm: React.FC = () => {
         >
           {PRIORITY_OPTIONS.map((priority) => (
             <MenuItem key={priority} value={priority}>
-              {priority.charAt(0).toUpperCase() + priority.slice(1)} {/* Display in Title Case */}
+              {priority.charAt(0).toUpperCase() + priority.slice(1)}
             </MenuItem>
           ))}
         </TextField>
         <TextField
           select
           label="Requested By"
-          name="requested_by_id" // Use consistent name for form field
+          name="requested_by_id"
           value={formData.requested_by_id || ''}
           onChange={handleUserChange}
           fullWidth
@@ -260,7 +257,7 @@ const ServiceRequestForm: React.FC = () => {
         <TextField
           select
           label="Assigned To"
-          name="assigned_to_id" // Use consistent name for form field
+          name="assigned_to_id"
           value={formData.assigned_to_id || ''}
           onChange={handleUserChange}
           fullWidth

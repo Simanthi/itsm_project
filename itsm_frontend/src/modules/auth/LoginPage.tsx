@@ -1,99 +1,237 @@
 // itsm_frontend/src/modules/auth/LoginPage.tsx
 import React, { useState } from 'react';
-import { TextField, Button, Box, Typography, Alert, CircularProgress } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../../../src/context/auth/AuthContext'; // Corrected import path
+import {
+  Container,
+  Box,
+  Typography,
+  TextField,
+  Button,
+  Paper,
+  CircularProgress,
+  Alert,
+  useTheme,
+} from '@mui/material';
+import { useAuth } from '../../context/auth/useAuth'; // Updated import path for useAuth
+import { useNavigate } from 'react-router-dom'; // Import useNavigate for explicit navigation
 
-const LoginPage: React.FC = () => {
+function LoginPage() {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const navigate = useNavigate();
-  const { login } = useAuth(); // Get the login function from AuthContext
+  const { login } = useAuth();
+  const theme = useTheme();
+  const navigate = useNavigate(); // Initialize useNavigate
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
     setLoading(true);
     setError(null);
+    console.log('Attempting login with:', { username, password });
 
     try {
-      // Replace with your actual Django login API endpoint
-      const response = await fetch('http://localhost:8000/api/security-access/login/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.non_field_errors ? errorData.non_field_errors[0] : 'Login failed');
+      await login(username, password); // Call the login function from AuthContext
+      console.log('Login successful! Navigating to dashboard.');
+      navigate('/'); // Navigate to the home/dashboard page on success
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'An unexpected error occurred during login.');
+      } else if (typeof err === 'string') {
+        setError(err);
+      } else {
+        setError('An unknown error occurred during login.');
       }
-
-      const data = await response.json();
-      // Assuming your backend returns token, user_id, username, is_staff
-      login(data.token, data.user_id, data.username, data.is_staff);
-      navigate('/'); // Redirect to dashboard or home page after successful login
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'An unexpected error occurred.');
+      console.error('Login error:', err);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <Box
+    <Container
+      component="main"
+      maxWidth="sm"
       sx={{
+        height: '100vh',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        minHeight: '100vh',
-        p: 3,
-        bgcolor: 'background.default',
+        bgcolor: theme.palette.background.default,
+        borderRadius: theme.shape.borderRadius,
       }}
     >
-      <Typography variant="h4" gutterBottom>
+      <Paper
+        elevation={10}
+        sx={{
+          paddingBottom: 3,
+          paddingTop: 3,
+          paddingLeft: 4,
+          paddingRight: 4,
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          width: '80%',
+          height: '80%',
+          bgcolor: theme.palette.background.paper,
+          borderRadius: theme.shape.borderRadius,
+        }}
+      >
+        <img
+          src="/images/sblt_fav_icon.png"
+          alt="SBLT Logo"
+          style={{ maxWidth: '100px', height: 'auto', marginBottom: '8px' }}
+        />
+        <Typography
+          component="h1"
+          variant="h3"
+          sx={{
+            mb: 3,
+            color: theme.palette.primary.main,
+          }}
+        >
+          IT Service Management
+        </Typography>
+        <Typography
+        component="h1"
+        variant="h2"
+        sx={{
+          mb: 3,
+          textAlign: 'center',
+          color: theme.palette.text.secondary,
+        }}
+      >
         Login
       </Typography>
-      <Box component="form" onSubmit={handleLogin} sx={{ mt: 1, width: '100%', maxWidth: 400 }}>
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          label="Username"
-          name="username"
-          autoComplete="username"
-          autoFocus
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
-        <TextField
-          margin="normal"
-          required
-          fullWidth
-          name="password"
-          label="Password"
-          type="password"
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-        {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
-        <Button
-          type="submit"
-          fullWidth
-          variant="contained"
-          sx={{ mt: 3, mb: 2 }}
-          disabled={loading}
-        >
-          {loading ? <CircularProgress size={24} /> : 'Sign In'}
-        </Button>
-      </Box>
-    </Box>
+        {error && (
+          <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <Box component="form" onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            id="username"
+            label="Username"
+            autoComplete="username"
+            autoFocus
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            variant="outlined"
+            InputProps={{
+              sx: {
+                backgroundColor: 'transparent',
+                background: 'none',
+              },
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'transparent',
+                background: 'none',
+                borderRadius: theme.shape.borderRadius,
+                '&.Mui-focused': {
+                  backgroundColor: 'transparent',
+                  background: 'none',
+                },
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  background: 'none',
+                },
+              },
+              '& .MuiOutlinedInput-input': {
+                fontSize: '1.0rem',
+                color: theme.palette.text.primary,
+                padding: '14px',
+                '&:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
+                  WebkitTextFillColor: theme.palette.text.primary,
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '&:-internal-autofill-selected': {
+                  WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
+                  WebkitTextFillColor: theme.palette.text.primary,
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '18px',
+                color: theme.palette.text.primary,
+              },
+              '& .MuiInputLabel-shrink': {
+                fontSize: '18px',
+              },
+            }}
+          />
+          <TextField
+            margin="normal"
+            required
+            fullWidth
+            name="password"
+            label="Password"
+            type="password"
+            id="password"
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            variant="outlined"
+            InputProps={{
+              sx: {
+                backgroundColor: 'transparent',
+                background: 'none',
+              },
+            }}
+            sx={{
+              '& .MuiOutlinedInput-root': {
+                backgroundColor: 'transparent',
+                background: 'none',
+                borderRadius: theme.shape.borderRadius,
+                '&.Mui-focused': {
+                  backgroundColor: 'transparent',
+                  background: 'none',
+                },
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  background: 'none',
+                },
+                borderWidth: '0px',
+              },
+              '& .MuiOutlinedInput-input': {
+                fontSize: '1.0rem',
+                color: theme.palette.text.primary,
+                padding: '14px',
+                '&:-webkit-autofill': {
+                  WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
+                  WebkitTextFillColor: theme.palette.text.primary,
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+                '&:-internal-autofill-selected': {
+                  WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
+                  WebkitTextFillColor: theme.palette.text.primary,
+                  transition: 'background-color 5000s ease-in-out 0s',
+                },
+              },
+              '& .MuiInputLabel-root': {
+                fontSize: '18px',
+                color: theme.palette.text.primary,
+              },
+              '& .MuiInputLabel-shrink': {
+                fontSize: '18px',
+              },
+            }}
+          />
+          <Button
+            type="submit"
+            variant="contained"
+            sx={{ mt: 3, mb: 2, py: 1.5 }}
+            disabled={loading}
+          >
+            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
   );
-};
-
+}
 export default LoginPage;
