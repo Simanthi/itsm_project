@@ -348,6 +348,7 @@ function HomePage() {
                     minWidth: 0,
                     mr: open ? 1 : 'auto',
                     justifyContent: 'center',
+                    
                   }}
                 >
                   {item.icon}

@@ -123,6 +123,7 @@ export const darkTheme = createTheme({
     text: {
       primary: 'rgb(255, 255, 255)', // White text on dark background
       secondary: 'rgb(176, 176, 176)', // Light grey secondary text on dark background
+      
     },
   },
   shape: {
