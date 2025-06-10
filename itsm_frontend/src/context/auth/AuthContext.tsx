@@ -1,7 +1,7 @@
 // itsm_frontend/src/context/auth/AuthContext.tsx
 import React, { useState, useEffect, useCallback } from 'react';
 import type { ReactNode } from 'react';
-import { AuthContext, type AuthContextType, type AuthUser } from './AuthContextDefinition'; // Import context and types from definition file
+import { AuthContext, type AuthContextType, type AuthUser } from './AuthContextDefinition';
 import { loginApi } from '../../api/authApi'; // Adjust path as needed for your project
 
 // Define the Props for AuthProvider
@@ -14,19 +14,15 @@ interface AuthProviderProps {
  * It handles login, logout, and token persistence in localStorage.
  */
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  // State for authentication token, initially read from localStorage
-  const [token, setToken] = useState<string | null>(localStorage.getItem('authToken')); // Use 'authToken' key as per LoginPage.tsx
-  // State for authenticated user data
+  // FIX: Initialize token and isAuthenticated to null/false
+  const [token, setToken] = useState<string | null>(null);
   const [user, setUser] = useState<AuthUser | null>(null);
-  // State to track if the user is authenticated
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false); // Will be set to true after successful login and user data loaded
-  // State to manage loading status (e.g., during initial load or login attempt)
-  const [loading, setLoading] = useState<boolean>(true);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(true); // Start as true, set to false after initial check
 
   // Effect to initialize authentication state on component mount
   useEffect(() => {
     const initializeAuth = async () => {
-      // Check for token and user in localStorage
       const storedToken = localStorage.getItem('authToken');
       const storedUser = localStorage.getItem('user');
 
@@ -38,7 +34,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsAuthenticated(true);
         } catch (e) {
           console.error("Error parsing stored user data or token:", e);
-          // Clear invalid data
+          // Clear invalid or corrupted data
           localStorage.removeItem('authToken');
           localStorage.removeItem('user');
           setToken(null);
@@ -46,9 +42,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           setIsAuthenticated(false);
         }
       } else {
-        setIsAuthenticated(false);
+        // No token or user in localStorage, so not authenticated
         setToken(null);
         setUser(null);
+        setIsAuthenticated(false);
       }
       setLoading(false); // Authentication initialization complete
     };
@@ -64,16 +61,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
    * @returns A promise that resolves to true on successful login, false otherwise.
    */
   const login = useCallback(async (username: string, password: string): Promise<boolean> => {
-    setLoading(true);
+    setLoading(true); // Indicate loading during login attempt
     try {
-      // Call the mock login API
       const response = await loginApi(username, password);
       localStorage.setItem('authToken', response.token);
-      localStorage.setItem('user', JSON.stringify(response.user)); // Store user data
+      localStorage.setItem('user', JSON.stringify(response.user));
       setToken(response.token);
       setUser(response.user);
       setIsAuthenticated(true);
-      return true; // Login successful
+      return true;
     } catch (error) {
       console.error('Login failed:', error);
       setIsAuthenticated(false);
@@ -81,9 +77,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(null);
       localStorage.removeItem('authToken');
       localStorage.removeItem('user');
-      throw error; // Re-throw the error for the calling component to handle (e.g., display message)
+      throw error;
     } finally {
-      setLoading(false);
+      setLoading(false); // Reset loading state after login attempt
     }
   }, []);
 
@@ -97,10 +93,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     setIsAuthenticated(false);
     localStorage.removeItem('authToken');
     localStorage.removeItem('user');
-    // Consider navigating to login page here or letting the route guard handle it
   }, []);
 
-  // Memoize the context value to prevent unnecessary re-renders of consumers
   const memoizedValue: AuthContextType = React.useMemo(() => ({
     token,
     user,

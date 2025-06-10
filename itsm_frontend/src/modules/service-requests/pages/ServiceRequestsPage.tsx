@@ -1,65 +1,45 @@
-// itsm_frontend/src/features/serviceRequests/pages/ServiceRequestsPage.tsx
+// itsm_frontend/src/modules/service-requests/components/ServiceRequestsPage.tsx
 import React, { useState } from 'react';
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  Paper,
-  Box,
-  Button,
-  Checkbox,
-  Typography,
+  Box, Typography, Button, CircularProgress, Alert
 } from '@mui/material';
+import { Add as AddIcon, Edit as EditIcon, Print as PrintIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
-
-// --- Icon Imports for buttons ---
-import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit';
-import PrintIcon from '@mui/icons-material/Print';
-import PreviewIcon from '@mui/icons-material/Preview';
-
-
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowId,
+  type GridRowSelectionModel, // Re-import GridRowSelectionModel
+  // Removed GridCallbackDetails as it's not needed if _details is removed
+} from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
+import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
+// Define a local type for valueFormatter params, as GridValueFormatterParams might not be exported
+interface CustomGridValueFormatterParams<R, V> {
+  value: V;
+  id: GridRowId;
+  field: string;
+  row: R;
+}
 
-function ServiceRequestsPage() {
+// Helper function to format date strings robustly
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) {
+    return 'N/A';
+  }
+  const date = new Date(String(dateString));
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  return date.toLocaleDateString();
+};
+
+const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { serviceRequests } = useServiceRequests();
-
-  const [selectedRequestIds, setSelectedRequestIds] = useState<string[]>([]);
-
-  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
-    if (event.target.checked) {
-      const allIds = serviceRequests.map((request) => request.id);
-      setSelectedRequestIds(allIds);
-      return;
-    }
-    setSelectedRequestIds([]);
-  };
-
-  const handleClick = (_event: React.MouseEvent<unknown>, id: string) => {
-    const selectedIndex = selectedRequestIds.indexOf(id);
-    let newSelected: string[] = [];
-
-    if (selectedIndex === -1) {
-      newSelected = newSelected.concat(selectedRequestIds, id);
-    } else if (selectedIndex === 0) {
-      newSelected = newSelected.concat(selectedRequestIds.slice(1));
-    } else if (selectedIndex === selectedRequestIds.length - 1) {
-      newSelected = newSelected.concat(selectedRequestIds.slice(0, -1));
-    } else if (selectedIndex > 0) {
-      newSelected = newSelected.concat(
-        selectedRequestIds.slice(0, selectedIndex),
-        selectedRequestIds.slice(selectedIndex + 1),
-      );
-    }
-    setSelectedRequestIds(newSelected);
-  };
-
-  const isSelected = (id: string) => selectedRequestIds.indexOf(id) !== -1;
+  const { serviceRequests, loading, error } = useServiceRequests();
+  // State to store selected row IDs as an array of GridRowId
+  const [selectedRequestIds, setSelectedRequestIds] = useState<GridRowId[]>([]);
 
   const handleCreateNew = () => {
     navigate('/service-requests/new');
@@ -67,174 +47,117 @@ function ServiceRequestsPage() {
 
   const handleEdit = () => {
     if (selectedRequestIds.length === 1) {
-      const requestIdToEdit = selectedRequestIds[0];
-      navigate(`/service-requests/edit/${requestIdToEdit}`);
+      navigate(`/service-requests/edit/${selectedRequestIds[0]}`);
     } else {
       alert('Please select exactly one request to edit.');
     }
   };
 
   const handlePrintPreview = () => {
-    if (selectedRequestIds.length > 0) {
-      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds } });
-    } else {
-      alert('Please select at least one request to print preview.');
-    }
+    alert('Print Preview functionality is not yet implemented.');
   };
 
-  // <<< MODIFIED: This is the function we are changing
   const handlePrint = () => {
-    if (selectedRequestIds.length > 0) {
-      navigate('/service-requests/print-preview', {
-        state: {
-          selectedIds: selectedRequestIds,
-          autoPrint: true
-        }
-      });
-    } else {
-      alert('Please select at least one request to print.');
-    }
+    alert('Print functionality is not yet implemented.');
   };
-  // >>> END MODIFICATION
+
+  // Define columns for DataGrid
+  const columns: GridColDef<ServiceRequest>[] = [
+    { field: 'request_id', headerName: 'Request ID', width: 150 },
+    { field: 'title', headerName: 'Title', width: 250 },
+    { field: 'description', headerName: 'Description', flex: 1, minWidth: 200 },
+    { field: 'category', headerName: 'Category', width: 150 },
+    { field: 'status', headerName: 'Status', width: 120 },
+    { field: 'priority', headerName: 'Priority', width: 120 },
+    { field: 'requested_by_username', headerName: 'Requested By', width: 150 },
+    {
+      field: 'created_at',
+      headerName: 'Created At',
+      width: 150,
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => formatDate(params.value),
+    },
+    { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => params.value || 'Unassigned',
+    },
+  ];
+
+  if (loading) {
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2 }}>Loading service requests...</Typography>
+      </Box>
+    );
+  }
+
+  if (error) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">Failed to load service requests: {error}</Alert>
+      </Box>
+    );
+  }
 
   return (
-    <Box sx={{
-      height: '100%',
-      display: 'flex',
-      flexDirection: 'column',
-      minHeight: 0,
-      p: 0,
-    }}>
-      <Box sx={{ marginBottom: '16px', display: 'flex', gap: '8px', justifyContent: 'flex-start', flexShrink: 0 }}>
-        <Button
-          variant="contained"
-          color="primary"
-          startIcon={<AddIcon />}
-          onClick={handleCreateNew}
-        >
-          Create New Request
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<EditIcon />}
-          onClick={handleEdit}
-          disabled={selectedRequestIds.length !== 1}
-        >
-          Edit Request
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<PreviewIcon />}
-          onClick={handlePrintPreview}
-          disabled={selectedRequestIds.length === 0}
-        >
-          Print Preview
-        </Button>
-        <Button
-          variant="outlined"
-          startIcon={<PrintIcon />}
-          onClick={handlePrint} // This button will now auto-trigger print
-          disabled={selectedRequestIds.length === 0}
-        >
-          Print Request
-        </Button>
+    <Box sx={{ p: 3, width: '100%' }}>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Typography variant="h4" component="h1">
+          Service Requests
+        </Typography>
+        <Box sx={{ display: 'flex', gap: 1 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={handleCreateNew}
+          >
+            Create New Request
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<EditIcon />}
+            onClick={handleEdit}
+            disabled={selectedRequestIds.length !== 1}
+          >
+            Edit Request
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={handlePrintPreview}
+            disabled={selectedRequestIds.length === 0}
+          >
+            Print Preview
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PrintIcon />}
+            onClick={handlePrint}
+            disabled={selectedRequestIds.length === 0}
+          >
+            Print Request
+          </Button>
+        </Box>
       </Box>
 
-      <TableContainer component={Paper} sx={{ flexGrow: 1, overflow: 'auto' }}>
-        <Table stickyHeader sx={{ minWidth: 1000 }} aria-label="service requests table">
-          <TableHead
-            sx={{
-              '& .MuiTableCell-stickyHeader': {
-                backgroundColor: (theme) => theme.palette.primary.main, // Changed to primary.main
-                color: (theme) => theme.palette.primary.contrastText,  // Added for text readability
-                zIndex: 100,
-                alignContent: 'left',
-                textWrap: 'nowrap', 
-
-
-              },
-            }}
-          >
-            <TableRow>
-              <TableCell padding="checkbox">
-                <Checkbox
-                  indeterminate={selectedRequestIds.length > 0 && selectedRequestIds.length < serviceRequests.length}
-                  checked={serviceRequests.length > 0 && selectedRequestIds.length === serviceRequests.length}
-                  onChange={handleSelectAllClick}
-                  inputProps={{ 'aria-label': 'select all requests' }}
-                />
-              </TableCell>
-              <TableCell>Request ID</TableCell>
-              <TableCell>Title</TableCell>
-              <TableCell>Category</TableCell>
-              <TableCell>Priority</TableCell>
-              <TableCell>Status</TableCell>
-              <TableCell>Requested By</TableCell>
-              <TableCell>Created At</TableCell>
-              <TableCell>Assigned To</TableCell>
-              <TableCell>Description</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {serviceRequests.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={10} sx={{ textAlign: 'center', py: 4 }}>
-                  <Typography variant="subtitle1" color="text.secondary">
-                    No service requests found.
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Click "Create New Request" to add one.
-                  </Typography>
-                </TableCell>
-              </TableRow>
-            ) : (
-              serviceRequests.map((request, index) => {
-                const isItemSelected = isSelected(request.id);
-                return (
-                  <TableRow
-                    hover
-                    onClick={(event) => handleClick(event, request.id)}
-                    role="checkbox"
-                    aria-checked={isItemSelected}
-                    tabIndex={-1}
-                    key={request.id}
-                    selected={isItemSelected}
-                    sx={{ cursor: 'pointer' }}
-                  >
-                    <TableCell padding="checkbox">
-                      <Checkbox
-                        checked={isItemSelected}
-                        inputProps={{ 'aria-labelledby': `sr-checkbox-${request.id}-${index}` }}
-                      />
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }} component="th" scope="row" id={`sr-checkbox-${request.id}-${index}` }>
-                      {request.request_id}
-                    </TableCell>
-                    <TableCell>{request.title}</TableCell>
-                    <TableCell>
-                      {request.category.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                    </TableCell>
-                    <TableCell>
-                      {request.priority.charAt(0).toUpperCase() + request.priority.slice(1)}
-                    </TableCell>
-                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {request.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}
-                    </TableCell>
-                    <TableCell>{request.requested_by}</TableCell>
-                    <TableCell>{new Date(request.created_at).toLocaleDateString()}</TableCell>
-                    <TableCell>{request.assigned_to || 'Unassigned'}</TableCell>
-                    <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {request.description}
-                    </TableCell>
-                  </TableRow>
-                );
-              })
-            )}
-          </TableBody>
-        </Table>
-      </TableContainer>
+      <Box sx={{ height: 500, width: '100%' }}>
+        <DataGrid
+          rows={serviceRequests}
+          columns={columns}
+          getRowId={(row) => row.id!}
+          checkboxSelection
+          // FIX: Updated onRowSelectionModelChange to match expected type and remove unused '_details'
+          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
+            // newSelectionModel is an object with 'ids' (a Set of GridRowId)
+            setSelectedRequestIds(Array.from(newSelectionModel.ids));
+          }}
+          // FIX: Changed 'type' to 'include' to match GridRowSelectionModel's allowed values
+          rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
+          disableRowSelectionOnClick
+          loading={loading}
+        />
+      </Box>
     </Box>
   );
-}
+};
 
 export default ServiceRequestsPage;

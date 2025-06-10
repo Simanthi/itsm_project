@@ -12,24 +12,21 @@ export interface ServiceRequest {
   status: ServiceRequestStatus;
   category: ServiceRequestCategory;
   priority: ServiceRequestPriority;
-  requested_by: number; // User ID (number)
-  requested_by_username?: string; // Read-only, for display
-  assigned_to: number | null; // User ID (number) or null
-  assigned_to_username?: string | null; // Read-only, for display
+requested_by_username: string; // Assuming these are now included directly
+  assigned_to_username: string | null; // Assuming this can be null
   resolution_notes: string | null;
-  created_at?: string; // ISO 8601 date string, read-only
-  updated_at?: string; // ISO 8601 date string, read-only
+  created_at: string | null; // <-- Ensure this is 'string | null' or 'string | null | undefined'
+  updated_at: string | null;
   resolved_at?: string | null; // ISO 8601 date string or null, read-only
 }
 
 // Type for data sent when creating a NEW service request
+
 export interface NewServiceRequestData {
   title: string;
   description: string;
-  status: ServiceRequestStatus;
-  category: ServiceRequestCategory;
-  priority: ServiceRequestPriority;
-  // requested_by is typically set by the backend based on the authenticated user
-  assigned_to?: number | null;
-  resolution_notes?: string | null;
+  requested_by_id: number;
+  assigned_to_id: number | null;
+  category: string;
+  priority: string;
 }

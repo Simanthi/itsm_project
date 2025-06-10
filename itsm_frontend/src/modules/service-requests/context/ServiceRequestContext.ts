@@ -1,14 +1,13 @@
-// itsm_frontend/src/features/serviceRequests/context/ServiceRequestContext.ts
-
+// itsm_frontend/src/modules/service-requests/context/ServiceRequestContext.ts
 import { createContext } from 'react';
-import { type ServiceRequest, type NewServiceRequestFormData } from '../types/ServiceRequestTypes';
+import { type ServiceRequest, type NewServiceRequestData } from '../types/ServiceRequestTypes';
 
 interface ServiceRequestContextType {
   serviceRequests: ServiceRequest[];
-  addServiceRequest: (newRequestData: NewServiceRequestFormData) => void;
-   updateServiceRequest: (updatedRequest: ServiceRequest) => void;
-  // Potentially add updateServiceRequest, deleteServiceRequest, etc. here in the future
+  addServiceRequest: (newRequestData: NewServiceRequestData) => Promise<ServiceRequest>; // Add Promise return type
+  updateServiceRequest: (updatedRequest: ServiceRequest) => Promise<ServiceRequest>; // Add Promise return type
+  loading: boolean; // Added loading state
+  error: string | null; // Added error state
 }
 
-// Export the context itself
 export const ServiceRequestContext = createContext<ServiceRequestContextType | undefined>(undefined);
