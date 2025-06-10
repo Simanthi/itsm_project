@@ -3,21 +3,20 @@
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 
-// --- Context Imports (Confirmed Paths) ---
-import { AuthProvider } from './context/AuthContext';
-import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider';
-import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider';
-// --- Page Imports (Confirmed Paths) ---
+// --- Context Imports ---
+import { AuthProvider } from './context/auth/AuthContext';
+import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider'; // Confirm this path
+import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider'; // Confirm this path
+
+// --- Page Imports ---
 import LoginPage from './modules/auth/LoginPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 
-// --- Module-based Page Imports (Confirmed Paths) ---
+// --- Module-based Page Imports ---
 import DashboardPage from './modules/dashboard/DashboardPage';
 import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequestsPage';
-// NEW: Import NewServiceRequestPage
-import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage'; // <--- ADD THIS LINE
-
+import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
 import AssetsPage from './modules/assets/AssetsPage';
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
@@ -38,12 +37,9 @@ function AppContent() {
           {/* Nested routes for module-specific pages */}
           <Route index element={<DashboardPage />} />
           <Route path="service-requests" element={<ServiceRequestsPage />} />
-          {/* NEW: Add route for creating a new service request */}
-          <Route path="service-requests/new" element={<NewServiceRequestPage />} /> {/* <--- ADD THIS LINE */}
-          {/* NEW: Route for editing an existing service request */}
+          <Route path="service-requests/new" element={<NewServiceRequestPage />} />
           <Route path="service-requests/edit/:id" element={<NewServiceRequestPage />} />
-          {/* NEW: Route for the print preview page */}
-          <Route path="service-requests/print-preview" element={<ServiceRequestPrintView/>} /> {/* <--- NEW ROUTE */}
+          <Route path="service-requests/print-preview" element={<ServiceRequestPrintView />} />
           <Route path="assets" element={<AssetsPage />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
@@ -62,13 +58,16 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AuthProvider>
-        <ThemeContextProvider>
-          <ServiceRequestProvider> {/* <--- ADD THIS LINE */}
+      {/* ThemeContextProvider should typically wrap the entire application */}
+      <ThemeContextProvider>
+        {/* AuthProvider wraps components that need authentication context */}
+        <AuthProvider>
+          {/* ServiceRequestProvider wraps components needing service request context */}
+          <ServiceRequestProvider>
             <AppContent />
-          </ServiceRequestProvider> {/* <--- ADD THIS LINE */}
-        </ThemeContextProvider>
-      </AuthProvider>
+          </ServiceRequestProvider>
+        </AuthProvider>
+      </ThemeContextProvider>
     </Router>
   );
 }
