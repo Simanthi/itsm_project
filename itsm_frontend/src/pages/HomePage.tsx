@@ -326,9 +326,9 @@ function HomePage() {
           </Button>
         </Toolbar>
         {/* <Divider /> */}
-        <List sx={{ flexGrow: 1, paddingTop: '32px' }}>
+        <List sx={{ flexGrow: 1, paddingTop: '12px' }}>
           {moduleLinks.map((item) => (
-            <ListItem key={item.text} sx={{ display: 'block' , paddingTop:'2px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0', }}>
+            <ListItem key={item.text} sx={{ display: 'block' , paddingTop:'2px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0px', }}>
               <ListItemButton
                 component={Link}
                 to={item.path}
@@ -357,7 +357,7 @@ function HomePage() {
             </ListItem>
           ))}
         </List>
-        <Divider sx={{ mt: 'auto', flexShrink: 0 }} />
+        <Divider sx={{ paddingTop:'0px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0px', mt: '0px', flexShrink: 0 }} />
         <List sx={{ flexShrink: 0 }}>
           {settingsNavItems.map((item) => (
             <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
@@ -372,7 +372,7 @@ function HomePage() {
                 <ListItemIcon
                   sx={{
                     minWidth: 0,
-                    mr: open ? 3 : 'auto',
+                    mr: open ? 1 : 'auto',
                     justifyContent: 'center',
                   }}
                 >
