@@ -26,6 +26,7 @@ export async function authFetch<T>(url: string, method: string, token: string, b
     try {
       const errorJson = await response.json();
       errorDetail = `${errorDetail}: ${JSON.stringify(errorJson)}`;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     } catch (_) { // FIX: Use '_' for unused catch variable
       errorDetail = `${errorDetail} ${response.statusText}`;
     }

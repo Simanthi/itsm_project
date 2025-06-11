@@ -1,5 +1,5 @@
 // itsm_frontend/src/modules/service-requests/components/ServiceRequestForm.tsx
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect} from 'react';
 import { TextField, Button, Box, Typography, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
@@ -18,8 +18,9 @@ interface User {
   username: string;
 }
 
+// FIX: Updated STATUS_OPTIONS to match backend choices
 const CATEGORY_OPTIONS = ['software', 'hardware', 'network', 'information', 'other'] as const;
-const STATUS_OPTIONS = ['open', 'in_progress', 'resolved', 'closed', 'cancelled'] as const;
+const STATUS_OPTIONS = ['new', 'in_progress', 'resolved', 'closed', 'cancelled'] as const; // Changed 'open' to 'new'
 const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const;
 
 interface ServiceRequestFormState {
@@ -30,7 +31,7 @@ interface ServiceRequestFormState {
   priority: typeof PRIORITY_OPTIONS[number];
   requested_by_id: number;
   assigned_to_id: number | null;
-  request_id_display?: string; // This holds the 'SR-AA-0001' format ID
+  request_id_display?: string;
 }
 
 interface ServiceRequestFormProps {
@@ -47,14 +48,14 @@ interface UpdateServiceRequestPayload {
 }
 
 const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) => {
-  const { id } = useParams<{ id?: string }>(); // This `id` is still the numerical internal ID from the route
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuth();
   const [formData, setFormData] = useState<ServiceRequestFormState>({
     title: '',
     description: '',
     category: CATEGORY_OPTIONS[0],
-    status: STATUS_OPTIONS[0],
+    status: STATUS_OPTIONS[0], // Will now correctly default to 'new'
     priority: PRIORITY_OPTIONS[1],
     requested_by_id: user?.id || 0,
     assigned_to_id: null,
@@ -135,27 +136,28 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
         title: initialData.title,
         description: initialData.description,
         category: initialData.category as typeof CATEGORY_OPTIONS[number],
+        // FIX: Ensure status from initialData is one of the valid STATUS_OPTIONS
         status: (STATUS_OPTIONS.includes(initialData.status as ServiceRequestStatus)
-          ? initialData.status
-          : STATUS_OPTIONS[0]) as typeof STATUS_OPTIONS[number],
+            ? initialData.status
+            : STATUS_OPTIONS[0]) as typeof STATUS_OPTIONS[number],
         priority: initialData.priority as typeof PRIORITY_OPTIONS[number],
         requested_by_id: resolvedRequestedById,
         assigned_to_id: resolvedAssignedToId,
-        request_id_display: initialData.request_id, // Store the string ID from initialData
+        request_id_display: initialData.request_id,
       });
     } else if (user) {
       console.log("Effect 2: No initial data, setting form for create mode.");
       setFormData(prev => ({
         ...prev,
         requested_by_id: user.id || 0,
-        status: STATUS_OPTIONS[0],
+        status: STATUS_OPTIONS[0], // Correctly defaults to 'new'
       }));
     } else {
       console.log("Effect 2: Neither initialData nor user available. Defaulting fields.");
       setFormData(prev => ({
         ...prev,
         requested_by_id: 0,
-        status: STATUS_OPTIONS[0],
+        status: STATUS_OPTIONS[0], // Correctly defaults to 'new'
       }));
     }
 
@@ -198,7 +200,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
     try {
       if (id) {
-        // FIX: Use formData.request_id_display for the update operation
         if (!formData.request_id_display) {
           setError("Cannot update: Service Request ID (string format) not found.");
           setSubmitting(false);
@@ -214,7 +215,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           assigned_to_id: formData.assigned_to_id !== null ? formData.assigned_to_id : null,
         };
         console.log("ServiceRequestForm: Sending PATCH payload (Request ID:", formData.request_id_display, "):", updatePayload);
-        // Pass formData.request_id_display (e.g., 'SR-AA-0001')
         await updateServiceRequest(formData.request_id_display, updatePayload, token);
         alert('Service Request updated successfully!');
       } else {
@@ -237,6 +237,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
         try {
           const errorDetails = JSON.parse(err.message.split("API error: 400")[1]);
           setError(`Submission failed: ${JSON.stringify(errorDetails)}`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           setError(err.message);
         }

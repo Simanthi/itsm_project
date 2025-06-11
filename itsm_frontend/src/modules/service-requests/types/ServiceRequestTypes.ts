@@ -1,6 +1,6 @@
 // itsm_frontend/src/modules/service-requests/types/ServiceRequestTypes.ts
 
-export type ServiceRequestStatus = 'open' | 'in_progress' | 'resolved' | 'closed' | 'cancelled';
+export type ServiceRequestStatus = "new" | "in_progress" | "resolved" | "closed" | "cancelled";
 export type ServiceRequestCategory = 'software' | 'hardware' | 'network' | 'information' | 'other';
 export type ServiceRequestPriority = 'low' | 'medium' | 'high';
 
