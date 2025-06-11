@@ -14,8 +14,9 @@ import {
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
-// Define a local type for valueFormatter params, ensuring `params` itself can be undefined
-// This allows for a more robust check within the formatter function.
+// Define a local type for valueFormatter params.
+// Make 'params' itself optional for extreme defensive coding if DataGrid
+// might rarely pass 'undefined' for the entire params object.
 interface CustomGridValueFormatterParams<R = ServiceRequest, V = string | null | undefined> {
   value: V;
   id: GridRowId;
@@ -38,7 +39,6 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { serviceRequests, loading, error } = useServiceRequests();
-  // State to store selected row IDs as an array of GridRowId
   const [selectedRequestIds, setSelectedRequestIds] = useState<GridRowId[]>([]);
 
   const handleCreateNew = () => {
@@ -55,7 +55,6 @@ const ServiceRequestsPage: React.FC = () => {
 
   const handlePrintPreview = () => {
     if (selectedRequestIds.length > 0) {
-      // Navigate to print preview page, passing selected IDs via state
       navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: false } });
     } else {
       alert('Please select at least one request to preview.');
@@ -64,7 +63,6 @@ const ServiceRequestsPage: React.FC = () => {
 
   const handlePrint = () => {
     if (selectedRequestIds.length > 0) {
-      // Navigate to print preview page, passing selected IDs and autoPrint flag
       navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: true } });
     } else {
       alert('Please select at least one request to print.');
@@ -84,8 +82,11 @@ const ServiceRequestsPage: React.FC = () => {
       field: 'created_at',
       headerName: 'Created At',
       width: 150,
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => {
-        // FIX: First, check if 'params' itself is defined before accessing 'params.value'
+      // FIX: Add a null/undefined check for 'params' itself before accessing 'params.value'
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
+        // Log to inspect the 'params' object when this formatter is called
+        // console.log(`valueFormatter for created_at: params =`, params); // Enable for debugging if issues persist
+
         if (!params || params.value === undefined || params.value === null) {
           return 'N/A';
         }
@@ -93,8 +94,11 @@ const ServiceRequestsPage: React.FC = () => {
       },
     },
     { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => {
-        // FIX: First, check if 'params' itself is defined before accessing 'params.value'
+      // FIX: Add a null/undefined check for 'params' itself before accessing 'params.value'
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
+        // Log to inspect the 'params' object when this formatter is called
+        // console.log(`valueFormatter for assigned_to_username: params =`, params); // Enable for debugging if issues persist
+
         if (!params || params.value === undefined || params.value === null) {
           return 'Unassigned';
         }
@@ -165,7 +169,7 @@ const ServiceRequestsPage: React.FC = () => {
         <DataGrid
           rows={serviceRequests}
           columns={columns}
-          getRowId={(row) => String(row.id)} // Ensure ID is string
+          getRowId={(row) => String(row.id)}
           checkboxSelection
           onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
             setSelectedRequestIds(Array.from(newSelectionModel.ids));
