@@ -14,11 +14,9 @@ import {
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
-// Define a local type for valueFormatter params, as GridValueFormatterParams might not be exported
-// This type strictly defines that 'params' will always be provided by DataGrid,
-// but the runtime error suggests it might be undefined in some scenarios.
-// We'll add defensive checks *inside* the formatter for safety.
-interface CustomGridValueFormatterParams<R, V> {
+// Define a local type for valueFormatter params, ensuring `params` itself can be undefined
+// This allows for a more robust check within the formatter function.
+interface CustomGridValueFormatterParams<R = ServiceRequest, V = string | null | undefined> {
   value: V;
   id: GridRowId;
   field: string;
@@ -40,6 +38,7 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { serviceRequests, loading, error } = useServiceRequests();
+  // State to store selected row IDs as an array of GridRowId
   const [selectedRequestIds, setSelectedRequestIds] = useState<GridRowId[]>([]);
 
   const handleCreateNew = () => {
@@ -55,11 +54,21 @@ const ServiceRequestsPage: React.FC = () => {
   };
 
   const handlePrintPreview = () => {
-    alert('Print Preview functionality is not yet implemented.');
+    if (selectedRequestIds.length > 0) {
+      // Navigate to print preview page, passing selected IDs via state
+      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: false } });
+    } else {
+      alert('Please select at least one request to preview.');
+    }
   };
 
   const handlePrint = () => {
-    alert('Print functionality is not yet implemented.');
+    if (selectedRequestIds.length > 0) {
+      // Navigate to print preview page, passing selected IDs and autoPrint flag
+      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: true } });
+    } else {
+      alert('Please select at least one request to print.');
+    }
   };
 
   // Define columns for DataGrid
@@ -75,29 +84,18 @@ const ServiceRequestsPage: React.FC = () => {
       field: 'created_at',
       headerName: 'Created At',
       width: 150,
-      // FIX: Add defensive checks for 'params' itself before accessing its properties.
-      // This is a very defensive measure for unexpected behavior from DataGrid.
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
-        // Log to see the 'params' object when this formatter is called
-        // console.log(`valueFormatter for created_at: params =`, params);
-
-        // If params is undefined, or its value is undefined/null, return 'N/A'
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => {
+        // FIX: First, check if 'params' itself is defined before accessing 'params.value'
         if (!params || params.value === undefined || params.value === null) {
-          // console.warn(`valueFormatter for created_at: params or params.value is undefined/null. params:`, params);
           return 'N/A';
         }
         return formatDate(params.value);
       },
     },
     { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
-      // FIX: Add defensive checks for 'params' itself before accessing its properties.
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
-        // Log to see the 'params' object when this formatter is called
-        // console.log(`valueFormatter for assigned_to_username: params =`, params);
-
-        // If params is undefined, or its value is undefined/null, return 'Unassigned'
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => {
+        // FIX: First, check if 'params' itself is defined before accessing 'params.value'
         if (!params || params.value === undefined || params.value === null) {
-          // console.warn(`valueFormatter for assigned_to_username: params or params.value is undefined/null. params:`, params);
           return 'Unassigned';
         }
         return params.value || 'Unassigned';
@@ -170,7 +168,6 @@ const ServiceRequestsPage: React.FC = () => {
           getRowId={(row) => String(row.id)} // Ensure ID is string
           checkboxSelection
           onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
-            // newSelectionModel is an object with 'ids' (a Set of GridRowId)
             setSelectedRequestIds(Array.from(newSelectionModel.ids));
           }}
           rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}

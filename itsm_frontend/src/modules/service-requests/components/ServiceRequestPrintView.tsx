@@ -1,33 +1,41 @@
-// itsm_frontend/src/features/serviceRequests/pages/ServiceRequestPrintView.tsx
-import React, { useEffect, useState } from 'react';
+// itsm_frontend/src/modules/service-requests/components/ServiceRequestPrintView.tsx
+import { useEffect, useState } from 'react'; // Removed direct 'React' import if unused
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Grid, CircularProgress, Button } from '@mui/material';
-
-// Import the global ServiceRequest type from ServiceRequestTypes.ts
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
+import { getServiceRequestById } from '../../../api/serviceRequestApi';
+import { useAuth } from '../../../context/auth/useAuth';
+import { type GridRowId } from '@mui/x-data-grid'; // FIX: Import GridRowId
 
-// REMOVE THE OLD LOCAL INTERFACE DEFINITION HERE:
-// interface ServiceRequest {
-//   id: string;
-//   title: string;
-//   description: string;
-//   status: string;
-//   requestedBy: string; // This is now requested_by (number)
-//   requestedDate: string; // This is now created_at (ISO string)
-//   category: string;
-//   // ... other fields as needed for print
-// }
+// Helper function to format date strings (re-used from ServiceRequestsPage)
+const formatDate = (dateString: string | null | undefined): string => {
+  if (!dateString) {
+    return 'N/A';
+  }
+  const date = new Date(String(dateString));
+  if (!(date instanceof Date) || isNaN(date.getTime())) {
+    return 'Invalid Date';
+  }
+  return date.toLocaleDateString();
+};
 
 function ServiceRequestPrintView() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const { selectedIds, autoPrint } = (location.state as { selectedIds: string[]; autoPrint?: boolean }) || { selectedIds: [] };
+  // Extract selectedIds and autoPrint from location state
+  const { selectedIds, autoPrint } = (location.state as { selectedIds: GridRowId[]; autoPrint?: boolean }) || { selectedIds: [], autoPrint: false };
 
   useEffect(() => {
+    if (!isAuthenticated || !token) {
+      setError("Authentication required to view print preview.");
+      setLoading(false);
+      return;
+    }
     if (!selectedIds || selectedIds.length === 0) {
       setError("No service requests selected for printing.");
       setLoading(false);
@@ -38,86 +46,40 @@ function ServiceRequestPrintView() {
       setLoading(true);
       setError(null);
       try {
-        // --- Replace this mock data with your actual data fetching logic ---
-        // This should fetch the details for all IDs in `selectedIds`
-        // Make sure this mock data fully matches the ServiceRequest type from ServiceRequestTypes.ts
-        const allMockData: ServiceRequest[] = [
-          {
-            id: 'SR001',
-            request_id: 'SR-PRINT-001',
-            title: 'Printer Toner Refill - Office B',
-            description: 'Toner low for LaserJet 4000 in Office B. Please refill.',
-            status: 'new', // Aligned with new status type
-            category: 'hardware', // Aligned with new category type
-            priority: 'medium', // Aligned with new priority type
-            requested_by: 'james', // User ID
-            created_at: '2023-10-26T10:00:00Z', // ISO string
-            updated_at: '2023-10-26T10:00:00Z',
-            resolution_notes: null,
-            resolved_at: null,
-            assigned_to: null,
-          },
-          {
-            id: 'SR002',
-            request_id: 'SR-PRINT-002',
-            title: 'New Laptop Request - Marketing',
-            description: 'Requesting a new laptop for new hire Jane Smith in Marketing department.',
-            status: 'pending_approval', // Aligned with new status type
-            category: 'hardware',
-            priority: 'high',
-            requested_by: 'james',
-            created_at: '2023-10-25T14:30:00Z',
-            updated_at: '2023-10-25T14:30:00Z',
-            resolution_notes: null,
-            resolved_at: null,
-            assigned_to: null,
-          },
-          {
-            id: 'SR003',
-            request_id: 'SR-PRINT-003',
-            title: 'Software Install - Photoshop',
-            description: 'Need Photoshop installed on my new workstation.',
-            status: 'closed', // Aligned with new status type
-            category: 'software',
-            priority: 'medium',
-            requested_by: 'james',
-            created_at: '2023-10-20T09:00:00Z',
-            updated_at: '2023-10-20T11:00:00Z',
-            resolution_notes: "Photoshop installed and licensed.",
-            resolved_at: '2023-10-20T11:00:00Z',
-            assigned_to: 'james',
+        const fetchedRequests: ServiceRequest[] = [];
+        for (const id of selectedIds) {
+          try {
+            const request = await getServiceRequestById(String(id), token);
+            fetchedRequests.push(request);
+          } catch (itemError) {
+            console.error(`Error fetching service request ${id}:`, itemError);
           }
-        ];
-
-        const filteredRequests = allMockData.filter(req => selectedIds.includes(req.id));
-
-        if (filteredRequests.length > 0) {
-          setServiceRequestsToPrint(filteredRequests);
-        } else {
-          setError("Selected service requests not found or no data available.");
         }
-        // --- End of mock data replacement ---
 
+        if (fetchedRequests.length > 0) {
+          setServiceRequestsToPrint(fetchedRequests);
+        } else {
+          setError("No service requests found for printing or failed to load all selected requests.");
+        }
       } catch (err) {
         setError("Failed to load service request details.");
-        console.error(err);
+        console.error("General error in fetchRequests:", err);
       } finally {
         setLoading(false);
       }
     };
 
     fetchRequests();
-  }, [selectedIds]); // Re-fetch if selectedIds change
+  }, [selectedIds, token, isAuthenticated]);
 
   useEffect(() => {
-    if (!loading && !error && autoPrint) {
+    if (!loading && !error && autoPrint && serviceRequestsToPrint.length > 0) {
       const printTimeout = setTimeout(() => {
         window.print();
-      }, 500); // Give it half a second to render
-
+      }, 500);
       return () => clearTimeout(printTimeout);
     }
-  }, [loading, error, autoPrint]); // Removed navigate from dependency array as it's not used in this effect
+  }, [loading, error, autoPrint, serviceRequestsToPrint]);
 
   if (loading) {
     return (
@@ -153,20 +115,17 @@ function ServiceRequestPrintView() {
         </Button>
         <Button variant="contained" onClick={() => window.print()}>Print Now</Button>
       </Box>
-
       {serviceRequestsToPrint.map((request) => (
         <Paper key={request.id} sx={{ p: 3, mb: 4, border: '1px solid #eee' }}>
           <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
-            Service Request: {request.title} (ID: {request.request_id || request.id}) {/* Display request_id if available */}
+            Service Request: {request.title} (ID: {request.request_id || request.id})
           </Typography>
           <Grid container spacing={2}>
             <Grid item xs={12} sm={6}>
-              {/* Display requested_by (ID) or provide a lookup if you implement user names */}
-              <Typography variant="body1"><strong>Requested By:</strong> {request.requested_by}</Typography>
+              <Typography variant="body1"><strong>Requested By:</strong> {request.requested_by_username}</Typography>
             </Grid>
             <Grid item xs={12} sm={6}>
-              {/* Display created_at formatted as a date */}
-              <Typography variant="body1"><strong>Requested Date:</strong> {new Date(request.created_at).toLocaleDateString()}</Typography>
+              <Typography variant="body1"><strong>Requested Date:</strong> {formatDate(request.created_at)}</Typography>
             </Grid>
             <Grid item xs={12}>
               <Typography variant="body1"><strong>Category:</strong> {request.category}</Typography>
@@ -177,7 +136,12 @@ function ServiceRequestPrintView() {
             <Grid item xs={12}>
               <Typography variant="body1"><strong>Status:</strong> {request.status.replace(/_/g, ' ').replace(/\b\w/g, char => char.toUpperCase())}</Typography>
             </Grid>
-            {request.resolution_notes && ( // Only show if resolution_notes exists
+            {request.assigned_to_username && (
+              <Grid item xs={12}>
+                <Typography variant="body1"><strong>Assigned To:</strong> {request.assigned_to_username}</Typography>
+              </Grid>
+            )}
+            {request.resolution_notes && (
               <Grid item xs={12}>
                 <Typography variant="body1"><strong>Resolution Notes:</strong></Typography>
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{request.resolution_notes}</Typography>
