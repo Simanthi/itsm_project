@@ -1,50 +1,30 @@
 // itsm_frontend/src/modules/service-requests/components/ServiceRequestList.tsx
-import React, { useState, useEffect, useCallback } from 'react'; // Added useCallback
+import React, { useState, useEffect } from 'react';
 import { DataGrid, type GridColDef, type GridRowSelectionModel, type GridRowId } from '@mui/x-data-grid';
 import { Button, Box, Typography, CircularProgress, Alert } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
-import { getServiceRequests, deleteServiceRequest } from '../../../api/serviceRequestApi';
-import { useAuth } from '../../../context/auth/useAuth'; // FIX 1: Corrected useAuth import
+import { deleteServiceRequest } from '../../../api/serviceRequestApi';
+import { useAuth } from '../../../context/auth/useAuth';
+import { useServiceRequests } from '../hooks/useServiceRequests';
 
-// FIX 2: Define a local interface for valueFormatter params to resolve 'never' type
 interface DateValueFormatterParams {
   value: string | null | undefined;
 }
 
 const ServiceRequestList: React.FC = () => {
-  const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [selectedRequestIds, setSelectedRequestIds] = useState<Array<GridRowId>>([]);
-  const [submitting, setSubmitting] = useState<boolean>(false);
   const navigate = useNavigate();
   const { token } = useAuth();
-
-  // FIX 5: Wrap fetchServiceRequests in useCallback to resolve ESLint warning
-  const fetchServiceRequests = useCallback(async () => {
-    if (!token) return;
-    setLoading(true);
-    setError(null);
-    try {
-      const data = await getServiceRequests(token);
-      setServiceRequests(data);
-    } catch (err) {
-      console.error("Error fetching service requests:", err);
-      setError(err instanceof Error ? err.message : String(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [token]); // token is a dependency for fetchServiceRequests
+  const { serviceRequests, loading, error, fetchServiceRequests } = useServiceRequests();
+  const [selectedRequestIds, setSelectedRequestIds] = useState<Array<GridRowId>>([]);
+  const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    if (token) {
-      fetchServiceRequests();
-    } else {
-      setLoading(false);
-      setError("Please log in to view service requests.");
-    }
-  }, [token, fetchServiceRequests]); // Added fetchServiceRequests to dependency array
+    console.log("ServiceRequestList: Component rendered. serviceRequests from context:", serviceRequests.length);
+    console.log("ServiceRequestList: Full serviceRequests array (passed to DataGrid):", serviceRequests);
+    // Log content of the array passed to DataGrid to see specific field values
+    serviceRequests.forEach(req => console.log(`  DataGrid Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
+  }, [serviceRequests]);
 
   const handleDelete = async () => {
     if (selectedRequestIds.length === 0) {
@@ -55,18 +35,25 @@ const ServiceRequestList: React.FC = () => {
       alert("Authentication token not found. Please log in.");
       return;
     }
-
     if (window.confirm(`Are you sure you want to delete ${selectedRequestIds.length} request(s)?`)) {
       setSubmitting(true);
       try {
-        await Promise.all(selectedRequestIds.map(id => deleteServiceRequest(Number(id), token)));
-        fetchServiceRequests();
+        const requestsToDelete = serviceRequests.filter(req => selectedRequestIds.includes(String(req.id)));
+        await Promise.all(requestsToDelete.map(req => {
+            if (req.request_id) {
+                return deleteServiceRequest(req.request_id, token);
+            } else if (req.id) {
+                return deleteServiceRequest(String(req.id), token);
+            }
+            return Promise.resolve();
+        }));
+
+        await fetchServiceRequests();
         setSelectedRequestIds([]);
         alert('Selected requests deleted successfully!');
       } catch (err) {
         console.error("Error deleting service requests:", err);
-        setError(err instanceof Error ? err.message : String(err));
-        alert(`Failed to delete requests: ${err}`);
+        alert(`Failed to delete requests: ${err instanceof Error ? err.message : String(err)}`);
       } finally {
         setSubmitting(false);
       }
@@ -94,7 +81,17 @@ const ServiceRequestList: React.FC = () => {
     { field: 'status', headerName: 'Status', width: 120 },
     { field: 'priority', headerName: 'Priority', width: 120 },
     { field: 'requested_by_username', headerName: 'Requested By', width: 150 },
-    { field: 'assigned_to_username', headerName: 'Assigned To', width: 150 },
+    {
+      field: 'assigned_to_username',
+      headerName: 'Assigned To',
+      width: 150,
+      // FIX: Add renderCell to explicitly display 'Unassigned' or the username
+      renderCell: (params) => {
+        const assignedTo = params.value; // This is the value of assigned_to_username
+        console.log(`  DataGrid Render Cell for ID: ${params.row.id}, Assigned To value: '${assignedTo}'`);
+        return assignedTo || 'Unassigned'; // Display 'Unassigned' if null or empty string
+      },
+    },
     {
       field: 'created_at',
       headerName: 'Created At',
@@ -110,7 +107,11 @@ const ServiceRequestList: React.FC = () => {
   ];
 
   if (loading) {
-    return <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}><CircularProgress /></Box>;
+    return (
+      <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+        <CircularProgress />
+      </Box>
+    );
   }
 
   if (error) {
@@ -143,25 +144,19 @@ const ServiceRequestList: React.FC = () => {
           getRowId={(row) => row.id!}
           checkboxSelection
           onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
-            // FIX 3: Safely extract 'ids' (which is a Set) from the newSelectionModel object
-            // and convert it to an Array for the state.
-            const model = newSelectionModel as { ids: Set<GridRowId> } | GridRowId[];
-            if (Array.isArray(model)) {
-                setSelectedRequestIds(model); // If it's directly an array (older versions)
-            } else if (model.ids instanceof Set) {
-                setSelectedRequestIds(Array.from(model.ids)); // If it's the object with a Set (newer versions)
+            if (Array.isArray(newSelectionModel)) {
+              setSelectedRequestIds(newSelectionModel);
+            } else if ('ids' in newSelectionModel && newSelectionModel.ids instanceof Set) {
+              setSelectedRequestIds(Array.from(newSelectionModel.ids));
             } else {
-                // Fallback for unexpected types, log or handle error
-                console.warn("Unexpected newSelectionModel type:", newSelectionModel);
-                setSelectedRequestIds([]);
+              console.warn("Unexpected newSelectionModel type for DataGrid:", newSelectionModel);
+              setSelectedRequestIds([]);
             }
           }}
-          // FIX 4: Pass the selectedRequestIds wrapped in the expected object format for rowSelectionModel
-          // The type is 'include' or 'exclude' for the 'type' property based on MUI X v6/v7 types.
-          // The 'ids' property expects a Set<GridRowId> in some newer versions.
           rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
           disableRowSelectionOnClick
           loading={loading || submitting}
+          key={serviceRequests.length}
         />
       </div>
     </Box>

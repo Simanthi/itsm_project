@@ -1,7 +1,7 @@
-// itsm_frontend/src/modules/service-requests/components/ServiceRequestsPage.tsx
-import React, { useState } from 'react';
+// itsm_frontend/src/modules/service-requests/pages/ServiceRequestsPage.tsx
+import React, { useState, useEffect } from 'react';
 import {
-  Box, Typography, Button, CircularProgress, Alert
+  Box, CircularProgress, Alert, Button, Typography
 } from '@mui/material';
 import { Add as AddIcon, Edit as EditIcon, Print as PrintIcon } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
@@ -9,14 +9,13 @@ import {
   DataGrid,
   type GridColDef,
   type GridRowId,
-  type GridRowSelectionModel,
+  type GridRowSelectionModel, // Keep this import for the prop type
+  type GridCallbackDetails,
 } from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
 // Define a local type for valueFormatter params.
-// Make 'params' itself optional for extreme defensive coding if DataGrid
-// might rarely pass 'undefined' for the entire params object.
 interface CustomGridValueFormatterParams<R = ServiceRequest, V = string | null | undefined> {
   value: V;
   id: GridRowId;
@@ -39,31 +38,50 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { serviceRequests, loading, error } = useServiceRequests();
-  const [selectedRequestIds, setSelectedRequestIds] = useState<GridRowId[]>([]);
+  // FIX: Manage selectedRequestIds as a GridRowSelectionModel object
+  // Initialize with an empty Set for ids and type 'include'
+  const [selectedRowModel, setSelectedRowModel] = useState<GridRowSelectionModel>({
+    type: 'include',
+    ids: new Set<GridRowId>(),
+  });
+
+  // Effect to inspect serviceRequests when it changes
+  useEffect(() => {
+    console.log("ServiceRequestsPage: Component rendered.");
+    console.log("ServiceRequestsPage: serviceRequests received from context (length):", serviceRequests.length);
+    serviceRequests.forEach(req => console.log(`  ServiceRequestsPage Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
+  }, [serviceRequests]);
+
 
   const handleCreateNew = () => {
     navigate('/service-requests/new');
   };
 
   const handleEdit = () => {
-    if (selectedRequestIds.length === 1) {
-      navigate(`/service-requests/edit/${selectedRequestIds[0]}`);
+    // FIX: Access selected IDs from the selectedRowModel state
+    const currentSelectedIds = Array.from(selectedRowModel.ids);
+    if (currentSelectedIds.length === 1) {
+      navigate(`/service-requests/edit/${currentSelectedIds[0]}`);
     } else {
       alert('Please select exactly one request to edit.');
     }
   };
 
   const handlePrintPreview = () => {
-    if (selectedRequestIds.length > 0) {
-      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: false } });
+    // FIX: Access selected IDs from the selectedRowModel state
+    const currentSelectedIds = Array.from(selectedRowModel.ids);
+    if (currentSelectedIds.length > 0) {
+      navigate('/service-requests/print-preview', { state: { selectedIds: currentSelectedIds, autoPrint: false } });
     } else {
       alert('Please select at least one request to preview.');
     }
   };
 
   const handlePrint = () => {
-    if (selectedRequestIds.length > 0) {
-      navigate('/service-requests/print-preview', { state: { selectedIds: selectedRequestIds, autoPrint: true } });
+    // FIX: Access selected IDs from the selectedRowModel state
+    const currentSelectedIds = Array.from(selectedRowModel.ids);
+    if (currentSelectedIds.length > 0) {
+      navigate('/service-requests/print-preview', { state: { selectedIds: currentSelectedIds, autoPrint: true } });
     } else {
       alert('Please select at least one request to print.');
     }
@@ -79,30 +97,36 @@ const ServiceRequestsPage: React.FC = () => {
     { field: 'priority', headerName: 'Priority', width: 120 },
     { field: 'requested_by_username', headerName: 'Requested By', width: 150 },
     {
+      field: 'assigned_to_username',
+      headerName: 'Assigned To',
+      width: 150,
+      renderCell: (params) => {
+        const assignedTo = params.value;
+        // Log the exact value the DataGrid render cell receives
+        console.log(`  DataGrid Render Cell for ID: ${params.row.id}, Assigned To value: '${assignedTo}'`);
+        return assignedTo || 'Unassigned';
+      },
+    },
+    {
       field: 'created_at',
       headerName: 'Created At',
       width: 150,
-      // FIX: Add a null/undefined check for 'params' itself before accessing 'params.value'
       valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
-        // Log to inspect the 'params' object when this formatter is called
-        // console.log(`valueFormatter for created_at: params =`, params); // Enable for debugging if issues persist
-
         if (!params || params.value === undefined || params.value === null) {
           return 'N/A';
         }
         return formatDate(params.value);
       },
     },
-    { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
-      // FIX: Add a null/undefined check for 'params' itself before accessing 'params.value'
+    {
+      field: 'updated_at',
+      headerName: 'Last Updated',
+      width: 150,
       valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
-        // Log to inspect the 'params' object when this formatter is called
-        // console.log(`valueFormatter for assigned_to_username: params =`, params); // Enable for debugging if issues persist
-
         if (!params || params.value === undefined || params.value === null) {
-          return 'Unassigned';
+          return 'N/A';
         }
-        return params.value || 'Unassigned';
+        return formatDate(params.value);
       },
     },
   ];
@@ -142,7 +166,8 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<EditIcon />}
             onClick={handleEdit}
-            disabled={selectedRequestIds.length !== 1}
+            // FIX: Check length of IDs within the selectedRowModel
+            disabled={Array.from(selectedRowModel.ids).length !== 1}
           >
             Edit Request
           </Button>
@@ -150,7 +175,8 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrintPreview}
-            disabled={selectedRequestIds.length === 0}
+            // FIX: Check length of IDs within the selectedRowModel
+            disabled={Array.from(selectedRowModel.ids).length === 0}
           >
             Print Preview
           </Button>
@@ -158,7 +184,8 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
-            disabled={selectedRequestIds.length === 0}
+            // FIX: Check length of IDs within the selectedRowModel
+            disabled={Array.from(selectedRowModel.ids).length === 0}
           >
             Print Request
           </Button>
@@ -171,10 +198,14 @@ const ServiceRequestsPage: React.FC = () => {
           columns={columns}
           getRowId={(row) => String(row.id)}
           checkboxSelection
-          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
-            setSelectedRequestIds(Array.from(newSelectionModel.ids));
+          // FIX: Correctly handle GridRowSelectionModel from the callback
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel, _details: GridCallbackDetails) => {
+            // newSelectionModel itself is the GridRowSelectionModel object
+            setSelectedRowModel(newSelectionModel); 
           }}
-          rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
+          // FIX: Pass selectedRowModel directly to rowSelectionModel
+          rowSelectionModel={selectedRowModel} 
           disableRowSelectionOnClick
           loading={loading}
         />

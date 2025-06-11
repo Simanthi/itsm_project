@@ -1,26 +1,26 @@
 // itsm_frontend/src/modules/service-requests/components/ServiceRequestForm.tsx
-import React, { useState, useEffect} from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { TextField, Button, Box, Typography, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   type ServiceRequest,
-  type NewServiceRequestData,
-  type ServiceRequestStatus,
-  type ServiceRequestCategory,
-  type ServiceRequestPriority
+  type NewServiceRequestData
+  // REMOVED: ServiceRequestStatus, ServiceRequestCategory, ServiceRequestPriority imports as they are implicitly used via ServiceRequest or constants
+  // type ServiceRequestStatus,
+  // type ServiceRequestCategory,
+  // type ServiceRequestPriority
 } from '../types/ServiceRequestTypes';
 import { getUserList } from '../../../api/authApi';
-import { createServiceRequest, updateServiceRequest } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
+import { useServiceRequests } from '../hooks/useServiceRequests';
 
 interface User {
   id: number;
   username: string;
 }
 
-// FIX: Updated STATUS_OPTIONS to match backend choices
 const CATEGORY_OPTIONS = ['software', 'hardware', 'network', 'information', 'other'] as const;
-const STATUS_OPTIONS = ['new', 'in_progress', 'resolved', 'closed', 'cancelled'] as const; // Changed 'open' to 'new'
+const STATUS_OPTIONS = ['new', 'in_progress', 'pending_approval', 'resolved', 'closed', 'cancelled'] as const;
 const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const;
 
 interface ServiceRequestFormState {
@@ -38,24 +38,17 @@ interface ServiceRequestFormProps {
   initialData?: ServiceRequest;
 }
 
-interface UpdateServiceRequestPayload {
-  title?: string;
-  description?: string;
-  category?: ServiceRequestCategory;
-  status?: ServiceRequestStatus;
-  priority?: ServiceRequestPriority;
-  assigned_to_id?: number | null;
-}
-
 const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuth();
+  const { addServiceRequest, updateServiceRequest: contextUpdateServiceRequest } = useServiceRequests();
+
   const [formData, setFormData] = useState<ServiceRequestFormState>({
     title: '',
     description: '',
     category: CATEGORY_OPTIONS[0],
-    status: STATUS_OPTIONS[0], // Will now correctly default to 'new'
+    status: STATUS_OPTIONS[0],
     priority: PRIORITY_OPTIONS[1],
     requested_by_id: user?.id || 0,
     assigned_to_id: null,
@@ -66,107 +59,95 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
-  // Effect 1: Fetch users
-  useEffect(() => {
-    let isMounted = true;
-    const fetchUsersData = async () => {
-      console.log("Effect 1: Starting user fetch. Token present:", !!token);
-      setLoadingUsers(true);
-      if (!token) {
-        if (isMounted) {
-          setError("Authentication token not found. Please log in.");
-          setLoadingUsers(false);
-        }
-        console.log("Effect 1: No token, skipping user fetch.");
-        return;
-      }
-      try {
-        const usersData = await getUserList(token);
-        if (isMounted) {
-          setUsers(usersData);
-          setError(null);
-        }
-        console.log("Effect 1: Users fetched successfully. Users:", usersData);
-      } catch (err) {
-        console.error("Effect 1: Error fetching users:", err);
-        if (isMounted) {
-          setError("Failed to load users. " + (err instanceof Error ? err.message : String(err)));
-          setUsers([]);
-        }
-      } finally {
-        if (isMounted) {
-          setLoadingUsers(false);
-          console.log("Effect 1: User fetch finished, setLoadingUsers(false).");
-        }
-      }
-    };
-
-    fetchUsersData();
-
-    return () => {
-      isMounted = false;
-    };
+  const fetchUsersData = useCallback(async () => {
+    console.log("ServiceRequestForm - fetchUsersData: Starting user fetch. Token present:", !!token);
+    setLoadingUsers(true);
+    if (!token) {
+      setError("Authentication token not found. Please log in.");
+      setLoadingUsers(false);
+      setUsers([]);
+      console.log("ServiceRequestForm - fetchUsersData: No token, skipping user fetch.");
+      return;
+    }
+    try {
+      const usersData = await getUserList(token);
+      setUsers(usersData);
+      setError(null);
+      console.log("ServiceRequestForm - fetchUsersData: Users fetched successfully. Users:", usersData);
+    } catch (err) {
+      console.error("ServiceRequestForm - fetchUsersData: Error fetching users:", err);
+      setError("Failed to load users. " + (err instanceof Error ? err.message : String(err)));
+      setUsers([]);
+    } finally {
+      setLoadingUsers(false);
+      console.log("ServiceRequestForm - fetchUsersData: User fetch finished, setLoadingUsers(false).");
+    }
   }, [token]);
 
-  // Effect 2: Initialize form data once users are loaded or initialData changes
   useEffect(() => {
+    fetchUsersData();
+  }, [fetchUsersData]);
+
+  useEffect(() => {
+    console.log(
+      `ServiceRequestForm - Effect 2 Triggered: ` +
+      `loadingUsers: ${loadingUsers}, ` +
+      `initialData presence: ${!!initialData}, ` +
+      `user ID: ${user?.id || 'none'}, ` +
+      `users.length: ${users.length}, ` +
+      `token presence: ${!!token}, ` +
+      `current error: ${error}`
+    );
+
     if (loadingUsers) {
-      console.log("Effect 2: Waiting for users to load.");
+      console.log("ServiceRequestForm - Effect 2: Waiting for users to load.");
       return;
     }
 
-    console.log("Effect 2: Starting form data initialization.");
     setLoadingFormData(true);
 
     if (!token && !error) {
       setError("Authentication token missing for form initialization.");
       setLoadingFormData(false);
-      console.log("Effect 2: No token, setting error and loadingFormData to false.");
+      console.log("ServiceRequestForm - Effect 2: No token, setting error and loadingFormData to false.");
       return;
     }
 
     if (initialData) {
-      console.log("Effect 2: Initial data provided, populating form for edit mode.");
+      console.log("ServiceRequestForm - Effect 2: Initial data provided, populating form for edit mode.");
       const resolvedRequestedById = users.find(u => u.username === initialData.requested_by_username)?.id || 0;
       const resolvedAssignedToId = initialData.assigned_to_username ? (users.find(u => u.username === initialData.assigned_to_username)?.id || null) : null;
       
-      console.log("initializeForm: Populating form for edit mode. initialData.assigned_to_username:", initialData.assigned_to_username, "Resolved assigned_to_id:", resolvedAssignedToId);
+      console.log("ServiceRequestForm - Effect 2: Resolved requested_by_id:", resolvedRequestedById, "Resolved assigned_to_id:", resolvedAssignedToId);
       
       setFormData({
         title: initialData.title,
         description: initialData.description,
         category: initialData.category as typeof CATEGORY_OPTIONS[number],
-        // FIX: Ensure status from initialData is one of the valid STATUS_OPTIONS
-        status: (STATUS_OPTIONS.includes(initialData.status as ServiceRequestStatus)
-            ? initialData.status
-            : STATUS_OPTIONS[0]) as typeof STATUS_OPTIONS[number],
+        status: (STATUS_OPTIONS.includes(initialData.status as typeof STATUS_OPTIONS[number])
+          ? initialData.status
+          : STATUS_OPTIONS[0]) as typeof STATUS_OPTIONS[number],
         priority: initialData.priority as typeof PRIORITY_OPTIONS[number],
         requested_by_id: resolvedRequestedById,
         assigned_to_id: resolvedAssignedToId,
         request_id_display: initialData.request_id,
       });
-    } else if (user) {
-      console.log("Effect 2: No initial data, setting form for create mode.");
-      setFormData(prev => ({
-        ...prev,
-        requested_by_id: user.id || 0,
-        status: STATUS_OPTIONS[0], // Correctly defaults to 'new'
-      }));
     } else {
-      console.log("Effect 2: Neither initialData nor user available. Defaulting fields.");
+      console.log("ServiceRequestForm - Effect 2: No initial data, setting form for create mode.");
       setFormData(prev => ({
         ...prev,
-        requested_by_id: 0,
-        status: STATUS_OPTIONS[0], // Correctly defaults to 'new'
+        requested_by_id: user?.id || 0,
+        status: STATUS_OPTIONS[0],
       }));
     }
 
     setLoadingFormData(false);
-    console.log("Effect 2: Form data initialization complete, setLoadingFormData(false).");
+    console.log("ServiceRequestForm - Effect 2: Form data initialization complete, setLoadingFormData(false).");
   }, [initialData, user, users, loadingUsers, token, error]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    console.log(`ServiceRequestForm - handleChange: ${name} changed to ${value}`);
     setFormData(prev => ({
       ...prev,
       [name]: value,
@@ -175,6 +156,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
   const handleUserChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
+    console.log(`ServiceRequestForm - handleUserChange: ${name} changed to ${value} (type: ${typeof value})`);
     setFormData(prev => ({
       ...prev,
       [name]: value === '' ? null : Number(value),
@@ -206,16 +188,26 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           return;
         }
 
-        const updatePayload: UpdateServiceRequestPayload = {
+        const updatePayload: ServiceRequest = {
+          id: Number(id),
+          request_id: formData.request_id_display,
           title: formData.title,
           description: formData.description,
           category: formData.category,
           status: formData.status,
           priority: formData.priority,
-          assigned_to_id: formData.assigned_to_id !== null ? formData.assigned_to_id : null,
+          // Ensure these are correctly derived based on the `users` state
+          requested_by_username: users.find(u => u.id === formData.requested_by_id)?.username || '',
+          assigned_to_username: users.find(u => u.id === formData.assigned_to_id)?.username || null,
+          assigned_to_id: formData.assigned_to_id,
+          resolution_notes: initialData?.resolution_notes || null,
+          created_at: initialData?.created_at || '', // Default to empty string if null
+          updated_at: new Date().toISOString(),
+          resolved_at: initialData?.resolved_at,
         };
-        console.log("ServiceRequestForm: Sending PATCH payload (Request ID:", formData.request_id_display, "):", updatePayload);
-        await updateServiceRequest(formData.request_id_display, updatePayload, token);
+        
+        console.log("ServiceRequestForm: Calling contextUpdateServiceRequest with:", updatePayload);
+        await contextUpdateServiceRequest(updatePayload);
         alert('Service Request updated successfully!');
       } else {
         const createPayload: NewServiceRequestData = {
@@ -224,21 +216,21 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           category: formData.category,
           priority: formData.priority,
           requested_by_id: formData.requested_by_id,
-          assigned_to_id: formData.assigned_to_id !== null ? formData.assigned_to_id : null,
+          assigned_to_id: formData.assigned_to_id,
         };
-        console.log("ServiceRequestForm: Sending POST payload:", createPayload);
-        await createServiceRequest(createPayload, token);
+        console.log("ServiceRequestForm: Calling addServiceRequest with:", createPayload);
+        await addServiceRequest(createPayload);
         alert('Service Request created successfully!');
       }
       navigate('/service-requests');
     } catch (err) {
-      console.error("Submission error:", err);
+      console.error("ServiceRequestForm: Submission error:", err);
       if (err instanceof Error && err.message.includes("API error: 400") && err.message.includes("{")) {
         try {
           const errorDetails = JSON.parse(err.message.split("API error: 400")[1]);
           setError(`Submission failed: ${JSON.stringify(errorDetails)}`);
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_) {
+        } catch (_) { // ESLint fix for unused '_'
           setError(err.message);
         }
       } else {

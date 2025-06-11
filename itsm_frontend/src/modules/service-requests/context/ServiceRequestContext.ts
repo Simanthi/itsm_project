@@ -4,10 +4,13 @@ import { type ServiceRequest, type NewServiceRequestData } from '../types/Servic
 
 interface ServiceRequestContextType {
   serviceRequests: ServiceRequest[];
-  addServiceRequest: (newRequestData: NewServiceRequestData) => Promise<ServiceRequest>; // Add Promise return type
-  updateServiceRequest: (updatedRequest: ServiceRequest) => Promise<ServiceRequest>; // Add Promise return type
-  loading: boolean; // Added loading state
-  error: string | null; // Added error state
+  addServiceRequest: (newRequestData: NewServiceRequestData) => Promise<ServiceRequest>;
+  updateServiceRequest: (updatedRequest: ServiceRequest) => Promise<ServiceRequest>;
+  loading: boolean;
+  error: string | null;
+  fetchServiceRequests: () => Promise<void>;
+  // FIX: Ensure deleteServiceRequest is present and correctly typed here
+  deleteServiceRequest: (requestId: string) => Promise<void>; 
 }
 
 export const ServiceRequestContext = createContext<ServiceRequestContextType | undefined>(undefined);
