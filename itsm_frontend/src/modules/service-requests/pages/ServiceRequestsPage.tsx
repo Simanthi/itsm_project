@@ -9,13 +9,15 @@ import {
   DataGrid,
   type GridColDef,
   type GridRowId,
-  type GridRowSelectionModel, // Re-import GridRowSelectionModel
-  // Removed GridCallbackDetails as it's not needed if _details is removed
+  type GridRowSelectionModel,
 } from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
 // Define a local type for valueFormatter params, as GridValueFormatterParams might not be exported
+// This type strictly defines that 'params' will always be provided by DataGrid,
+// but the runtime error suggests it might be undefined in some scenarios.
+// We'll add defensive checks *inside* the formatter for safety.
 interface CustomGridValueFormatterParams<R, V> {
   value: V;
   id: GridRowId;
@@ -38,7 +40,6 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { serviceRequests, loading, error } = useServiceRequests();
-  // State to store selected row IDs as an array of GridRowId
   const [selectedRequestIds, setSelectedRequestIds] = useState<GridRowId[]>([]);
 
   const handleCreateNew = () => {
@@ -74,10 +75,33 @@ const ServiceRequestsPage: React.FC = () => {
       field: 'created_at',
       headerName: 'Created At',
       width: 150,
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => formatDate(params.value),
+      // FIX: Add defensive checks for 'params' itself before accessing its properties.
+      // This is a very defensive measure for unexpected behavior from DataGrid.
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
+        // Log to see the 'params' object when this formatter is called
+        // console.log(`valueFormatter for created_at: params =`, params);
+
+        // If params is undefined, or its value is undefined/null, return 'N/A'
+        if (!params || params.value === undefined || params.value === null) {
+          // console.warn(`valueFormatter for created_at: params or params.value is undefined/null. params:`, params);
+          return 'N/A';
+        }
+        return formatDate(params.value);
+      },
     },
     { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
-      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined>) => params.value || 'Unassigned',
+      // FIX: Add defensive checks for 'params' itself before accessing its properties.
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
+        // Log to see the 'params' object when this formatter is called
+        // console.log(`valueFormatter for assigned_to_username: params =`, params);
+
+        // If params is undefined, or its value is undefined/null, return 'Unassigned'
+        if (!params || params.value === undefined || params.value === null) {
+          // console.warn(`valueFormatter for assigned_to_username: params or params.value is undefined/null. params:`, params);
+          return 'Unassigned';
+        }
+        return params.value || 'Unassigned';
+      },
     },
   ];
 
@@ -143,14 +167,12 @@ const ServiceRequestsPage: React.FC = () => {
         <DataGrid
           rows={serviceRequests}
           columns={columns}
-          getRowId={(row) => row.id!}
+          getRowId={(row) => String(row.id)} // Ensure ID is string
           checkboxSelection
-          // FIX: Updated onRowSelectionModelChange to match expected type and remove unused '_details'
           onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
             // newSelectionModel is an object with 'ids' (a Set of GridRowId)
             setSelectedRequestIds(Array.from(newSelectionModel.ids));
           }}
-          // FIX: Changed 'type' to 'include' to match GridRowSelectionModel's allowed values
           rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
           disableRowSelectionOnClick
           loading={loading}
