@@ -5,10 +5,15 @@ import { Box, Typography, Paper, Grid, CircularProgress, Button } from '@mui/mat
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequestById } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
-import ReactToPrintCasted from 'react-to-print';
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-const ReactToPrint = ReactToPrintCasted as any;
 import PrintIcon from '@mui/icons-material/Print';
+
+// FIX: Changed to a more robust import for react-to-print.
+// This handles cases where the actual component is the default export
+// or nested under a '.default' property due to module interoperability.
+import * as ReactToPrintModule from 'react-to-print';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const ReactToPrint = (ReactToPrintModule as any).default || ReactToPrintModule;
+
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -30,7 +35,6 @@ function ServiceRequestPrintView() {
   const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // FIX: Expect 'selectedRequestIds' (an array of string request_ids) from navigation state
   const { selectedRequestIds, autoPrint } = (location.state as { selectedRequestIds: string[]; autoPrint?: boolean }) || { selectedRequestIds: [], autoPrint: false };
 
   useEffect(() => {
@@ -50,9 +54,8 @@ function ServiceRequestPrintView() {
 
       try {
         const fetchedRequests: ServiceRequest[] = [];
-        for (const requestId of selectedRequestIds) { // Iterate over request_id strings
+        for (const requestId of selectedRequestIds) {
           try {
-            // FIX: Pass the request_id directly to getServiceRequestById (backend expects this string)
             const request = await getServiceRequestById(requestId, token);
             fetchedRequests.push(request);
           } catch (itemError) {
@@ -74,7 +77,7 @@ function ServiceRequestPrintView() {
     };
 
     fetchRequests();
-  }, [selectedRequestIds, token, isAuthenticated]); // Dependencies: selectedRequestIds, token, isAuthenticated
+  }, [selectedRequestIds, token, isAuthenticated]);
 
   useEffect(() => {
     if (!loading && !error && autoPrint && serviceRequestsToPrint.length > 0) {
@@ -163,7 +166,7 @@ function ServiceRequestPrintView() {
               <Grid item xs={12}>
                 <Typography variant="body1"><strong>Description:</strong></Typography>
                 <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{request.description}</Typography>
-              </Grid>
+                </Grid>
             </Grid>
           </Paper>
         ))}

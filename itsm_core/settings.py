@@ -20,6 +20,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'corsheaders',
     'rest_framework', # Make sure rest_framework is here
+    'rest_framework_simplejwt', 
     'assets',
     'configs',
     'service_requests',
@@ -117,12 +118,12 @@ CORS_ALLOWED_ORIGINS = [
 # FIX: Add REST_FRAMEWORK settings for default pagination
 REST_FRAMEWORK = {
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
-    'PAGE_SIZE': 10, # A sensible default page size
-    'DEFAULT_AUTHENTICATION_CLASSES': ( # You might want to uncomment and configure this for actual auth
-        # 'rest_framework.authentication.TokenAuthentication',
-        # 'rest_framework.authentication.SessionAuthentication',
+    'PAGE_SIZE': 10,
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication', # Use JWT Authentication
+        'rest_framework.authentication.SessionAuthentication', # Optional, for browsable API
     ),
-    'DEFAULT_PERMISSION_CLASSES': ( # You might want to uncomment and configure this for actual permissions
-        # 'rest_framework.permissions.IsAuthenticated',
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated', # Now this permission will work
     )
 }

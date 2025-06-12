@@ -1,6 +1,10 @@
 # itsm_project/itsm_core/urls.py
 from django.contrib import admin
 from django.urls import path, include
+from rest_framework_simplejwt.views import (
+    TokenObtainPairView,
+    TokenRefreshView,
+)
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -16,7 +20,8 @@ urlpatterns = [
     path('api/service-requests/', include('service_requests.urls')),
     # Include urls from the security_access app (for User API, etc.)
     path('api/security-access/', include('security_access.urls')), 
-    
+    path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
+    path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     # You will add paths for other modules here as we develop them:
     # path('api/incidents/', include('incidents.urls')),
     # path('api/changes/', include('changes.urls')),

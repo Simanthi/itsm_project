@@ -2,7 +2,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TextField, Button, Box, Typography, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-// ServiceRequest type is used here for the initialData prop implicitly via ServiceRequestFormState initialization in useEffect
+// ServiceRequest type is used indirectly through other imported types that are part of ServiceRequestTypes
 import { type NewServiceRequestData, type ServiceRequestCategory, type ServiceRequestPriority, type ServiceRequestStatus } from '../types/ServiceRequestTypes';
 import { getUserList } from '../../../api/authApi';
 import { createServiceRequest, getServiceRequestById, updateServiceRequest } from '../../../api/serviceRequestApi';
