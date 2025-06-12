@@ -1,4 +1,5 @@
 // itsm_frontend/src/modules/service-requests/pages/ServiceRequestsPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   Box, CircularProgress, Alert, Button, Typography
@@ -9,8 +10,8 @@ import {
   DataGrid,
   type GridColDef,
   type GridRowId,
-  type GridRowSelectionModel, // Keep this import for the prop type
-  type GridCallbackDetails,
+  type GridRowSelectionModel,
+  type GridPaginationModel,
 } from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
@@ -37,57 +38,73 @@ const formatDate = (dateString: string | null | undefined): string => {
 
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
-  const { serviceRequests, loading, error } = useServiceRequests();
-  // FIX: Manage selectedRequestIds as a GridRowSelectionModel object
-  // Initialize with an empty Set for ids and type 'include'
+  const { serviceRequests, loading, error, totalCount, paginationModel, setPaginationModel } = useServiceRequests();
   const [selectedRowModel, setSelectedRowModel] = useState<GridRowSelectionModel>({
     type: 'include',
     ids: new Set<GridRowId>(),
   });
 
-  // Effect to inspect serviceRequests when it changes
   useEffect(() => {
     console.log("ServiceRequestsPage: Component rendered.");
     console.log("ServiceRequestsPage: serviceRequests received from context (length):", serviceRequests.length);
     serviceRequests.forEach(req => console.log(`  ServiceRequestsPage Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
   }, [serviceRequests]);
 
-
   const handleCreateNew = () => {
     navigate('/service-requests/new');
   };
 
   const handleEdit = () => {
-    // FIX: Access selected IDs from the selectedRowModel state
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length === 1) {
-      navigate(`/service-requests/edit/${currentSelectedIds[0]}`);
+      // FIX: Find the selected service request object and use its 'request_id' for navigation
+      const selectedRequest = serviceRequests.find(req => String(req.id) === String(currentSelectedIds[0]));
+      if (selectedRequest) {
+        navigate(`/service-requests/edit/${selectedRequest.request_id}`);
+      } else {
+        alert('Selected request not found.');
+      }
     } else {
       alert('Please select exactly one request to edit.');
     }
   };
 
   const handlePrintPreview = () => {
-    // FIX: Access selected IDs from the selectedRowModel state
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length > 0) {
-      navigate('/service-requests/print-preview', { state: { selectedIds: currentSelectedIds, autoPrint: false } });
+      // FIX: Map numeric IDs to request_ids for print preview
+      const selectedRequestIds = serviceRequests
+        .filter(req => currentSelectedIds.includes(String(req.id)))
+        .map(req => req.request_id);
+
+      if (selectedRequestIds.length > 0) {
+        navigate('/service-requests/print-preview', { state: { selectedRequestIds: selectedRequestIds, autoPrint: false } });
+      } else {
+        alert('No valid requests selected for preview.');
+      }
     } else {
       alert('Please select at least one request to preview.');
     }
   };
 
   const handlePrint = () => {
-    // FIX: Access selected IDs from the selectedRowModel state
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length > 0) {
-      navigate('/service-requests/print-preview', { state: { selectedIds: currentSelectedIds, autoPrint: true } });
+      // FIX: Map numeric IDs to request_ids for printing
+      const selectedRequestIds = serviceRequests
+        .filter(req => currentSelectedIds.includes(String(req.id)))
+        .map(req => req.request_id);
+
+      if (selectedRequestIds.length > 0) {
+        navigate('/service-requests/print-preview', { state: { selectedRequestIds: selectedRequestIds, autoPrint: true } });
+      } else {
+        alert('No valid requests selected for print.');
+      }
     } else {
       alert('Please select at least one request to print.');
     }
   };
 
-  // Define columns for DataGrid
   const columns: GridColDef<ServiceRequest>[] = [
     { field: 'request_id', headerName: 'Request ID', width: 150 },
     { field: 'title', headerName: 'Title', width: 250 },
@@ -102,7 +119,6 @@ const ServiceRequestsPage: React.FC = () => {
       width: 150,
       renderCell: (params) => {
         const assignedTo = params.value;
-        // Log the exact value the DataGrid render cell receives
         console.log(`  DataGrid Render Cell for ID: ${params.row.id}, Assigned To value: '${assignedTo}'`);
         return assignedTo || 'Unassigned';
       },
@@ -166,7 +182,6 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<EditIcon />}
             onClick={handleEdit}
-            // FIX: Check length of IDs within the selectedRowModel
             disabled={Array.from(selectedRowModel.ids).length !== 1}
           >
             Edit Request
@@ -175,7 +190,6 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrintPreview}
-            // FIX: Check length of IDs within the selectedRowModel
             disabled={Array.from(selectedRowModel.ids).length === 0}
           >
             Print Preview
@@ -184,7 +198,6 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
-            // FIX: Check length of IDs within the selectedRowModel
             disabled={Array.from(selectedRowModel.ids).length === 0}
           >
             Print Request
@@ -198,16 +211,19 @@ const ServiceRequestsPage: React.FC = () => {
           columns={columns}
           getRowId={(row) => String(row.id)}
           checkboxSelection
-          // FIX: Correctly handle GridRowSelectionModel from the callback
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel, _details: GridCallbackDetails) => {
-            // newSelectionModel itself is the GridRowSelectionModel object
-            setSelectedRowModel(newSelectionModel); 
+          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
+            setSelectedRowModel(newSelectionModel);
           }}
-          // FIX: Pass selectedRowModel directly to rowSelectionModel
-          rowSelectionModel={selectedRowModel} 
+          rowSelectionModel={selectedRowModel}
           disableRowSelectionOnClick
           loading={loading}
+          paginationMode="server"
+          rowCount={totalCount}
+          paginationModel={paginationModel}
+          onPaginationModelChange={(model: GridPaginationModel) => {
+            setPaginationModel(model);
+          }}
+          pageSizeOptions={[5, 10, 25, 50, 100]}
         />
       </Box>
     </Box>
