@@ -1,20 +1,14 @@
 // itsm_frontend/src/modules/service-requests/components/ServiceRequestPrintView.tsx
-// FIX: Removed useRef import as componentRef is no longer needed
-// React is implicitly used by JSX and React.FC, so this import is necessary despite ESLint's potential warning.
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Box, Typography, Paper, Grid, CircularProgress, Button } from '@mui/material';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequestById } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
-// FIX: Casting ReactToPrint to 'any' is a workaround for persistent JSX type errors.
-// This is a pragmatic solution when library type definitions are problematic and prevent compilation.
 import ReactToPrintCasted from 'react-to-print';
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const ReactToPrint = ReactToPrintCasted as any;
-
-// FIX: PrintIcon is now used in the Button's startIcon prop.
 import PrintIcon from '@mui/icons-material/Print';
-
 
 // Helper function to format date strings
 const formatDate = (dateString: string | null | undefined): string => {
@@ -31,42 +25,41 @@ const formatDate = (dateString: string | null | undefined): string => {
 function ServiceRequestPrintView() {
   const location = useLocation();
   const navigate = useNavigate();
-  // FIX: Removed 'user' from destructuring as it was unused (only token and isAuthenticated were directly referenced)
   const { token, isAuthenticated } = useAuth();
   const [loading, setLoading] = useState(true);
   const [serviceRequestsToPrint, setServiceRequestsToPrint] = useState<ServiceRequest[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const { selectedIds, autoPrint } = (location.state as { selectedIds: (string | number)[]; autoPrint?: boolean }) || { selectedIds: [], autoPrint: false };
-
+  // FIX: Expect 'selectedRequestIds' (an array of string request_ids) from navigation state
+  const { selectedRequestIds, autoPrint } = (location.state as { selectedRequestIds: string[]; autoPrint?: boolean }) || { selectedRequestIds: [], autoPrint: false };
 
   useEffect(() => {
-    if (!isAuthenticated || !token) {
-      setError("Authentication required to view print preview.");
-      setLoading(false);
-      return;
-    }
-    if (!selectedIds || selectedIds.length === 0) {
-      setError("No service requests selected for printing.");
-      setLoading(false);
-      return;
-    }
-
     const fetchRequests = async () => {
       setLoading(true);
       setError(null);
+      if (!isAuthenticated || !token) {
+        setError("Authentication required to view print preview.");
+        setLoading(false);
+        return;
+      }
+      if (!selectedRequestIds || selectedRequestIds.length === 0) {
+        setError("No service requests selected for printing.");
+        setLoading(false);
+        return;
+      }
+
       try {
         const fetchedRequests: ServiceRequest[] = [];
-        for (const id of selectedIds) {
+        for (const requestId of selectedRequestIds) { // Iterate over request_id strings
           try {
-            const request = await getServiceRequestById(String(id), token);
+            // FIX: Pass the request_id directly to getServiceRequestById (backend expects this string)
+            const request = await getServiceRequestById(requestId, token);
             fetchedRequests.push(request);
           } catch (itemError) {
-            console.error(`Error fetching service request ${id}:`, itemError);
-            setError(`Error fetching service request ${id}: ${itemError instanceof Error ? itemError.message : String(itemError)}`);
+            console.error(`Error fetching service request ${requestId}:`, itemError);
+            setError(`Error fetching service request ${requestId}: ${itemError instanceof Error ? itemError.message : String(itemError)}`);
           }
         }
-
         if (fetchedRequests.length > 0) {
           setServiceRequestsToPrint(fetchedRequests);
         } else {
@@ -81,7 +74,7 @@ function ServiceRequestPrintView() {
     };
 
     fetchRequests();
-  }, [selectedIds, token, isAuthenticated]);
+  }, [selectedRequestIds, token, isAuthenticated]); // Dependencies: selectedRequestIds, token, isAuthenticated
 
   useEffect(() => {
     if (!loading && !error && autoPrint && serviceRequestsToPrint.length > 0) {

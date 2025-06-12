@@ -1,14 +1,8 @@
 // itsm_frontend/src/modules/service-requests/context/ServiceRequestProvider.tsx
-
 import { useState, useEffect, useCallback, type ReactNode } from "react";
 import { type ServiceRequest, type NewServiceRequestData, type ServiceRequestStatus } from "../types/ServiceRequestTypes";
 import { ServiceRequestContext } from "./ServiceRequestContext";
-import {
-  getServiceRequests,
-  createServiceRequest as apiCreateServiceRequest,
-  updateServiceRequest as apiUpdateServiceRequest,
-  deleteServiceRequest as apiDeleteServiceRequest, // Import delete API
-} from '../../../api/serviceRequestApi';
+import { getServiceRequests, createServiceRequest as apiCreateServiceRequest, updateServiceRequest as apiUpdateServiceRequest, deleteServiceRequest as apiDeleteServiceRequest } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
 import { type GridPaginationModel } from '@mui/x-data-grid'; // Import GridPaginationModel
 
@@ -19,8 +13,9 @@ interface ServiceRequestProviderProps {
 export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps) => {
   const { token, isAuthenticated } = useAuth();
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
-  const [totalCount, setTotalCount] = useState<number>(0); // FIX: New state for total count
-  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({ // FIX: New state for pagination model
+  // Add totalCount and paginationModel states
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [paginationModel, setPaginationModel] = useState<GridPaginationModel>({
     page: 0, // DataGrid uses 0-indexed page
     pageSize: 10,
   });
@@ -28,7 +23,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
   const [error, setError] = useState<string | null>(null);
 
   const fetchServiceRequests = useCallback(async () => {
-    console.log("ServiceRequestProvider: fetchServiceRequests called.");
+    console.log("ServiceRequestProvider: fetchServiceRequests called with pagination:", paginationModel);
     if (!isAuthenticated || !token) {
       setLoading(false);
       setError("Authentication required to fetch service requests.");
@@ -39,13 +34,15 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
     setLoading(true);
     setError(null);
     try {
-      // FIX: Call API with current pagination model (+1 for 1-indexed backend page)
+      // Call API with current pagination model (+1 for 1-indexed backend)
+      // Correctly destructure results and count from the getServiceRequests response
       const { results, count } = await getServiceRequests(token, paginationModel.page + 1, paginationModel.pageSize);
-      console.log("ServiceRequestProvider: Fetched data from API:", results);
+      console.log("ServiceRequestProvider: Fetched data from API. Results count:", results.length, "Total Count:", count);
       setServiceRequests(results);
-      setTotalCount(count); // FIX: Set total count from API response
-      console.log("ServiceRequestProvider: State updated with fetched data. Current serviceRequests length:", results.length);
-      results.forEach(req => console.log(`  Fetched Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
+      setTotalCount(count); // Set total count from API response
+      console.log("ServiceRequestProvider: State updated with fetched data.");
+      // Explicitly type 'req' in forEach loop
+      results.forEach((req: ServiceRequest) => console.log(`  Fetched Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
     } catch (err) {
       console.error("ServiceRequestProvider: Error fetching service requests:", err);
       setError(err instanceof Error ? err.message : String(err));
@@ -53,7 +50,9 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
       setLoading(false);
       console.log("ServiceRequestProvider: fetchServiceRequests finished.");
     }
-  }, [isAuthenticated, token, paginationModel.page, paginationModel.pageSize]); // FIX: Add paginationModel to dependencies
+  // FIX: Changed dependency array to include paginationModel directly, as ESLint suggests.
+  // This satisfies the exhaustive-deps rule, as the entire object is used in the callback.
+  }, [isAuthenticated, token, paginationModel]);
 
   useEffect(() => {
     fetchServiceRequests();
@@ -70,7 +69,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
     try {
       const createdRequest = await apiCreateServiceRequest(newRequestData, token);
       console.log("ServiceRequestProvider: API returned created request:", createdRequest);
-      // FIX: After adding, re-fetch the current page to reflect changes
+      // After adding, re-fetch the current page to reflect changes, or update state intelligently if on first page
       await fetchServiceRequests();
       return createdRequest;
     } catch (err) {
@@ -79,7 +78,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  }, [token, fetchServiceRequests]); // FIX: Add fetchServiceRequests to dependencies
+  }, [token, fetchServiceRequests]);
 
   const updateServiceRequest = useCallback(async (updatedRequest: ServiceRequest): Promise<ServiceRequest> => {
     console.log("ServiceRequestProvider: updateServiceRequest called with data:", updatedRequest);
@@ -102,12 +101,14 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
         category: updatedRequest.category,
         status: updatedRequest.status,
         priority: updatedRequest.priority,
+        requested_by_id: updatedRequest.requested_by_id,
         assigned_to_id: updatedRequest.assigned_to_id,
       };
       console.log("ServiceRequestProvider: Sending PATCH payload to API:", payloadToSend);
+      // Pass request_id for the update API call
       const updatedResponse = await apiUpdateServiceRequest(updatedRequest.request_id, payloadToSend, token);
       console.log("ServiceRequestProvider: API returned updated request (from backend):", updatedResponse);
-      // FIX: After updating, re-fetch the current page to reflect changes
+      // After updating, re-fetch the current page
       await fetchServiceRequests();
       return updatedResponse;
     } catch (err) {
@@ -116,7 +117,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  }, [token, fetchServiceRequests]); // FIX: Add fetchServiceRequests to dependencies
+  }, [token, fetchServiceRequests]);
 
   const deleteServiceRequest = useCallback(async (requestId: string): Promise<void> => {
     console.log("ServiceRequestProvider: deleteServiceRequest called for ID:", requestId);
@@ -129,7 +130,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
     try {
       await apiDeleteServiceRequest(requestId, token);
       console.log("ServiceRequestProvider: API returned success for deletion of ID:", requestId);
-      // FIX: After deleting, re-fetch the current page to reflect changes
+      // After deleting, re-fetch the current page
       await fetchServiceRequests();
     } catch (err) {
       console.error("ServiceRequestProvider: Error deleting service request:", err);
@@ -137,7 +138,7 @@ export const ServiceRequestProvider = ({ children }: ServiceRequestProviderProps
       setError(errorMessage);
       throw new Error(errorMessage);
     }
-  }, [token, fetchServiceRequests]); // FIX: Add fetchServiceRequests to dependencies
+  }, [token, fetchServiceRequests]);
 
   return (
     <ServiceRequestContext.Provider

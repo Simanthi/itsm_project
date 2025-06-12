@@ -4,6 +4,8 @@ from rest_framework import viewsets
 from .models import ServiceRequest
 from .serializers import ServiceRequestSerializer
 from rest_framework.pagination import PageNumberPagination # Import PageNumberPagination
+from rest_framework.permissions import IsAuthenticated
+
 
 # FIX: Define a custom pagination class for more control
 class StandardResultsSetPagination(PageNumberPagination):
@@ -17,6 +19,8 @@ class ServiceRequestViewSet(viewsets.ModelViewSet):
     queryset = ServiceRequest.objects.select_related('requested_by', 'assigned_to').all().order_by('-created_at')
     serializer_class = ServiceRequestSerializer
     lookup_field = 'request_id' # Tell DRF to use 'request_id' for detail lookups
+    permission_classes = [IsAuthenticated] # Ensure permissions are set
+
 
     # FIX: Apply the pagination class
     pagination_class = StandardResultsSetPagination

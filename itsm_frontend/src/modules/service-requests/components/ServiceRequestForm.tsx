@@ -2,152 +2,149 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { TextField, Button, Box, Typography, MenuItem, CircularProgress, Alert } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import {
-  type ServiceRequest,
-  type NewServiceRequestData
-  // REMOVED: ServiceRequestStatus, ServiceRequestCategory, ServiceRequestPriority imports as they are implicitly used via ServiceRequest or constants
-  // type ServiceRequestStatus,
-  // type ServiceRequestCategory,
-  // type ServiceRequestPriority
-} from '../types/ServiceRequestTypes';
+// ServiceRequest type is used here for the initialData prop
+import { type ServiceRequest, type NewServiceRequestData, type ServiceRequestCategory, type ServiceRequestPriority, type ServiceRequestStatus } from '../types/ServiceRequestTypes';
 import { getUserList } from '../../../api/authApi';
-import { useAuth } from '../../../context/auth/useAuth';
-import { useServiceRequests } from '../hooks/useServiceRequests';
+import { createServiceRequest, getServiceRequestById, updateServiceRequest } from '../../../api/serviceRequestApi';
+import { useAuth } from '../../../../src/context/auth/useAuth';
 
 interface User {
   id: number;
   username: string;
 }
 
-const CATEGORY_OPTIONS = ['software', 'hardware', 'network', 'information', 'other'] as const;
+// FIX: Aligned CATEGORY_OPTIONS with ServiceRequestCategory from ServiceRequestTypes.ts
+const CATEGORY_OPTIONS = ['software', 'hardware', 'account', 'network', 'printer', 'system', 'information', 'other'] as const;
+// FIX: Aligned STATUS_OPTIONS with ServiceRequestStatus from ServiceRequestTypes.ts
 const STATUS_OPTIONS = ['new', 'in_progress', 'pending_approval', 'resolved', 'closed', 'cancelled'] as const;
 const PRIORITY_OPTIONS = ['low', 'medium', 'high'] as const;
 
+// Define a unified form state interface
 interface ServiceRequestFormState {
   title: string;
   description: string;
-  category: typeof CATEGORY_OPTIONS[number];
-  status: typeof STATUS_OPTIONS[number];
-  priority: typeof PRIORITY_OPTIONS[number];
-  requested_by_id: number;
-  assigned_to_id: number | null;
-  request_id_display?: string;
+  category: ServiceRequestCategory;
+  status: ServiceRequestStatus;
+  priority: ServiceRequestPriority;
+  requested_by_id: number; // For internal form state, represents the user making the request
+  assigned_to_id: number | null; // For internal form state
+  request_id_display?: string; // For displaying existing request ID
 }
 
+// FIX: Define props interface for ServiceRequestForm to explicitly accept initialData
 interface ServiceRequestFormProps {
-  initialData?: ServiceRequest;
+  initialData?: ServiceRequest; // Optional prop for editing existing requests
 }
 
+// FIX: Pass ServiceRequestFormProps to React.FC
 const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) => {
-  const { id } = useParams<{ id?: string }>();
+  const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., 'SR-AA-0013')
   const navigate = useNavigate();
-  const { token, user } = useAuth();
-  const { addServiceRequest, updateServiceRequest: contextUpdateServiceRequest } = useServiceRequests();
-
-  const [formData, setFormData] = useState<ServiceRequestFormState>({
-    title: '',
-    description: '',
-    category: CATEGORY_OPTIONS[0],
-    status: STATUS_OPTIONS[0],
-    priority: PRIORITY_OPTIONS[1],
-    requested_by_id: user?.id || 0,
-    assigned_to_id: null,
+  const { token, user } = useAuth(); // Also get 'user' to set default requested_by_id for new requests
+  const [formData, setFormData] = useState<ServiceRequestFormState>(() => {
+    // Initialize form data based on initialData prop or defaults for new requests
+    if (initialData) {
+      return {
+        title: initialData.title,
+        description: initialData.description,
+        category: initialData.category,
+        status: initialData.status,
+        priority: initialData.priority,
+        requested_by_id: initialData.requested_by_id || user?.id || 0, // Use initialData's ID or current user's ID
+        assigned_to_id: initialData.assigned_to_id || null,
+        request_id_display: initialData.request_id,
+      };
+    } else {
+      return {
+        title: '',
+        description: '',
+        category: CATEGORY_OPTIONS[0],
+        status: STATUS_OPTIONS[0],
+        priority: PRIORITY_OPTIONS[1],
+        requested_by_id: user?.id || 0, // Default for new requests: logged-in user's ID
+        assigned_to_id: null,
+      };
+    }
   });
-  const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
-  const [loadingFormData, setLoadingFormData] = useState<boolean>(true);
+
+  const [loading, setLoading] = useState<boolean>(true);
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
 
-  const fetchUsersData = useCallback(async () => {
-    console.log("ServiceRequestForm - fetchUsersData: Starting user fetch. Token present:", !!token);
-    setLoadingUsers(true);
-    if (!token) {
-      setError("Authentication token not found. Please log in.");
-      setLoadingUsers(false);
-      setUsers([]);
-      console.log("ServiceRequestForm - fetchUsersData: No token, skipping user fetch.");
-      return;
+  // FIX: Added parseError function
+  const parseError = useCallback((err: unknown): string => {
+    if (err instanceof Error) {
+      // Check for specific API error structure from authFetch
+      if (err.message.includes("API error: ") && err.message.includes("{")) {
+        try {
+          const errorPart = err.message.substring(err.message.indexOf("{"));
+          const errorDetails = JSON.parse(errorPart);
+          // Return first key's error or generic JSON string
+          const firstKey = Object.keys(errorDetails)[0];
+          if (firstKey && Array.isArray(errorDetails[firstKey]) && typeof errorDetails[firstKey][0] === 'string') {
+            return `${firstKey.replace(/_/g, ' ')}: ${errorDetails[firstKey][0]}`;
+          }
+          return `Details: ${JSON.stringify(errorDetails)}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          // Fallback if parsing fails
+          return err.message;
+        }
+      }
+      return err.message;
     }
+    return String(err); // Convert non-Error objects/values to string
+  }, []);
+
+
+  const fetchUsers = useCallback(async () => {
+    if (!token) return;
     try {
       const usersData = await getUserList(token);
       setUsers(usersData);
-      setError(null);
-      console.log("ServiceRequestForm - fetchUsersData: Users fetched successfully. Users:", usersData);
     } catch (err) {
-      console.error("ServiceRequestForm - fetchUsersData: Error fetching users:", err);
-      setError("Failed to load users. " + (err instanceof Error ? err.message : String(err)));
-      setUsers([]);
-    } finally {
-      setLoadingUsers(false);
-      console.log("ServiceRequestForm - fetchUsersData: User fetch finished, setLoadingUsers(false).");
+      console.error("Error fetching users:", err);
+      setError(parseError(err)); // FIX: Use parseError here
     }
-  }, [token]);
+  }, [token, parseError]); // FIX: Add parseError to dependencies
+
+  const fetchServiceRequest = useCallback(async () => {
+    if (id && token) {
+      try {
+        const request = await getServiceRequestById(id, token);
+        setFormData({
+          title: request.title,
+          description: request.description,
+          category: request.category,
+          status: request.status,
+          priority: request.priority,
+          requested_by_id: request.requested_by_id,
+          assigned_to_id: request.assigned_to_id || null,
+          request_id_display: request.request_id,
+        });
+      } catch (err) {
+        console.error("Error fetching service request:", err);
+        setError(parseError(err)); // FIX: Use parseError here
+      }
+    }
+  }, [id, token, parseError]); // FIX: Add parseError to dependencies
+
 
   useEffect(() => {
-    fetchUsersData();
-  }, [fetchUsersData]);
-
-  useEffect(() => {
-    console.log(
-      `ServiceRequestForm - Effect 2 Triggered: ` +
-      `loadingUsers: ${loadingUsers}, ` +
-      `initialData presence: ${!!initialData}, ` +
-      `user ID: ${user?.id || 'none'}, ` +
-      `users.length: ${users.length}, ` +
-      `token presence: ${!!token}, ` +
-      `current error: ${error}`
-    );
-
-    if (loadingUsers) {
-      console.log("ServiceRequestForm - Effect 2: Waiting for users to load.");
+    if (!token) {
+      setError("Authentication token not found. Please log in.");
+      setLoading(false);
       return;
     }
 
-    setLoadingFormData(true);
-
-    if (!token && !error) {
-      setError("Authentication token missing for form initialization.");
-      setLoadingFormData(false);
-      console.log("ServiceRequestForm - Effect 2: No token, setting error and loadingFormData to false.");
-      return;
-    }
-
-    if (initialData) {
-      console.log("ServiceRequestForm - Effect 2: Initial data provided, populating form for edit mode.");
-      const resolvedRequestedById = users.find(u => u.username === initialData.requested_by_username)?.id || 0;
-      const resolvedAssignedToId = initialData.assigned_to_username ? (users.find(u => u.username === initialData.assigned_to_username)?.id || null) : null;
-      
-      console.log("ServiceRequestForm - Effect 2: Resolved requested_by_id:", resolvedRequestedById, "Resolved assigned_to_id:", resolvedAssignedToId);
-      
-      setFormData({
-        title: initialData.title,
-        description: initialData.description,
-        category: initialData.category as typeof CATEGORY_OPTIONS[number],
-        status: (STATUS_OPTIONS.includes(initialData.status as typeof STATUS_OPTIONS[number])
-          ? initialData.status
-          : STATUS_OPTIONS[0]) as typeof STATUS_OPTIONS[number],
-        priority: initialData.priority as typeof PRIORITY_OPTIONS[number],
-        requested_by_id: resolvedRequestedById,
-        assigned_to_id: resolvedAssignedToId,
-        request_id_display: initialData.request_id,
-      });
-    } else {
-      console.log("ServiceRequestForm - Effect 2: No initial data, setting form for create mode.");
-      setFormData(prev => ({
-        ...prev,
-        requested_by_id: user?.id || 0,
-        status: STATUS_OPTIONS[0],
-      }));
-    }
-
-    setLoadingFormData(false);
-    console.log("ServiceRequestForm - Effect 2: Form data initialization complete, setLoadingFormData(false).");
-  }, [initialData, user, users, loadingUsers, token, error]);
+    Promise.all([fetchUsers(), fetchServiceRequest()]).finally(() => {
+      setLoading(false);
+    });
+  }, [token, fetchUsers, fetchServiceRequest]); // Dependencies now include fetchUsers and fetchServiceRequest
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    console.log(`ServiceRequestForm - handleChange: ${name} changed to ${value}`);
     setFormData(prev => ({
       ...prev,
       [name]: value,
@@ -156,7 +153,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
   const handleUserChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    console.log(`ServiceRequestForm - handleUserChange: ${name} changed to ${value} (type: ${typeof value})`);
     setFormData(prev => ({
       ...prev,
       [name]: value === '' ? null : Number(value),
@@ -168,74 +164,52 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
     setSubmitting(true);
     setError(null);
 
-    if (!id && (formData.requested_by_id === 0 || !formData.requested_by_id)) {
-      setError("Please select a valid 'Requested By' user.");
-      setSubmitting(false);
-      return;
-    }
-
     if (!token) {
       setError("Authentication token not found. Please log in.");
       setSubmitting(false);
       return;
     }
 
+    // Validation for new requests: ensure requested_by_id is set
+    if (!id && (formData.requested_by_id === 0 || !formData.requested_by_id)) {
+      setError("Please select a valid 'Requested By' user.");
+      setSubmitting(false);
+      return;
+    }
+
     try {
       if (id) {
-        if (!formData.request_id_display) {
-          setError("Cannot update: Service Request ID (string format) not found.");
-          setSubmitting(false);
-          return;
-        }
-
-        const updatePayload: ServiceRequest = {
-          id: Number(id),
-          request_id: formData.request_id_display,
+        // Update existing service request
+        const updatePayload: Partial<NewServiceRequestData> & { status?: ServiceRequestStatus } = {
           title: formData.title,
           description: formData.description,
           category: formData.category,
           status: formData.status,
           priority: formData.priority,
-          // Ensure these are correctly derived based on the `users` state
-          requested_by_username: users.find(u => u.id === formData.requested_by_id)?.username || '',
-          assigned_to_username: users.find(u => u.id === formData.assigned_to_id)?.username || null,
-          assigned_to_id: formData.assigned_to_id,
-          resolution_notes: initialData?.resolution_notes || null,
-          created_at: initialData?.created_at || '', // Default to empty string if null
-          updated_at: new Date().toISOString(),
-          resolved_at: initialData?.resolved_at,
-        };
-        
-        console.log("ServiceRequestForm: Calling contextUpdateServiceRequest with:", updatePayload);
-        await contextUpdateServiceRequest(updatePayload);
-        alert('Service Request updated successfully!');
-      } else {
-        const createPayload: NewServiceRequestData = {
-          title: formData.title,
-          description: formData.description,
-          category: formData.category,
-          priority: formData.priority,
           requested_by_id: formData.requested_by_id,
           assigned_to_id: formData.assigned_to_id,
         };
-        console.log("ServiceRequestForm: Calling addServiceRequest with:", createPayload);
-        await addServiceRequest(createPayload);
+
+        // Pass `id` (the request_id string) and `updatePayload` to the update API.
+        await updateServiceRequest(id, updatePayload, token);
+        alert('Service Request updated successfully!');
+      } else {
+        // Create new service request
+        const createPayload: NewServiceRequestData = {
+            title: formData.title,
+            description: formData.description,
+            category: formData.category,
+            priority: formData.priority,
+            requested_by_id: formData.requested_by_id,
+            assigned_to_id: formData.assigned_to_id,
+        };
+        await createServiceRequest(createPayload, token);
         alert('Service Request created successfully!');
       }
-      navigate('/service-requests');
-    } catch (err) {
-      console.error("ServiceRequestForm: Submission error:", err);
-      if (err instanceof Error && err.message.includes("API error: 400") && err.message.includes("{")) {
-        try {
-          const errorDetails = JSON.parse(err.message.split("API error: 400")[1]);
-          setError(`Submission failed: ${JSON.stringify(errorDetails)}`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_) { // ESLint fix for unused '_'
-          setError(err.message);
-        }
-      } else {
-        setError(err instanceof Error ? err.message : "An unknown error occurred during submission.");
-      }
+      navigate('/service-requests'); // Redirect to list page on success
+    } catch (err: unknown) {
+      console.error("Submission error:", err);
+      setError(parseError(err)); // FIX: Use parseError here
     } finally {
       setSubmitting(false);
     }
@@ -243,7 +217,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
   const isSubmitDisabled = submitting || (id === undefined && (formData.requested_by_id === 0 || !formData.requested_by_id));
 
-  if (loadingUsers || loadingFormData) {
+  if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
         <CircularProgress />
@@ -314,7 +288,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           fullWidth
           margin="normal"
           required
-          disabled={!id}
+          disabled={!id} // Disable status change for new requests
         >
           {STATUS_OPTIONS.map((status) => (
             <MenuItem key={status} value={status}>
@@ -347,7 +321,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           fullWidth
           margin="normal"
           required
-          disabled={!!id}
+          disabled={!!id} // Disable changing requested_by for existing requests
         >
           {users.map((user) => (
             <MenuItem key={user.id} value={user.id}>
