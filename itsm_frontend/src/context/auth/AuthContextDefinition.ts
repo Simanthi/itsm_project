@@ -6,11 +6,13 @@ export interface AuthUser {
   id: number;
   name: string;
   role: string;
+  // FIX: Added token property to AuthUser
+  token: string;
 }
 
 // Define the shape of the AuthContext value
 export interface AuthContextType {
-  token: string | null;
+  token: string | null; // This is the overall token, which will be the same as user.token
   user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
@@ -19,5 +21,4 @@ export interface AuthContextType {
 }
 
 // Create the AuthContext.
-// This is intentionally separated from AuthContext.tsx to satisfy the ESLint rule.
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
