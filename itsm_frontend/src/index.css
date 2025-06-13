@@ -1,167 +1,181 @@
-/* src/index.css */
-
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
-
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87); /* Existing color rgba(255, 255, 255, 0.87) */
-  background-color: rgba(36, 36, 36, 1); /* #242424 */
-
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-
-}
-
-a {
-  font-weight: 500;
-  color: rgba(100, 108, 255, 1); /* #646cff */
-  text-decoration: inherit;
-}
-a:hover {
-  color: rgba(83, 91, 242, 1); /* #535bf2 */
-}
-
-/* --- CRITICAL GLOBAL STYLES FOR LAYOUT --- */
-/* These ensure html, body, and #root take up the full viewport and don't scroll themselves */
-html,
-body,
-#root {
+/* General styles */
+html, body, #root {
+  height: 100%;
   margin: 0;
   padding: 0;
-  width: 100%;
-  height: 100%;
-  overflow: hidden; /* This prevents the entire page from scrolling */
+  font-family: 'Roboto', 'Helvetica', 'Arial', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-body {
-  min-width: 320px;
+code {
+  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
+    monospace;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
+/* Base styles for DataGrid column headers for better readability */
+.MuiDataGrid-columnHeaderTitle {
+  font-weight: bold;
 }
 
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: rgba(26, 26, 26, 1); /* #1a1a1a */
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: rgba(100, 108, 255, 1); /* #646cff */
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
+/* Custom styles for the app's scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px; /* For horizontal scrollbars */
 }
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: rgba(33, 53, 71, 1); /* #213547 */
-    background-color: rgba(255, 255, 255, 1); /* #ffffff */
-  }
-  a:hover {
-    color: rgba(116, 123, 255, 1); /* #747bff */
-  }
-  button {
-    background-color: rgba(249, 249, 249, 1); /* #f9f9f9 */
-  }
+::-webkit-scrollbar-track {
+  background: #f1f1f1; /* Light gray track */
+  border-radius: 10px;
 }
 
-/* --- Styles for Printing ONLY --- */
+::-webkit-scrollbar-thumb {
+  background: #888; /* Darker gray thumb */
+  border-radius: 10px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #555; /* Even darker gray on hover */
+}
+
+
+/* ========================================================= */
+/* @MEDIA PRINT STYLES - IMPORTANT FOR ACTUAL PRINTING */
+/* ========================================================= */
 @media print {
-  /* Hide the top application bar */
-  #app-bar {
+  /* Basic print page setup */
+  @page {
+    size: A4 portrait;
+    margin: 1cm; /* Consistent margin for print */
+  }
+
+  /* Hide the main application root and show the print root */
+  #root {
     display: none !important;
   }
-
-  /* Hide the side navigation drawer(s) */
-  /* Assuming the primary desktop drawer has id="side-drawer-desktop" */
-  #side-drawer-desktop {
-    display: none !important;
-  }
-  /* If you also have a separate temporary mobile drawer, add its ID here too: */
-  /* #side-drawer-mobile {
-    display: none !important;
-  } */
-
-
-  /* Adjust the main content area (where your print view is) */
-  main {
-    margin-left: 0 !important; /* Remove any left margin from the hidden sidebar */
-    width: 100% !important;    /* Make content take full width of the page */
-    padding: 0 !important;     /* Remove any padding around the main content */
-    margin-top: 0 !important;  /* Remove top margin from the hidden app bar */
-    height: auto !important;   /* Allow height to adjust to content for printing */
-    overflow: visible !important; /* Allow content to expand beyond viewport if needed for print */
-    min-height: auto !important; /* Reset min-height that might interfere with print layout */
-    box-sizing: border-box !important; /* Ensure consistent box model */
+  #print-root {
+    display: block !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    height: auto !important;
+    min-height: auto !important;
+    overflow: visible !important;
   }
 
-  /* Hide any Material-UI Toolbar used as a spacer if it's not part of the content */
-  /* This targets MuiToolbar-root class globally, useful if you have multiple toolbars */
-  .MuiToolbar-root {
-    display: none !important;
-  }
-  .MuiButton-root { /* Hides all Material-UI buttons in print output */
-    display: none !important;
-  }
-
-  /* General print improvements for readability */
-  body {
-    background-color: white !important; /* Ensure background is white */
-    color: black !important; /* Ensure main text color is black */
-    -webkit-print-color-adjust: exact; /* Important: tells browser to print colors exactly, otherwise it might try to "optimize" for ink */
-    print-color-adjust: exact; /* Standard property */
-  }
-
-  /* Explicitly set all text elements to black */
-  /* This is crucial for dark themes */
-  * {
-    color: black !important; /* Target all elements to force black text */
-    background-color: transparent !important; /* Ensure elements don't print their dark backgrounds */
-    box-shadow: none !important; /* Remove shadows if any */
-    text-shadow: none !important; /* Remove text shadows if any */
+  /* Ensure body and html are clean for print */
+  html, body {
+    background-color: #fff !important;
+    color: #000 !important;
+    /* print-color-adjust property is critical for forcing backgrounds/colors to print. */
+    /* 'exact' means print colors as is, 'economy' or 'auto' allows browser to strip. */
+    /* We apply it here and also on specific elements to ensure no background color prints. */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    overflow: visible !important;
+    height: auto !important;
+    min-height: auto !important;
+    box-sizing: border-box !important;
   }
 
-  /* Override specific Material-UI text colors if they are still dark */
-  .MuiTypography-root {
-    color: black !important;
+  /* Force all elements that might have a background to be white, remove shadows */
+  /* This targets common Material-UI elements too by being broad yet specific enough */
+  body, div, p, span, h1, h2, h3, h4, h5, h6, table, tr, td, th, ul, li {
+      background-color: #fff !important;
+      color: #000 !important; /* Force black text */
+      box-shadow: none !important;
+      text-shadow: none !important; /* Remove text shadows */
+      border-color: #eee !important; /* Maintain light borders */
+  }
+  
+  /* Ensure input fields and buttons also print clearly */
+  input, button, textarea, select {
+      background-color: #fff !important;
+      color: #000 !important;
+      border: 1px solid #ccc !important;
+      box-shadow: none !important;
   }
 
-  .MuiListItemText-root {
-    color: black !important;
+
+  /* General typography adjustments for print */
+  p, h1, h2, h3, h4, h5, h6, span, div, li, td, th {
+    color: #000 !important; /* Re-affirm all text is black */
+  }
+  h1 { font-size: 24pt !important; }
+  h2 { font-size: 20pt !important; }
+  h3 { font-size: 16pt !important; }
+  h4 { font-size: 14pt !important; }
+  p, li, td, th { font-size: 10pt !important; line-height: 1.5; }
+
+  /* Ensure images fit within the page */
+  img {
+    max-width: 100% !important;
+    height: auto !important;
   }
 
-  /* Ensure Paper components (like your service request cards) have white background */
-  .MuiPaper-root {
-    background-color: white !important;
-    color: black !important;
-    box-shadow: none !important;
-    border: 1px solid #ccc !important; /* Optional: add a light border for visual separation */
+  /* Tables for print */
+  table {
+    width: 100% !important;
+    border-collapse: collapse !important;
   }
-
-  /* Any other specific components that might have dark backgrounds or text colors */
-  /* For example, if you have custom divs with specific dark background classes */
-  .my-dark-bg-div {
-    background-color: white !important;
-    color: black !important;
-  }
-
-  /* Ensure input fields and similar elements have readable text */
-  input, textarea, select {
-    color: black !important;
-    background-color: white !important;
+  th, td {
     border: 1px solid #ccc !important;
+    padding: 8px !important;
+    text-align: left !important;
+  }
+  thead {
+    display: table-header-group !important; /* Repeat table headers on new pages */
+  }
+
+  /* Specific styles for print content containers (within #print-root) */
+  .print-container {
+    width: 100% !important;
+    max-width: none !important; /* Remove any max-width */
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box;
+    display: block !important; /* Crucial for page breaks to work */
+    gap: 0 !important; /* No gap for print layout */
+    border: none !important; /* Remove any border from preview */
+    box-shadow: none !important; /* Remove any shadow from preview */
+    background-color: #fff !important; /* Explicitly white background */
+    min-height: auto !important; /* Ensure height adjusts to content for print */
+    overflow: visible !important; /* Allow content to overflow/paginate */
+  }
+
+  .print-item {
+    page-break-inside: avoid; /* Keep content of a single item together if possible */
+    page-break-after: always; /* Force a page break after each item */
+    margin-bottom: 0 !important; /* No extra margin between items that could push content off */
+    border: 1px solid #eee !important; /* Keep a light border for visual separation */
+    padding: 15px !important;
+    background-color: #fff !important; /* Ensure white background for print */
+    border-radius: 0 !important; /* Remove border radius for print */
+    height: auto !important; /* Ensure height adjusts to content */
+    overflow: visible !important; /* Ensure content is visible */
+    box-sizing: border-box !important;
+    min-height: auto !important; /* Reset any potential min-heights */
+
+    /* For the very last item, don't force a page break */
+    &:last-child {
+      page-break-after: auto;
+    }
+  }
+
+  .print-item h5, .print-item p strong {
+    color: #000 !important; /* Ensure headings and strong text are black */
+  }
+
+  /* Hide scrollbars for print */
+  ::-webkit-scrollbar {
+    display: none !important;
+  }
+
+  /* Hide any explicit page break elements */
+  .print-page-break {
+    display: none !important;
   }
 }
