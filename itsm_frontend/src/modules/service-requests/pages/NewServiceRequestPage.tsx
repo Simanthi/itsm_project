@@ -1,39 +1,74 @@
 // itsm_frontend/src/modules/service-requests/pages/NewServiceRequestPage.tsx
 
-import { useEffect, useState } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Alert, Button } from '@mui/material';
+import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ServiceRequestForm from '../components/ServiceRequestForm';
-import { useServiceRequests } from '../hooks/useServiceRequests';
-import { type ServiceRequest } from '../types/ServiceRequestTypes';
+import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Import API call for fetching request
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth to get token
+import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import ServiceRequest type
 
 function NewServiceRequestPage() {
-  const { id } = useParams<{ id?: string }>(); // Make id optional to reflect potential absence
+  const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
   const navigate = useNavigate();
-  const { serviceRequests } = useServiceRequests();
+  const { token } = useAuth();
+
   const [initialFormData, setInitialFormData] = useState<ServiceRequest | undefined>(undefined);
-  const [isLoading, setIsLoading] = useState(true);
+  const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (id) {
-      setIsLoading(true);
-      setError(null);
-      // FIX: Convert req.id to string for comparison with id from useParams (which is always string)
-      const foundRequest = serviceRequests.find(req => String(req.id) === id);
-      if (foundRequest) {
-        setInitialFormData(foundRequest);
-      } else {
-        setError(`Service Request with ID ${id} not found.`);
+  const parseError = useCallback((err: unknown): string => {
+    if (err instanceof Error) {
+      if (err.message.includes("API error: ") && err.message.includes("{")) {
+        try {
+          const errorPart = err.message.substring(err.message.indexOf("{"));
+          const errorDetails = JSON.parse(errorPart);
+          const firstKey = Object.keys(errorDetails)[0];
+          if (firstKey && Array.isArray(errorDetails[firstKey]) && typeof errorDetails[firstKey][0] === 'string') {
+            return `${firstKey.replace(/_/g, ' ')}: ${errorDetails[firstKey][0]}`;
+          }
+          return `Details: ${JSON.stringify(errorDetails)}`;
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_) {
+          return err.message;
+        }
       }
-      setIsLoading(false);
-    } else {
-      setInitialFormData(undefined);
-      setIsLoading(false);
+      return err.message;
     }
-  }, [id, serviceRequests, navigate]);
+    return String(err);
+  }, []);
+
+  // Effect to fetch initial data for editing
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      if (id && token) {
+        setLoading(true);
+        setError(null);
+        try {
+          const requestData = await getServiceRequestById(id, token);
+          setInitialFormData(requestData);
+        } catch (err) {
+          console.error("Error fetching service request data for edit:", err);
+          setError(parseError(err));
+        } finally {
+          setLoading(false);
+        }
+      } else {
+        // If no ID is present, it's a new request, so no initial data to load
+        setLoading(false);
+        setInitialFormData(undefined); // Ensure it's undefined for new requests
+      }
+    };
+
+    if (token) { // Only attempt to fetch if token is available
+      fetchInitialData();
+    } else {
+      setError("Authentication token not found. Please log in.");
+      setLoading(false);
+    }
+  }, [id, token, parseError]);
 
   const pageTitle = id ? `Edit Service Request: ${id}` : 'Create New Service Request';
 
@@ -41,19 +76,20 @@ function NewServiceRequestPage() {
     navigate('/service-requests');
   };
 
-  if (isLoading) {
+  if (loading) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Typography variant="h5">Loading...</Typography>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+        <CircularProgress />
+        <Typography sx={{ ml: 2, mt: 2 }}>Loading service request details...</Typography>
       </Box>
     );
   }
 
   if (error) {
     return (
-      <Box sx={{ p: 4 }}>
-        <Alert severity="error">{error}</Alert>
-        <Button variant="contained" onClick={() => navigate('/service-requests')} sx={{ mt: 2 }}>
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">Failed to load service request: {error}</Alert>
+        <Button variant="contained" onClick={handleBack} sx={{ mt: 2 }}>
           Back to Service Requests
         </Button>
       </Box>
@@ -74,7 +110,11 @@ function NewServiceRequestPage() {
           {pageTitle}
         </Typography>
       </Box>
-      {/* Pass initialFormData to the ServiceRequestForm */}
+      {/*
+        Pass initialFormData to ServiceRequestForm only after it's loaded.
+        For new requests (id is undefined), initialFormData will be undefined,
+        and ServiceRequestForm will correctly initialize as a new request form.
+      */}
       <ServiceRequestForm initialData={initialFormData} />
     </Box>
   );
