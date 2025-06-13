@@ -1,12 +1,10 @@
 // itsm_frontend/src/api/authApi.ts
 import type { User } from '../types/UserTypes';
+import { API_BASE_URL } from '../config'; // Import API_BASE_URL from central config
 
-// Define the base URL for your main Django API (where token endpoints are)
-const DJANGO_API_BASE_URL = 'http://localhost:8000/api';
-// Define the base URL for the service-requests API, which was already in serviceRequestApi.ts
-// Removed SERVICE_REQUESTS_API_BASE_URL as it was unused in this file.
-const SECURITY_ACCESS_API_BASE_URL = 'http://localhost:8000/api/security-access';
-
+// Use the imported API_BASE_URL for constructing specific endpoints
+const DJANGO_AUTH_API_BASE_URL = `${API_BASE_URL}`; // Used for /token/ and /token/refresh/
+const SECURITY_ACCESS_API_BASE_URL = `${API_BASE_URL}/security-access`; // Used for /security-access/users/
 
 /**
  * Helper for making authenticated fetch requests.
@@ -52,7 +50,8 @@ async function authFetch<T>(url: string, token: string, options?: RequestInit): 
  */
 export const loginApi = async (username: string, password: string): Promise<{ token: string; user: { name: string; role: string; id: number } }> => {
   try {
-    const response = await fetch(`${DJANGO_API_BASE_URL}/token/`, {
+    // Use DJANGO_AUTH_API_BASE_URL for the token endpoint
+    const response = await fetch(`${DJANGO_AUTH_API_BASE_URL}/token/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -66,15 +65,8 @@ export const loginApi = async (username: string, password: string): Promise<{ to
     }
 
     const data = await response.json();
-    // 'data.access' is the JWT token
     const token = data.access;
 
-    // In a real scenario, you might decode the JWT to get basic user info
-    // or make another API call to get the authenticated user's details.
-    // For now, we'll construct a mock user based on the username for demonstration.
-    // The 'id' should ideally come from the backend's user data.
-    // If your JWT doesn't contain user ID, you'd typically fetch '/api/security-access/users/me/'
-    // or similar after login.
     const mockUser = {
       id: 0, // Placeholder: In a real app, this should come from a decoded JWT or a separate user info endpoint
       name: username, // Using username as name for simplicity
@@ -82,7 +74,6 @@ export const loginApi = async (username: string, password: string): Promise<{ to
     };
 
     // Attempt to get the actual user ID from the response if available, or based on username
-    // This is a common pattern: after getting token, fetch current user's full details
     try {
         const currentUserResponse = await authFetch<User[]>(`${SECURITY_ACCESS_API_BASE_URL}/users/?username=${username}`, token);
         if (currentUserResponse && currentUserResponse.length > 0) {
@@ -90,7 +81,6 @@ export const loginApi = async (username: string, password: string): Promise<{ to
             mockUser.name = currentUserResponse[0].first_name && currentUserResponse[0].last_name
                             ? `${currentUserResponse[0].first_name} ${currentUserResponse[0].last_name}`
                             : currentUserResponse[0].username;
-            // You might infer role here based on backend data if it exists
         }
     } catch (userFetchError) {
         console.warn("Could not fetch full user details after login, using basic mock user:", userFetchError);
@@ -100,7 +90,7 @@ export const loginApi = async (username: string, password: string): Promise<{ to
     return { token: token, user: mockUser };
   } catch (error) {
     console.error("Login API error:", error);
-    throw error; // Re-throw to be handled by the calling component (LoginPage)
+    throw error;
   }
 };
 
@@ -116,11 +106,35 @@ export const getUserList = async (token: string): Promise<User[]> => {
     return Promise.reject(new Error('Authentication required to fetch user list.'));
   }
   try {
-    // Making a real API call to your Django backend's UserViewSet
+    // Use SECURITY_ACCESS_API_BASE_URL for fetching users
     const usersData = await authFetch<User[]>(`${SECURITY_ACCESS_API_BASE_URL}/users/`, token);
     return usersData;
   } catch (error) {
     console.error("Error fetching user list:", error);
-    throw error; // Re-throw to be handled by the calling component
+    throw error;
   }
+};
+
+export const logoutApi = async (token: string): Promise<void> => {
+    try {
+        // Assuming your backend has a logout endpoint, otherwise this might just be a frontend token clear.
+        // If your backend requires a POST request for logout, modify as needed.
+        // Use DJANGO_AUTH_API_BASE_URL for constructing logout URL
+        const response = await fetch(`${DJANGO_AUTH_API_BASE_URL}/auth/logout/`, { // Adjust endpoint as needed
+            method: 'POST', // Or 'GET' depending on your backend
+            headers: {
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json',
+            },
+        });
+
+        if (!response.ok) {
+            const errorData = await response.json().catch(() => ({}));
+            throw new Error(`API error: ${response.status} ${response.statusText} - ${JSON.stringify(errorData)}`);
+        }
+        console.log("Successfully logged out on backend.");
+    } catch (error) {
+        console.error("Logout API error:", error);
+        // Do not re-throw error for logout, as frontend token clear is usually sufficient
+    }
 };

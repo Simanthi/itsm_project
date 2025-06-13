@@ -7,6 +7,7 @@ import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { deleteServiceRequest } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
 import { useServiceRequests } from '../hooks/useServiceRequests';
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI hook
 
 interface DateValueFormatterParams {
   value: string | null | undefined;
@@ -16,48 +17,56 @@ const ServiceRequestList: React.FC = () => {
   const navigate = useNavigate();
   const { token } = useAuth();
   const { serviceRequests, loading, error, fetchServiceRequests } = useServiceRequests();
+  const { showSnackbar, showConfirmDialog } = useUI(); // Use UI hooks
   const [selectedRequestIds, setSelectedRequestIds] = useState<Array<GridRowId>>([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
     console.log("ServiceRequestList: Component rendered. serviceRequests from context:", serviceRequests.length);
     console.log("ServiceRequestList: Full serviceRequests array (passed to DataGrid):", serviceRequests);
-    // Log content of the array passed to DataGrid to see specific field values
     serviceRequests.forEach(req => console.log(`  DataGrid Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
   }, [serviceRequests]);
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (selectedRequestIds.length === 0) {
-      alert('Please select requests to delete.');
+      showSnackbar('Please select requests to delete.', 'warning'); // Use Snackbar
       return;
     }
     if (!token) {
-      alert("Authentication token not found. Please log in.");
+      showSnackbar("Authentication token not found. Please log in.", 'error'); // Use Snackbar
       return;
     }
-    if (window.confirm(`Are you sure you want to delete ${selectedRequestIds.length} request(s)?`)) {
-      setSubmitting(true);
-      try {
-        const requestsToDelete = serviceRequests.filter(req => selectedRequestIds.includes(String(req.id)));
-        await Promise.all(requestsToDelete.map(req => {
-            if (req.request_id) {
-                return deleteServiceRequest(req.request_id, token);
-            } else if (req.id) {
-                return deleteServiceRequest(String(req.id), token);
-            }
-            return Promise.resolve();
-        }));
 
-        await fetchServiceRequests();
-        setSelectedRequestIds([]);
-        alert('Selected requests deleted successfully!');
-      } catch (err) {
-        console.error("Error deleting service requests:", err);
-        alert(`Failed to delete requests: ${err instanceof Error ? err.message : String(err)}`);
-      } finally {
-        setSubmitting(false);
+    const confirmMessage = `Are you sure you want to delete ${selectedRequestIds.length} request(s)? This action cannot be undone.`;
+    showConfirmDialog(
+      'Confirm Deletion',
+      confirmMessage,
+      async () => { // onConfirm callback
+        setSubmitting(true);
+        try {
+          const requestsToDelete = serviceRequests.filter(req => selectedRequestIds.includes(String(req.id)));
+          await Promise.all(requestsToDelete.map(req => {
+              if (req.request_id) {
+                  return deleteServiceRequest(req.request_id, token);
+              } else if (req.id) {
+                  return deleteServiceRequest(String(req.id), token);
+              }
+              return Promise.resolve(); // Should not happen if data is valid
+          }));
+          await fetchServiceRequests();
+          setSelectedRequestIds([]);
+          showSnackbar('Selected requests deleted successfully!', 'success'); // Use Snackbar
+        } catch (err) {
+          console.error("Error deleting service requests:", err);
+          showSnackbar(`Failed to delete requests: ${err instanceof Error ? err.message : String(err)}`, 'error'); // Use Snackbar
+        } finally {
+          setSubmitting(false);
+        }
+      },
+      () => { // onCancel callback
+        showSnackbar('Deletion cancelled.', 'info'); // Optional: show info on cancel
       }
-    }
+    );
   };
 
   const handleCreateNew = () => {
@@ -66,10 +75,14 @@ const ServiceRequestList: React.FC = () => {
 
   const handleEdit = () => {
     if (selectedRequestIds.length === 1) {
-      const requestIdToEdit = selectedRequestIds[0];
-      navigate(`/service-requests/edit/${requestIdToEdit}`);
+      const selectedRequest = serviceRequests.find(req => String(req.id) === String(selectedRequestIds[0]));
+      if (selectedRequest) {
+        navigate(`/service-requests/edit/${selectedRequest.request_id}`);
+      } else {
+        showSnackbar('Selected request not found in current data. Please refresh.', 'warning'); // Use Snackbar
+      }
     } else {
-      alert('Please select exactly one request to edit.');
+      showSnackbar('Please select exactly one request to edit.', 'warning'); // Use Snackbar
     }
   };
 
@@ -85,11 +98,9 @@ const ServiceRequestList: React.FC = () => {
       field: 'assigned_to_username',
       headerName: 'Assigned To',
       width: 150,
-      // FIX: Add renderCell to explicitly display 'Unassigned' or the username
       renderCell: (params) => {
-        const assignedTo = params.value; // This is the value of assigned_to_username
-        console.log(`  DataGrid Render Cell for ID: ${params.row.id}, Assigned To value: '${assignedTo}'`);
-        return assignedTo || 'Unassigned'; // Display 'Unassigned' if null or empty string
+        const assignedTo = params.value;
+        return assignedTo || 'Unassigned';
       },
     },
     {
@@ -156,7 +167,7 @@ const ServiceRequestList: React.FC = () => {
           rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
           disableRowSelectionOnClick
           loading={loading || submitting}
-          key={serviceRequests.length}
+          key={serviceRequests.length} // Force re-render of DataGrid when serviceRequests change
         />
       </div>
     </Box>

@@ -1,11 +1,10 @@
 // itsm_frontend/src/api/serviceRequestApi.ts
-
-// Define your backend API base URL
-const API_BASE_URL = 'http://localhost:8000/api/service-requests';
-
+import { API_BASE_URL } from '../config'; // Import API_BASE_URL from central config
 import type { ServiceRequest, NewServiceRequestData, ServiceRequestStatus, ServiceRequestCategory, ServiceRequestPriority } from '../modules/service-requests/types/ServiceRequestTypes';
 
-// --- Helper Interfaces for Raw API Responses ---
+// Use the imported API_BASE_URL to define the service requests endpoint
+const SERVICE_REQUESTS_API_BASE_URL = `${API_BASE_URL}/service-requests`;
+
 interface RawUserResponse {
   id: number;
   username: string;
@@ -19,8 +18,8 @@ interface RawServiceRequestResponse {
   request_id: string;
   title: string;
   description: string;
-  requested_by: RawUserResponse; // This is a nested object from backend
-  assigned_to: RawUserResponse | null; // This is a nested object from backend
+  requested_by: RawUserResponse;
+  assigned_to: RawUserResponse | null;
   status: ServiceRequestStatus;
   category: ServiceRequestCategory;
   priority: ServiceRequestPriority;
@@ -30,16 +29,17 @@ interface RawServiceRequestResponse {
   resolved_at?: string | null;
 }
 
-// Define the structure of the paginated API response
 interface PaginatedServiceRequestsResponse {
-  count: number; // Total number of items across all pages
-  next: string | null; // URL for the next page
-  previous: string | null; // URL for the previous page
-  results: RawServiceRequestResponse[]; // Array of service requests for the current page
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: RawServiceRequestResponse[];
 }
 
-
-// Helper for making authenticated fetch requests
+/**
+ * Helper for making authenticated fetch requests.
+ * This is duplicated in authApi.ts as well. In a larger app, you'd centralize this.
+ */
 async function authFetch<T>(url: string, token: string, options?: RequestInit): Promise<T> {
   const headers = {
     'Content-Type': 'application/json',
@@ -56,6 +56,7 @@ async function authFetch<T>(url: string, token: string, options?: RequestInit): 
 
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({ message: response.statusText }));
+    // If the server returns a 'detail' field (common for DRF errors) use that
     throw new Error(errorData.detail || errorData.message || `API error: ${response.status}`);
   }
 
@@ -67,7 +68,10 @@ async function authFetch<T>(url: string, token: string, options?: RequestInit): 
   return response.json();
 }
 
-// Updated transform function to include requested_by_id
+/**
+ * Transforms a raw service request response from the API into the frontend's ServiceRequest type.
+ * This function extracts nested user objects and flattens them into direct username/id fields.
+ */
 const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse): ServiceRequest => {
   return {
     id: rawRequest.id,
@@ -82,24 +86,24 @@ const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse):
     updated_at: rawRequest.updated_at,
     resolved_at: rawRequest.resolved_at,
     requested_by_username: rawRequest.requested_by.username,
-    requested_by_id: rawRequest.requested_by.id, // Add requested_by_id from the nested object
-    assigned_to_username: rawRequest.assigned_to?.username || null,
-    assigned_to_id: rawRequest.assigned_to?.id || null,
+    requested_by_id: rawRequest.requested_by.id,
+    assigned_to_username: rawRequest.assigned_to?.username || null, // Use optional chaining for assigned_to
+    assigned_to_id: rawRequest.assigned_to?.id || null, // Use optional chaining for assigned_to
   };
 };
 
 /**
- * Fetches service requests with pagination.
+ * Fetches a paginated list of service requests.
+ *
  * @param token Authentication token.
  * @param page The page number to fetch (1-indexed).
  * @param pageSize The number of items per page.
- * @returns A promise that resolves to an object containing results and total count.
+ * @returns A promise that resolves to an object containing transformed service requests and the total count.
  */
-// Modified getServiceRequests to accept pagination parameters and return PaginatedServiceRequestsResponse structure
 export const getServiceRequests = async (token: string, page: number = 1, pageSize: number = 10): Promise<{ results: ServiceRequest[]; count: number }> => {
-  const url = `${API_BASE_URL}/requests/?page=${page}&page_size=${pageSize}`;
-  const rawData = await authFetch<PaginatedServiceRequestsResponse>(url, token); // Expect paginated response
-
+  // Use SERVICE_REQUESTS_API_BASE_URL
+  const url = `${SERVICE_REQUESTS_API_BASE_URL}/requests/?page=${page}&page_size=${pageSize}`;
+  const rawData = await authFetch<PaginatedServiceRequestsResponse>(url, token);
   return {
     results: rawData.results.map(transformServiceRequestResponse),
     count: rawData.count,
@@ -108,12 +112,14 @@ export const getServiceRequests = async (token: string, page: number = 1, pageSi
 
 /**
  * Creates a new service request.
- * @param newRequestData Data for the new service request.
+ *
+ * @param newRequestData The data for the new service request.
  * @param token Authentication token.
- * @returns A promise that resolves to the created ServiceRequest object.
+ * @returns A promise that resolves to the created ServiceRequest.
  */
 export const createServiceRequest = async (newRequestData: NewServiceRequestData, token: string): Promise<ServiceRequest> => {
-  const url = `${API_BASE_URL}/requests/`;
+  // Use SERVICE_REQUESTS_API_BASE_URL
+  const url = `${SERVICE_REQUESTS_API_BASE_URL}/requests/`;
   const rawResponse = await authFetch<RawServiceRequestResponse>(url, token, {
     method: 'POST',
     body: JSON.stringify(newRequestData),
@@ -122,41 +128,47 @@ export const createServiceRequest = async (newRequestData: NewServiceRequestData
 };
 
 /**
- * Fetches a single service request by its ID.
- * @param id The ID of the service request (can be number or string request_id).
+ * Fetches a single service request by its ID (request_id).
+ *
+ * @param id The ID (request_id string) of the service request.
  * @param token Authentication token.
- * @returns A promise that resolves to the ServiceRequest object.
+ * @returns A promise that resolves to the ServiceRequest.
  */
 export const getServiceRequestById = async (id: number | string, token: string): Promise<ServiceRequest> => {
-  const url = `${API_BASE_URL}/requests/${id}/`; // Backend expects request_id string
+  // Use SERVICE_REQUESTS_API_BASE_URL
+  const url = `${SERVICE_REQUESTS_API_BASE_URL}/requests/${id}/`;
   const rawData = await authFetch<RawServiceRequestResponse>(url, token);
   return transformServiceRequestResponse(rawData);
 };
 
 /**
- * Updates an existing service request.
- * @param id The ID of the service request to update (can be number or string request_id).
- * @param updatedData Partial data to update.
+ * Updates an existing service request by its ID (request_id).
+ *
+ * @param id The ID (request_id string) of the service request.
+ * @param updatedData The partial data to update.
  * @param token Authentication token.
- * @returns A promise that resolves to the updated ServiceRequest object.
+ * @returns A promise that resolves to the updated ServiceRequest.
  */
 export const updateServiceRequest = async (id: number | string, updatedData: Partial<NewServiceRequestData> & { status?: ServiceRequestStatus }, token: string): Promise<ServiceRequest> => {
-  const url = `${API_BASE_URL}/requests/${id}/`;
+  // Use SERVICE_REQUESTS_API_BASE_URL
+  const url = `${SERVICE_REQUESTS_API_BASE_URL}/requests/${id}/`;
   const rawResponse = await authFetch<RawServiceRequestResponse>(url, token, {
-    method: 'PATCH', // Use PATCH for partial updates
+    method: 'PATCH',
     body: JSON.stringify(updatedData),
   });
   return transformServiceRequestResponse(rawResponse);
 };
 
 /**
- * Deletes a service request by its ID.
- * @param id The ID of the service request to delete (can be number or string request_id).
+ * Deletes a service request by its ID (request_id).
+ *
+ * @param id The ID (request_id string) of the service request.
  * @param token Authentication token.
- * @returns A promise that resolves when the request is successfully deleted (no content).
+ * @returns A promise that resolves when the deletion is successful.
  */
 export const deleteServiceRequest = async (id: number | string, token: string): Promise<void> => {
-  const url = `${API_BASE_URL}/requests/${id}/`;
+  // Use SERVICE_REQUESTS_API_BASE_URL
+  const url = `${SERVICE_REQUESTS_API_BASE_URL}/requests/${id}/`;
   await authFetch<void>(url, token, {
     method: 'DELETE',
   });

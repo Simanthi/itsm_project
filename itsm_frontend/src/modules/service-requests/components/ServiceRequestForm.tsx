@@ -12,6 +12,7 @@ import {
 import { getUserList } from '../../../api/authApi';
 import { createServiceRequest, updateServiceRequest } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI hook
 
 interface User {
   id: number;
@@ -41,6 +42,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const { token, user } = useAuth();
+  const { showSnackbar } = useUI(); // Use the showSnackbar from UI context
 
   const [formData, setFormData] = useState<ServiceRequestFormState>({
     title: '',
@@ -57,9 +59,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
   const [submitting, setSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>([]);
-
-  // Debug log for users state whenever the component renders (moved outside JSX)
-  // console.log("ServiceRequestForm: Render cycle. Current 'users' state:", users, "Type:", typeof users, "IsArray:", Array.isArray(users));
 
   const parseError = useCallback((err: unknown): string => {
     if (err instanceof Error) {
@@ -109,7 +108,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
   useEffect(() => {
     if (id && initialData) {
-      // console.log("ServiceRequestForm: Populating form with initialData:", initialData); // Removed debug log from here
       setFormData({
         title: initialData.title,
         description: initialData.description,
@@ -121,7 +119,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
         request_id_display: initialData.request_id,
       });
     } else if (!id) {
-      // console.log("ServiceRequestForm: Initializing form for new request."); // Removed debug log from here
       setFormData(prev => ({
         ...prev,
         title: '',
@@ -160,12 +157,14 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
 
     if (!token) {
       setError("Authentication token not found. Please log in.");
+      showSnackbar("Authentication token not found. Please log in.", "error"); // Use Snackbar
       setSubmitting(false);
       return;
     }
 
     if (!id && (formData.requested_by_id === 0 || !formData.requested_by_id)) {
       setError("Please select a valid 'Requested By' user.");
+      showSnackbar("Please select a valid 'Requested By' user.", "warning"); // Use Snackbar
       setSubmitting(false);
       return;
     }
@@ -174,6 +173,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
       if (id) {
         if (!formData.request_id_display) {
           setError("Cannot update: Service Request ID (string format) not found.");
+          showSnackbar("Error: Service Request ID missing for update.", "error"); // Use Snackbar
           setSubmitting(false);
           return;
         }
@@ -187,7 +187,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           assigned_to_id: formData.assigned_to_id,
         };
         await updateServiceRequest(formData.request_id_display, updatePayload, token);
-        console.log('Service Request updated successfully!');
+        showSnackbar('Service Request updated successfully!', 'success'); // Use Snackbar for success
       } else {
         const createPayload: NewServiceRequestData = {
           title: formData.title,
@@ -198,23 +198,14 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           assigned_to_id: formData.assigned_to_id,
         };
         await createServiceRequest(createPayload, token);
-        console.log('Service Request created successfully!');
+        showSnackbar('Service Request created successfully!', 'success'); // Use Snackbar for success
       }
       navigate('/service-requests');
     } catch (err: unknown) {
       console.error("Submission error:", err);
-      if (err instanceof Error && err.message.includes("API error: ") && err.message.includes("{")) {
-        try {
-          const errorPart = err.message.substring(err.message.indexOf("{"));
-          const errorDetails = JSON.parse(errorPart);
-          setError(`Submission failed: ${JSON.stringify(errorDetails)}`);
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_) {
-          setError(err.message);
-        }
-      } else {
-        setError(err instanceof Error ? err.message : "An unknown error occurred during submission.");
-      }
+      const errorMessage = parseError(err);
+      setError(errorMessage);
+      showSnackbar(`Submission failed: ${errorMessage}`, 'error'); // Use Snackbar for error
     } finally {
       setSubmitting(false);
     }
@@ -231,6 +222,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
     );
   }
 
+  // The main error display (if any severe error prevents rendering the form)
   if (error) {
     return (
       <Box sx={{ p: 3 }}>
@@ -328,7 +320,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           required
           disabled={!!id}
         >
-          {/* Removed console.log from here */}
           {Array.isArray(users) && users.map((user) => (
             <MenuItem key={user.id} value={user.id}>
               {user.username}
@@ -347,7 +338,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({ initialData }) 
           <MenuItem value="">
             <em>None</em>
           </MenuItem>
-          {/* Removed console.log from here */}
           {Array.isArray(users) && users.map((user) => (
             <MenuItem key={user.id} value={user.id}>
               {user.username}

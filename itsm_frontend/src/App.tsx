@@ -1,19 +1,13 @@
-// src/App.tsx
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
-
-// --- Context Imports ---
 import { AuthProvider } from './context/auth/AuthContext';
-import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider'; // Confirm this path
-import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider'; // Confirm this path
+import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider';
+import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider';
+import { UIContextProvider } from './context/UIContext/UIContextProvider'; // Import the new UIContextProvider
 
-// --- Page Imports ---
 import LoginPage from './modules/auth/LoginPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
-
-// --- Module-based Page Imports ---
 import DashboardPage from './modules/dashboard/DashboardPage';
 import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequestsPage';
 import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
@@ -32,9 +26,8 @@ function AppContent() {
       <CssBaseline />
       <Routes>
         <Route path="/login" element={<LoginPage />} />
-        {/* HomePage acts as the layout component for the main application routes */}
+        {/* Main application routes, protected by HomePage's auth check */}
         <Route path="/" element={<HomePage />}>
-          {/* Nested routes for module-specific pages */}
           <Route index element={<DashboardPage />} />
           <Route path="service-requests" element={<ServiceRequestsPage />} />
           <Route path="service-requests/new" element={<NewServiceRequestPage />} />
@@ -48,7 +41,7 @@ function AppContent() {
           <Route path="workflows" element={<ApprovalWorkflowPage />} />
           <Route path="reports" element={<ReportsAnalyticsPage />} />
         </Route>
-        {/* Catch-all route for any undefined paths, directing to NotFoundPage */}
+        {/* Fallback for unmatched routes */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </>
@@ -58,13 +51,16 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      {/* ThemeContextProvider should typically wrap the entire application */}
+      {/* Theme context provider */}
       <ThemeContextProvider>
-        {/* AuthProvider wraps components that need authentication context */}
+        {/* Auth context provider */}
         <AuthProvider>
-          {/* ServiceRequestProvider wraps components needing service request context */}
+          {/* Service Request context provider */}
           <ServiceRequestProvider>
-            <AppContent />
+            {/* UI Context Provider should wrap AppContent to make snackbars/dialogs available globally */}
+            <UIContextProvider>
+              <AppContent />
+            </UIContextProvider>
           </ServiceRequestProvider>
         </AuthProvider>
       </ThemeContextProvider>

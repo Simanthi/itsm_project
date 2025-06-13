@@ -1,4 +1,5 @@
 // itsm_frontend/src/modules/service-requests/pages/ServiceRequestsPage.tsx
+
 import React, { useState, useEffect } from 'react';
 import {
   Box, Typography, Button, CircularProgress, Alert
@@ -10,11 +11,11 @@ import {
   type GridColDef,
   type GridRowId,
   type GridRowSelectionModel,
-  // Removed GridCallbackDetails from import as it's no longer needed
   type GridPaginationModel,
 } from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI hook
 
 // Define a local type for valueFormatter params.
 interface CustomGridValueFormatterParams<R = ServiceRequest, V = string | null | undefined> {
@@ -39,12 +40,12 @@ const formatDate = (dateString: string | null | undefined): string => {
 const ServiceRequestsPage: React.FC = () => {
   const navigate = useNavigate();
   const { serviceRequests, loading, error, totalCount, paginationModel, setPaginationModel } = useServiceRequests();
+  const { showSnackbar } = useUI(); // Use showSnackbar from UI context
   const [selectedRowModel, setSelectedRowModel] = useState<GridRowSelectionModel>({
     type: 'include',
     ids: new Set<GridRowId>(),
   });
 
-  // Effect to inspect serviceRequests when it changes in this component
   useEffect(() => {
     console.log("ServiceRequestsPage: Component rendered.");
     console.log("ServiceRequestsPage: serviceRequests received from context (length):", serviceRequests.length);
@@ -58,22 +59,24 @@ const ServiceRequestsPage: React.FC = () => {
   const handleEdit = () => {
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length === 1) {
-      // Find the selected service request object and use its 'request_id' for navigation
+      // Find the selected service request object to get its 'request_id'
       const selectedRequest = serviceRequests.find(req => String(req.id) === String(currentSelectedIds[0]));
       if (selectedRequest) {
+        // Navigate using the human-readable request_id, as expected by backend API
         navigate(`/service-requests/edit/${selectedRequest.request_id}`);
       } else {
-        alert('Selected request not found.');
+        // This alert should ideally not be hit if DataGrid rows are from serviceRequests
+        showSnackbar('Selected request not found in current data set. Please refresh.', 'warning'); // Use Snackbar
       }
     } else {
-      alert('Please select exactly one request to edit.');
+      showSnackbar('Please select exactly one request to edit.', 'warning'); // Use Snackbar
     }
   };
 
   const handlePrintPreview = () => {
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length > 0) {
-      // Map numeric IDs to request_ids for print preview
+      // Map numeric internal IDs to human-readable request_ids for print preview
       const selectedRequestIds = serviceRequests
         .filter(req => currentSelectedIds.includes(String(req.id)))
         .map(req => req.request_id);
@@ -81,17 +84,17 @@ const ServiceRequestsPage: React.FC = () => {
       if (selectedRequestIds.length > 0) {
         navigate('/service-requests/print-preview', { state: { selectedRequestIds: selectedRequestIds, autoPrint: false } });
       } else {
-        alert('No valid requests selected for preview.');
+        showSnackbar('No valid requests selected for preview.', 'warning'); // Use Snackbar
       }
     } else {
-      alert('Please select at least one request to preview.');
+      showSnackbar('Please select at least one request to preview.', 'warning'); // Use Snackbar
     }
   };
 
   const handlePrint = () => {
     const currentSelectedIds = Array.from(selectedRowModel.ids);
     if (currentSelectedIds.length > 0) {
-      // Map numeric IDs to request_ids for printing
+      // Map numeric internal IDs to human-readable request_ids for printing
       const selectedRequestIds = serviceRequests
         .filter(req => currentSelectedIds.includes(String(req.id)))
         .map(req => req.request_id);
@@ -99,14 +102,13 @@ const ServiceRequestsPage: React.FC = () => {
       if (selectedRequestIds.length > 0) {
         navigate('/service-requests/print-preview', { state: { selectedRequestIds: selectedRequestIds, autoPrint: true } });
       } else {
-        alert('No valid requests selected for print.');
+        showSnackbar('No valid requests selected for print.', 'warning'); // Use Snackbar
       }
     } else {
-      alert('Please select at least one request to print.');
+      showSnackbar('Please select at least one request to print.', 'warning'); // Use Snackbar
     }
   };
 
-  // Define columns for DataGrid
   const columns: GridColDef<ServiceRequest>[] = [
     { field: 'request_id', headerName: 'Request ID', width: 150 },
     { field: 'title', headerName: 'Title', width: 250 },
@@ -115,6 +117,16 @@ const ServiceRequestsPage: React.FC = () => {
     { field: 'status', headerName: 'Status', width: 120 },
     { field: 'priority', headerName: 'Priority', width: 120 },
     { field: 'requested_by_username', headerName: 'Requested By', width: 150 },
+    {
+      field: 'assigned_to_username',
+      headerName: 'Assigned To',
+      width: 150,
+      renderCell: (params) => {
+        const assignedTo = params.value;
+        // Display 'Unassigned' if null or empty string
+        return assignedTo || 'Unassigned';
+      },
+    },
     {
       field: 'created_at',
       headerName: 'Created At',
@@ -126,10 +138,15 @@ const ServiceRequestsPage: React.FC = () => {
         return formatDate(params.value);
       },
     },
-    { field: 'assigned_to_username', headerName: 'Assigned To', width: 150,
-      renderCell: (params) => {
-        const assignedTo = params.value;
-        return assignedTo || 'Unassigned';
+    {
+      field: 'updated_at',
+      headerName: 'Last Updated',
+      width: 150,
+      valueFormatter: (params: CustomGridValueFormatterParams<ServiceRequest, string | null | undefined> | undefined) => {
+        if (!params || params.value === undefined || params.value === null) {
+          return 'N/A';
+        }
+        return formatDate(params.value);
       },
     },
   ];
@@ -153,11 +170,13 @@ const ServiceRequestsPage: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, width: '100%' }}>
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-        <Typography variant="h4" component="h1">
+      {/* Add flexWrap: 'wrap' to allow buttons to wrap on smaller screens */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2, flexWrap: 'wrap', gap: { xs: 1, sm: 2 } }}>
+        <Typography variant="h4" component="h1" sx={{ minWidth: 0, mb: { xs: 1, sm: 0 }, flexShrink: 1 }}>
           Service Requests
         </Typography>
-        <Box sx={{ display: 'flex', gap: 1 }}>
+        {/* Add flexWrap: 'wrap' to the button container as well */}
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
           <Button
             variant="contained"
             startIcon={<AddIcon />}
@@ -196,16 +215,14 @@ const ServiceRequestsPage: React.FC = () => {
         <DataGrid
           rows={serviceRequests}
           columns={columns}
-          getRowId={(row) => String(row.id)}
+          getRowId={(row) => String(row.id)} // Ensure DataGrid uses the numeric `id` as string
           checkboxSelection
-          // FIX: Removed the unused '_details' parameter
           onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
             setSelectedRowModel(newSelectionModel);
           }}
           rowSelectionModel={selectedRowModel}
           disableRowSelectionOnClick
           loading={loading}
-          // Add server-side pagination props
           paginationMode="server"
           rowCount={totalCount}
           paginationModel={paginationModel}
