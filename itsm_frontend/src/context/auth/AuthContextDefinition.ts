@@ -1,24 +1,19 @@
-// itsm_frontend/src/context/auth/AuthContextDefinition.ts
 import { createContext } from 'react';
 
-// Define the structure of the user object stored in context
 export interface AuthUser {
   id: number;
   name: string;
   role: string;
-  // FIX: Added token property to AuthUser
-  token: string;
+  // Removed 'token' from AuthUser as it's a credential, not part of user's profile
 }
 
-// Define the shape of the AuthContext value
 export interface AuthContextType {
-  token: string | null; // This is the overall token, which will be the same as user.token
+  token: string | null;
   user: AuthUser | null;
   isAuthenticated: boolean;
   loading: boolean;
-  login: (username: string, password: string) => Promise<boolean>; // Returns true on success, false on failure
+  login: (username: string, password: string) => Promise<boolean>;
   logout: () => void;
 }
 
-// Create the AuthContext.
 export const AuthContext = createContext<AuthContextType | undefined>(undefined);
