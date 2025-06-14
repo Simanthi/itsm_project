@@ -23,3 +23,5 @@ pip freeze > requirements.txt
 pip install -r requirements.txt
 
 install-extensions.bat
+
+open PowerShell as admin :  Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
