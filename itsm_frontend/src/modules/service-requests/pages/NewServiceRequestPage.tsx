@@ -106,7 +106,7 @@ function NewServiceRequestPage() {
         >
           Back
         </Button>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h1" component="h1">
           {pageTitle}
         </Typography>
       </Box>

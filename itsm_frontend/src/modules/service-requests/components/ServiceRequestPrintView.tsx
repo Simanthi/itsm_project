@@ -1,7 +1,15 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { Typography, Box, CircularProgress, Alert, Button } from '@mui/material';
+import {
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  // AppBar, // Removed AppBar
+  // Toolbar, // Removed Toolbar
+} from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'; 
@@ -15,7 +23,7 @@ interface LocationState {
   selectedRequestIds: string[];
   autoPrint?: boolean;
 }
-
+const SIDEBAR_WIDTH = 240; // Assuming a common sidebar width in pixels
 const ServiceRequestPrintView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
@@ -33,8 +41,8 @@ const ServiceRequestPrintView: React.FC = () => {
     if (element) {
       setPrintRootElement(element);
     } else {
-      console.error("Print root element #print-root not found in index.html");
-      setError("Print functionality not initialized. Missing #print-root element.");
+      console.error("Print root element #print-root not found in index.html. Print functionality may not work.");
+      setError("Print functionality not initialized. Missing #print-root element in your public/index.html.");
       setLoading(false);
     }
   }, []);
@@ -65,11 +73,11 @@ const ServiceRequestPrintView: React.FC = () => {
       }
       setServiceRequests(fetchedRequests);
       if (fetchedRequests.length === 0 && selectedRequestIds.length > 0) {
-          setError("Could not fetch any of the selected service requests.");
+          setError("Could not fetch any of the selected service requests. They might not exist or you lack permission.");
       }
     } catch (err) {
       console.error("Error fetching service requests for print:", err);
-      setError("Failed to load service requests for print preview.");
+      setError("Failed to load service requests for print preview due to a general error.");
     } finally {
       setLoading(false);
     }
@@ -95,7 +103,6 @@ const ServiceRequestPrintView: React.FC = () => {
             autoPrint: false
           }
         });
-
       }, 500);
 
       return () => {
@@ -107,8 +114,6 @@ const ServiceRequestPrintView: React.FC = () => {
     }
   }, [loading, error, serviceRequests.length, autoPrint, navigate, printRootElement, location.pathname, selectedRequestIds]);
 
-
-  // Define the BackButton component properly to accept and forward props, including 'sx'
   const BackButton: React.FC<ButtonProps> = (props) => (
     <Button
       variant="contained"
@@ -121,8 +126,6 @@ const ServiceRequestPrintView: React.FC = () => {
     </Button>
   );
 
-
-  // Render loading/error states
   if (loading) {
     return (
       <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
@@ -136,7 +139,6 @@ const ServiceRequestPrintView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>
-        {/* In error/empty states, this button is just at the bottom, not fixed */}
         {!autoPrint && <BackButton sx={{ mt: 2 }} />} 
       </Box>
     );
@@ -146,35 +148,37 @@ const ServiceRequestPrintView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">No service requests found for printing.</Alert>
-        {/* In error/empty states, this button is just at the bottom, not fixed */}
         {!autoPrint && <BackButton sx={{ mt: 2 }} />} 
       </Box>
     );
   }
 
-  // Define the content to be printed/previewed
   const printContent = (
     <>
-      {/* Fixed Container for both buttons, directly mimicking print-container's horizontal layout */}
+      {/* Fixed Container for both "Back" and "Print" buttons.
+          This Box is fixed to the viewport, but its 'width', 'left', and 'transform'
+          properties are set to make it appear horizontally centered and aligned with
+          the main content container's 80% max-width. */}
       {!autoPrint && (
         <Box sx={{
           position: 'fixed',
-          top: 80,            // Positions it below your app bar (adjust if your app bar height differs)
-          maxWidth: '75%',    // <<< CRITICAL: Matches the print-container's max width
-          width: '100%',      // Ensures it takes available space up to maxWidth
-          left: '50%',        // Start from 50% of the viewport width
-          transform: 'translateX(-50%)', // Shift back by half of its own width to center
+          top: 80, // Positioned 80px from the top of the viewport.
+          left: SIDEBAR_WIDTH, // Starts from where the sidebar ends.
+          width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, // Spans the remaining viewport width.
           display: 'flex',
-          justifyContent: 'space-between', // Pushes buttons to opposite ends
-          zIndex: 9999,       // Ensures it's above other content
-          padding: '0 30px',  // <<< CRITICAL: Applies padding to align with print-container's inner content
-          boxSizing: 'border-box', // Include padding in width calculation
+          justifyContent: 'space-between', // Distributes items to ends of the flex container.
+          zIndex: theme.zIndex.drawer + 1, // Ensures buttons are on top of other content.
+          padding: '0 20px', // Horizontal padding within the fixed container.
+          boxSizing: 'border-box', // Crucial: padding is included in the element's total width.
+          //backgroundColor: theme.palette.background.paper, // Use theme background for integration.
+          //boxShadow: theme.shadows[1], // Add shadow for visual separation.
+          //borderRadius: theme.shape.borderRadius || 4, // Match other elements' rounded corners.
         }}>
           {/* Back Button */}
           <BackButton /> 
 
           {/* Print Button */}
-          <Button
+          <Button 
             variant="contained"
             color="primary"
             onClick={() => {
@@ -188,20 +192,23 @@ const ServiceRequestPrintView: React.FC = () => {
             }}
             startIcon={<PrintIcon />}
           >
-            Print Requests
+            Print
           </Button>
         </Box>
       )}
 
+      {/* Main content container for service request details. */}
       <Box
         className="print-container"
         sx={{
-          maxWidth: '75%', // Main content max width
-          // Adjusted margin-top to ensure the main content clears the fixed button area.
-          // This value should be approximately: top_position_of_fixed_box + height_of_buttons + desired_spacing
-          // (e.g., 80px + ~40px button height + ~20px desired spacing = 140px)
-          margin: '140px auto 30px auto', 
-          padding: '30px', // Main content internal padding
+          maxWidth: '80%', 
+          // Adjust margin-top to account for the fixed button box's height and desired spacing.
+          // Roughly: fixed_box_top (80px) + fixed_box_height (~40-50px) + desired_spacing (e.g., 20px) = ~140-150px
+          marginTop: autoPrint ? '0' : '64px', // When not printing, push content below fixed buttons
+          marginBottom: '30px',
+          marginLeft: 'auto', 
+          marginRight: 'auto', 
+          padding: '30px',
           backgroundColor: theme.palette.background.paper,
           border: `1px solid ${theme.palette.divider}`,
           boxShadow: theme.shadows[1],
@@ -213,7 +220,6 @@ const ServiceRequestPrintView: React.FC = () => {
           borderRadius: theme.shape.borderRadius || 4,
         }}
       >
-        {/* Content of the service request items */}
         {serviceRequests.map((request) => (
           <Box
             key={request.id}
