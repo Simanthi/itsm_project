@@ -299,7 +299,7 @@ const PurchaseOrderForm: React.FC = () => {
     return <Box sx={{p:3}}><Alert severity="error">{error}</Alert><Button onClick={() => navigate('/procurement/memos')} sx={{mt:2}}>Back to List</Button></Box>;
   }
 
-  const currentTotalAmount = calculateOverallTotal();
+  // const currentTotalAmount = calculateOverallTotal(); // Variable is unused, direct call in JSX
   const effectiveViewOnly = viewOnlyMode || (isEditMode && formData.status !== 'draft' && formData.status !== 'pending_approval');
 
 
