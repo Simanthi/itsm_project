@@ -32,7 +32,7 @@ import type {
   GetCheckRequestsParams,
   CheckRequestStatus,
   PaymentMethod,
-  AccountsDecisionPayload,
+  // AccountsDecisionPayload, // Not directly used for typing in this file
   ConfirmPaymentPayload,
 } from '../../../api/procurementApi';
 import { useNavigate } from 'react-router-dom';
@@ -112,7 +112,7 @@ const CheckRequestList: React.FC = () => {
     setSortConfigKey(property);
   };
 
-  const handleAction = async (actionFn: () => Promise<any>, successMessage: string, errorMessagePrefix: string) => {
+  const handleAction = async (actionFn: () => Promise<unknown>, successMessage: string, errorMessagePrefix: string) => {
     setIsLoading(true); // Or a specific action loading state
     try {
       await actionFn();
