@@ -147,7 +147,8 @@ const PurchaseOrderDetailView: React.FC = () => {
         <Grid item xs={12} md={6}>
           <Typography variant="h6" gutterBottom>PO Information</Typography>
           <Typography variant="body1"><strong>PO Number:</strong> {purchaseOrder.po_number}</Typography>
-          <Typography variant="body1"><strong>Status:</strong>
+          <Typography component="div" variant="body1" sx={{ display: 'flex', alignItems: 'center' }}> {/* Changed to div and added flex for alignment */}
+            <strong>Status:</strong>
             <Chip
                 label={purchaseOrder.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
                 color={getStatusChipColor(purchaseOrder.status)}
