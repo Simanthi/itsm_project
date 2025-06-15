@@ -44,9 +44,7 @@ import type {
   OrderItemData,
   PurchaseRequestMemo, // For IOM selection
   // Vendor, // Removed from here
-  PurchaseOrderStatus,
-  // PaginatedResponse, // Removed as it's not directly used for annotations in this file
-  VendorSummary, // This is available from procurementApi for vendor_details in PurchaseOrder
+  PurchaseOrderStatus, // This is available from procurementApi for vendor_details in PurchaseOrder
 } from '../../../api/procurementApi';
 
 // PO Status choices for the dropdown

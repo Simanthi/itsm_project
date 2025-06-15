@@ -4,7 +4,7 @@
 type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
+) => Promise<unknown>;
 
 // --- Common Types ---
 export interface PaginatedResponse<T> {
@@ -119,7 +119,7 @@ export const createAssetCategory = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory; // Add type assertion here
 };
 
 export const updateAssetCategory = async (
@@ -132,7 +132,7 @@ export const updateAssetCategory = async (
     method: 'PUT', // Or PATCH if partial updates are preferred and supported
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory; // Add type assertion here
 };
 
 export const deleteAssetCategory = async (
@@ -166,7 +166,7 @@ export const createLocation = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location; // Add type assertion here
 };
 
 export const updateLocation = async (
@@ -179,7 +179,7 @@ export const updateLocation = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location; // Add type assertion here
 };
 
 export const deleteLocation = async (
@@ -213,7 +213,7 @@ export const createVendor = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor; // Add type assertion here
 };
 
 export const updateVendor = async (
@@ -226,7 +226,7 @@ export const updateVendor = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor; // Add type assertion here
 };
 
 export const deleteVendor = async (
@@ -266,7 +266,7 @@ export const getAssetById = async (
   id: number,
 ): Promise<Asset> => {
   const endpoint = `${API_BASE_PATH}/assets/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as Asset;
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as Asset; // Add type assertion here
 };
 
 export const createAsset = async (
@@ -278,7 +278,7 @@ export const createAsset = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset; // Add type assertion here
 };
 
 export const updateAsset = async (
@@ -291,7 +291,7 @@ export const updateAsset = async (
     method: 'PUT', // Or PATCH
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset; // Add type assertion here
 };
 
 export const deleteAsset = async (
