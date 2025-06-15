@@ -89,7 +89,7 @@ export interface GetListParams {
 }
 
 export interface GetAssetsParams extends GetListParams {
-  filters?: Record<string, string | number>; // e.g., { status: "in_use", category_id: 1 }
+  filters?: Record<string, string | number | boolean>; // Refined to include boolean for filter values
   sortBy?: string; // e.g., "name", "asset_tag"
   sortOrder?: 'asc' | 'desc'; // Default to 'asc' if not provided
 }
