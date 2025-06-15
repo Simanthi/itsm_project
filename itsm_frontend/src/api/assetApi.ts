@@ -94,7 +94,7 @@ export interface GetAssetsParams extends GetListParams {
   sortOrder?: 'asc' | 'desc'; // Default to 'asc' if not provided
 }
 
-const API_BASE_PATH = '/api/assets';
+const API_BASE_PATH = '/assets'; // Corrected: Relative to global API_BASE_URL (e.g., /api)
 
 // --- AssetCategory Functions ---
 
