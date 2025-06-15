@@ -86,7 +86,7 @@ export const loginApi = async (
 };
 
 export const getUserList = async (
-  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<any>,
+  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<unknown>, // Changed Promise<any> to Promise<unknown>
 ): Promise<User[]> => {
   // Token check is now handled by authenticatedFetch
   try {

@@ -4,7 +4,7 @@
 type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<any>;
+) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 
 // --- Common Types ---
 export interface PaginatedResponse<T> {
@@ -107,7 +107,7 @@ export const getAssetCategories = async (
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString()); // Standard DRF page size param
 
   const endpoint = `${API_BASE_PATH}/categories/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<AssetCategory>;
 };
 
 export const createAssetCategory = async (
@@ -154,7 +154,7 @@ export const getLocations = async (
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString());
 
   const endpoint = `${API_BASE_PATH}/locations/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Location>;
 };
 
 export const createLocation = async (
@@ -201,7 +201,7 @@ export const getVendors = async (
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString());
 
   const endpoint = `${API_BASE_PATH}/vendors/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Vendor>;
 };
 
 export const createVendor = async (
@@ -258,7 +258,7 @@ export const getAssets = async (
   }
 
   const endpoint = `${API_BASE_PATH}/assets/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Asset>;
 };
 
 export const getAssetById = async (
@@ -266,7 +266,7 @@ export const getAssetById = async (
   id: number,
 ): Promise<Asset> => {
   const endpoint = `${API_BASE_PATH}/assets/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as Asset;
 };
 
 export const createAsset = async (

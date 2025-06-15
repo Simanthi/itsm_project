@@ -12,7 +12,7 @@ import type {
 type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<any>;
+) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 
 const SERVICE_REQUESTS_ENDPOINT = '/service-requests'; // Removed trailing slash
 
