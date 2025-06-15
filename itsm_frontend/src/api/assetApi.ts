@@ -119,7 +119,7 @@ export const createAssetCategory = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory;
 };
 
 export const updateAssetCategory = async (
@@ -132,7 +132,7 @@ export const updateAssetCategory = async (
     method: 'PUT', // Or PATCH if partial updates are preferred and supported
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory;
 };
 
 export const deleteAssetCategory = async (
@@ -166,7 +166,7 @@ export const createLocation = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location;
 };
 
 export const updateLocation = async (
@@ -179,7 +179,7 @@ export const updateLocation = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location;
 };
 
 export const deleteLocation = async (
@@ -213,7 +213,7 @@ export const createVendor = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor;
 };
 
 export const updateVendor = async (
@@ -226,7 +226,7 @@ export const updateVendor = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor;
 };
 
 export const deleteVendor = async (
@@ -278,7 +278,7 @@ export const createAsset = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset;
 };
 
 export const updateAsset = async (
@@ -291,7 +291,7 @@ export const updateAsset = async (
     method: 'PUT', // Or PATCH
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset;
 };
 
 export const deleteAsset = async (
