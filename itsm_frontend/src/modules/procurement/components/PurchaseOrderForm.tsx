@@ -343,9 +343,21 @@ const PurchaseOrderForm: React.FC = () => {
             <TextField name="expected_delivery_date" label="Expected Delivery Date" type="date" value={formData.expected_delivery_date || ''} onChange={handleDateChange} InputLabelProps={{ shrink: true }} fullWidth disabled={effectiveViewOnly}/>
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField select name="status" label="Status" value={formData.status || 'draft'} onChange={handleStatusChange} fullWidth required disabled={effectiveViewOnly && formData.status !== 'draft'}>
-              {PO_STATUS_CHOICES.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
-            </TextField>
+            <FormControl fullWidth required disabled={effectiveViewOnly && formData.status !== 'draft'}>
+              <InputLabel id="po-status-select-label">Status</InputLabel>
+              <Select
+                labelId="po-status-select-label"
+                id="po-status-select"
+                name="status"
+                value={formData.status || 'draft'}
+                label="Status"
+                onChange={handleStatusChange}
+              >
+                {PO_STATUS_CHOICES.map(option => (
+                  <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
           </Grid>
           <Grid item xs={12}>
             <TextField name="shipping_address" label="Shipping Address" value={formData.shipping_address || ''} onChange={handleHeaderChange} fullWidth multiline rows={2} disabled={effectiveViewOnly}/>
