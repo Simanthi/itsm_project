@@ -46,8 +46,8 @@ const AssetsPage: React.FC = () => {
   };
 
   return (
-    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 1 } }}> {/* Responsive padding */}
-      <Typography variant="h4" gutterBottom sx={{ mb: 1 , mx: { xs: 1, sm: 1 } }}>
+    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 3 } }}> {/* Responsive padding */}
+      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
         Asset Management
       </Typography>
       <Paper elevation={2} sx={{ width: '100%'}}>

@@ -148,12 +148,98 @@ export interface GetPurchaseOrdersParams {
   [key: string]: string | number | boolean | undefined | PurchaseOrderStatus;
 }
 
+// --- Check Request Types ---
+export type CheckRequestStatus =
+  | 'pending_submission'
+  | 'pending_approval'
+  | 'approved'
+  | 'rejected'
+  | 'payment_processing'
+  | 'paid'
+  | 'cancelled';
+
+export type PaymentMethod =
+  | 'check'
+  | 'ach'
+  | 'wire'
+  | 'cash'
+  | 'credit_card'
+  | 'other';
+
+export interface CheckRequest {
+  id: number;
+  purchase_order?: number | null; // ID
+  purchase_order_number?: string | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null; // ISO date string
+  amount: string; // Decimal as string from backend
+  payee_name: string;
+  payee_address?: string | null;
+  reason_for_payment: string;
+  requested_by: number; // ID
+  requested_by_username: string;
+  request_date: string; // ISO date string
+  status: CheckRequestStatus;
+  approved_by_accounts?: number | null; // ID
+  approved_by_accounts_username?: string | null;
+  accounts_approval_date?: string | null; // ISO date string
+  accounts_comments?: string | null;
+  payment_method?: PaymentMethod | null;
+  payment_date?: string | null; // ISO date string
+  transaction_id?: string | null;
+  payment_notes?: string | null;
+}
+
+export interface CheckRequestData { // For POST (creation)
+  purchase_order?: number | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  amount: string; // Send as string for DecimalField precision
+  payee_name: string;
+  payee_address?: string | null;
+  reason_for_payment: string;
+  // requested_by and initial status set by backend
+}
+
+export interface CheckRequestUpdateData { // For PATCH/PUT (updates)
+  purchase_order?: number | null;
+  invoice_number?: string | null;
+  invoice_date?: string | null;
+  amount?: string;
+  payee_name?: string;
+  payee_address?: string | null;
+  reason_for_payment?: string;
+  // Status and approval fields are typically managed by actions
+}
+
+export interface AccountsDecisionPayload { // For approve/reject by accounts
+  comments?: string;
+}
+
+export interface ConfirmPaymentPayload {
+  payment_method: PaymentMethod;
+  payment_date: string; // ISO date string, e.g., YYYY-MM-DD
+  transaction_id: string;
+  payment_notes?: string;
+}
+
+// --- API Function Parameters (Check Request) ---
+export interface GetCheckRequestsParams {
+  page?: number;
+  pageSize?: number;
+  ordering?: string;
+  status?: CheckRequestStatus;
+  purchase_order_id?: number;
+  requested_by_id?: number;
+  [key: string]: string | number | boolean | undefined | CheckRequestStatus;
+}
+
 
 // 3. API Base Path
 const API_PROCUREMENT_PATH = '/procurement';
 
 // 4. API Client Functions (Memo - existing)
-
+// ... (existing memo functions remain unchanged) ...
 export const getPurchaseRequestMemos = async (
   authenticatedFetch: AuthenticatedFetch,
   params?: GetPurchaseRequestMemosParams,
@@ -233,7 +319,7 @@ export const cancelPurchaseRequestMemo = async (
 
 
 // --- Purchase Order Functions ---
-
+// ... (existing PO functions remain unchanged) ...
 export const getPurchaseOrders = async (
   authenticatedFetch: AuthenticatedFetch,
   params?: GetPurchaseOrdersParams,
@@ -299,10 +385,125 @@ export const deletePurchaseOrder = async (
 };
 
 
-// --- (Optional) OrderItem Functions ---
-// These functions would interact with '/procurement/order-items/' endpoint if needed directly.
-// For now, OrderItems are primarily managed via the nested PurchaseOrder serializer.
+// --- Check Request Functions ---
 
+export const getCheckRequests = async (
+  authenticatedFetch: AuthenticatedFetch,
+  params?: GetCheckRequestsParams,
+): Promise<PaginatedResponse<CheckRequest>> => {
+  const queryParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined && value !== null) {
+            if (key === 'pageSize') { queryParams.append('page_size', String(value)); }
+            else if (key === 'purchase_order_id') { queryParams.append('purchase_order', String(value)); }
+            else if (key === 'requested_by_id') { queryParams.append('requested_by', String(value)); }
+            else { queryParams.append(key, String(value)); }
+        }
+    });
+  }
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<CheckRequest>;
+};
+
+export const createCheckRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  data: CheckRequestData,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/`;
+  return await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }) as CheckRequest;
+};
+
+export const getCheckRequestById = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/`;
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as CheckRequest;
+};
+
+export const updateCheckRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+  data: Partial<CheckRequestUpdateData>,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/`;
+  return await authenticatedFetch(endpoint, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  }) as CheckRequest;
+};
+
+export const submitCheckRequestForApproval = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/submit_for_approval/`;
+  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+};
+
+export const approveCheckRequestByAccounts = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+  payload: AccountsDecisionPayload,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/accounts_approve/`;
+  return await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as CheckRequest;
+};
+
+export const rejectCheckRequestByAccounts = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+  payload: AccountsDecisionPayload, // Requires comments
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/accounts_reject/`;
+  return await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as CheckRequest;
+};
+
+export const markCheckRequestPaymentProcessing = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/mark_payment_processing/`;
+  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+};
+
+export const confirmCheckRequestPayment = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+  payload: ConfirmPaymentPayload,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/confirm_payment/`;
+  return await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  }) as CheckRequest;
+};
+
+export const cancelCheckRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number,
+): Promise<CheckRequest> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/cancel/`;
+  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+};
+
+// --- (Optional) OrderItem Functions ---
+// ... (existing commented out OrderItem functions remain unchanged) ...
 /*
 export const getOrderItems = async (
   authenticatedFetch: AuthenticatedFetch,

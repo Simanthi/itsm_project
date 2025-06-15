@@ -20,6 +20,7 @@ import {
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
 
 import { useAuth } from '../../../context/auth/useAuth';
 // import { useUI } from '../../../context/UIContext/useUI'; // Not strictly needed if only snackbar for error/success
@@ -94,7 +95,11 @@ const PurchaseOrderList: React.FC = () => {
   };
 
   const handleViewDetails = (poId: number) => {
-    navigate(`/procurement/purchase-orders/edit/${poId}`); // Form will handle view/edit logic
+    navigate(`/procurement/purchase-orders/view/${poId}`); // Navigate to the new detail view
+  };
+
+  const handleEditPO = (poId: number) => {
+    navigate(`/procurement/purchase-orders/edit/${poId}`);
   };
 
   const getStatusChipColor = (status: PurchaseOrderStatus) => {
@@ -185,11 +190,18 @@ const PurchaseOrderList: React.FC = () => {
                 <TableCell align="right">{po.total_amount != null ? `$${Number(po.total_amount).toFixed(2)}` : '-'}</TableCell>
                 <TableCell>{po.created_by_username}</TableCell>
                 <TableCell align="right">
-                  <Tooltip title="View/Edit Details">
+                  <Tooltip title="View Details">
                     <IconButton onClick={() => handleViewDetails(po.id)} size="small">
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
+                  {(po.status === 'draft' || po.status === 'pending_approval') && (
+                    <Tooltip title="Edit Purchase Order">
+                      <IconButton onClick={() => handleEditPO(po.id)} size="small">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {/* Add other relevant actions like 'Cancel PO', 'Receive Items' based on status and permissions */}
                 </TableCell>
               </TableRow>
