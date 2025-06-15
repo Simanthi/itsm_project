@@ -30,6 +30,7 @@ import {
   Toolbar, // For filter bar layout
   Tooltip,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select'; // Added for typed Select events
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
@@ -182,13 +183,13 @@ const AssetList: React.FC = () => {
     setPage(0);
   };
 
-  const handleStatusFilterChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setStatusFilter(event.target.value as string);
+  const handleStatusFilterChange = (event: SelectChangeEvent<string>) => { // Updated type
+    setStatusFilter(event.target.value); // No 'as string' needed if SelectChangeEvent<string>
     setPage(0);
   };
 
-  const handleCategoryFilterChange = (event: React.ChangeEvent<{ value: unknown }>) => {
-    setCategoryFilter(event.target.value as string);
+  const handleCategoryFilterChange = (event: SelectChangeEvent<string>) => { // Updated type
+    setCategoryFilter(event.target.value); // No 'as string' needed
     setPage(0);
   };
 
@@ -291,7 +292,7 @@ const AssetList: React.FC = () => {
                 <InputLabel>Status</InputLabel>
                 <Select
                   value={statusFilter}
-                  onChange={handleStatusFilterChange as any} // Cast due to MUI Select type issue with unknown
+                  onChange={handleStatusFilterChange} // Removed 'as any'
                   label="Status"
                 >
                   {ASSET_STATUS_CHOICES.map(choice => (
@@ -305,7 +306,7 @@ const AssetList: React.FC = () => {
                 <InputLabel>Category</InputLabel>
                 <Select
                   value={categoryFilter}
-                  onChange={handleCategoryFilterChange as any}
+                  onChange={handleCategoryFilterChange} // Removed 'as any'
                   label="Category"
                   disabled={!assetCategories.length}
                 >

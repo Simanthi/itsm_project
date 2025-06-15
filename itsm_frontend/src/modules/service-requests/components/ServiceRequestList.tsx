@@ -26,7 +26,7 @@ interface DateValueFormatterParams {
 
 const ServiceRequestList: React.FC = () => {
   const navigate = useNavigate();
-  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch
+  const { authenticatedFetch } = useAuth(); // Removed token
   const { serviceRequests, loading, error, fetchServiceRequests } =
     useServiceRequests();
   const { showSnackbar, showConfirmDialog } = useUI(); // Use UI hooks
