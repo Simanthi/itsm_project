@@ -31,18 +31,20 @@ import {
   createPurchaseOrder,
   updatePurchaseOrder,
   getPurchaseRequestMemos, // To fetch approved IOMs
-  // getVendors, // Assuming vendors might be fetched differently or from another API if needed
+  // getVendors,
 } from '../../../api/procurementApi';
 import { getVendors } from '../../../api/assetApi'; // Using Vendor list from assetApi
+import type { Vendor } from '../../../api/assetApi'; // Import full Vendor type from assetApi
 import type {
   PurchaseOrder,
   PurchaseOrderData,
   OrderItemData,
   PurchaseRequestMemo, // For IOM selection
-  Vendor, // For Vendor selection
+  // Vendor, // Removed from here
   PurchaseOrderStatus,
-  PaginatedResponse,
-} from '../../../api/procurementApi'; // Ensure these types are exported from procurementApi
+  PaginatedResponse, // This might be unused if only results are directly used
+  VendorSummary, // This is available from procurementApi for vendor_details in PurchaseOrder
+} from '../../../api/procurementApi';
 
 // PO Status choices for the dropdown
 const PO_STATUS_CHOICES: { value: PurchaseOrderStatus; label: string }[] = [
@@ -77,7 +79,7 @@ const initialOrderItemData: OrderItemData = {
 const PurchaseOrderForm: React.FC = () => {
   const { poId } = useParams<{ poId?: string }>();
   const navigate = useNavigate();
-  const { authenticatedFetch, user: currentUser } = useAuth();
+  const { authenticatedFetch } = useAuth(); // Removed currentUser
   const { showSnackbar } = useUI();
 
   const [formData, setFormData] = useState<Partial<PurchaseOrderData>>(initialFormData);
@@ -158,11 +160,15 @@ const PurchaseOrderForm: React.FC = () => {
     } else {
         setFormData(prev => ({...prev, po_number: `PO-${Date.now().toString().slice(-6)}`})); // Simple unique PO draft
     }
-  }, [poId, fetchPurchaseOrderForEdit]);
+  }, [poId, fetchPurchaseOrderForEdit]); // Removed currentUser from dependency array (it was implicitly removed when currentUser was removed)
 
-  const handleHeaderChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string | number | undefined>) => {
+  const handleHeaderChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => { // Removed SelectChangeEvent part
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name!]: value || null }));
+  };
+
+  const handleStatusChange = (event: SelectChangeEvent<PurchaseOrderStatus>) => { // Specific handler for status
+    setFormData((prev) => ({ ...prev, status: event.target.value as PurchaseOrderStatus }));
   };
 
   const handleAutocompleteChange = (fieldName: keyof PurchaseOrderData, newValue: { id: number } | null) => {
@@ -177,8 +183,18 @@ const PurchaseOrderForm: React.FC = () => {
   const handleItemChange = (index: number, event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = event.target;
     const items = [...orderItems];
-    const currentItem = items[index] as any; // Temp any for dynamic key
-    currentItem[name] = name === 'quantity' || name === 'unit_price' ? (value === '' ? null : Number(value)) : value;
+    const itemToUpdate = { ...items[index] };
+
+    if (name === 'item_description') {
+      itemToUpdate.item_description = value;
+    } else if (name === 'quantity') {
+      // Ensure quantity is not set to 0 or negative from empty string, default to 1 or existing
+      const numValue = Number(value);
+      itemToUpdate.quantity = value === '' ? 1 : (numValue > 0 ? numValue : 1) ;
+    } else if (name === 'unit_price') {
+      itemToUpdate.unit_price = value === '' ? null : Number(value);
+    }
+    items[index] = itemToUpdate;
     setOrderItems(items);
   };
 
@@ -192,7 +208,7 @@ const PurchaseOrderForm: React.FC = () => {
     setOrderItems(items);
   };
 
-  const handleIOMSelect = (event: any, selectedIOM: PurchaseRequestMemo | null) => {
+  const handleIOMSelect = (_event: React.SyntheticEvent, selectedIOM: PurchaseRequestMemo | null) => { // Changed event to _event and typed
     if (selectedIOM) {
         setFormData(prev => ({
             ...prev,
@@ -327,7 +343,7 @@ const PurchaseOrderForm: React.FC = () => {
             <TextField name="expected_delivery_date" label="Expected Delivery Date" type="date" value={formData.expected_delivery_date || ''} onChange={handleDateChange} InputLabelProps={{ shrink: true }} fullWidth disabled={effectiveViewOnly}/>
           </Grid>
           <Grid item xs={12} md={4}>
-            <TextField select name="status" label="Status" value={formData.status || 'draft'} onChange={handleHeaderChange as any} fullWidth required disabled={effectiveViewOnly && formData.status !== 'draft'}>
+            <TextField select name="status" label="Status" value={formData.status || 'draft'} onChange={handleStatusChange} fullWidth required disabled={effectiveViewOnly && formData.status !== 'draft'}>
               {PO_STATUS_CHOICES.map(option => <MenuItem key={option.value} value={option.value}>{option.label}</MenuItem>)}
             </TextField>
           </Grid>

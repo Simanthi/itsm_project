@@ -80,7 +80,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [memoId, authenticatedFetch, navigate, showSnackbar, user?.id]);
+  }, [memoId, authenticatedFetch, showSnackbar, user?.id]); // Removed navigate
 
   useEffect(() => {
     if (memoId) {
