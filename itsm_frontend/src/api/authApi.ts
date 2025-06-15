@@ -81,19 +81,14 @@ export const loginApi = async (
   }
 };
 
-export const getUserList = async (token: string): Promise<User[]> => {
-  if (!token) {
-    return Promise.reject(
-      new Error('Authentication required to fetch user list.'),
-    );
-  }
+export const getUserList = async (
+  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<any>,
+): Promise<User[]> => {
+  // Token check is now handled by authenticatedFetch
   try {
-    // 👇 CHANGE 4: Use the new apiClient for fetching the user list.
     const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/`;
-    const paginatedUsersData = await apiClient<PaginatedResponse<User>>(
-      endpoint,
-      token,
-    );
+    // Use authenticatedFetch instead of apiClient directly
+    const paginatedUsersData = await authenticatedFetch(endpoint) as PaginatedResponse<User>;
 
     return paginatedUsersData?.results || [];
   } catch (error) {

@@ -6,6 +6,7 @@ import {
   type AuthUser,
 } from './AuthContextDefinition';
 import { loginApi, logoutApi as backendLogoutApi } from '../../api/authApi'; // Renamed logoutApi to avoid conflict
+import { apiClient } from '../../api/apiClient';
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -176,6 +177,35 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     );
   }, [token]); // 'token' is a dependency because backendLogoutApi uses it.
 
+  const authenticatedFetch = useCallback(
+    async (endpoint: string, options?: RequestInit): Promise<any> => {
+      if (!token) {
+        console.error('authenticatedFetch: No token available.');
+        // Optionally, call logout() here if missing token should always force logout
+        // logout();
+        throw new Error('No authentication token available. Please log in.');
+      }
+
+      try {
+        return await apiClient(endpoint, token, options);
+      } catch (error: any) {
+        if (error.isAuthError) {
+          console.warn(
+            'authenticatedFetch: Authentication error detected. Logging out.',
+            error,
+          );
+          logout(); // Clear session and redirect
+          // Re-throw the original error or a more specific session expiry error
+          // It might be useful for the caller to know the original error
+          throw error;
+        }
+        // For non-auth errors, just re-throw
+        throw error;
+      }
+    },
+    [token, logout], // Dependencies: token for the API call, logout for error handling
+  );
+
   // Memoize the context value to prevent unnecessary re-renders of consuming components.
   const memoizedValue: AuthContextType = React.useMemo(
     () => ({
@@ -185,8 +215,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       loading,
       login,
       logout,
+      authenticatedFetch,
     }),
-    [token, user, isAuthenticated, loading, login, logout],
+    [token, user, isAuthenticated, loading, login, logout, authenticatedFetch],
   );
 
   return (
