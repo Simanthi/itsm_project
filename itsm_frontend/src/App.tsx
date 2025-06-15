@@ -13,6 +13,8 @@ import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequest
 import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
 import AssetsPage from './modules/assets/AssetsPage';
 import AssetForm from './modules/assets/components/AssetForm'; // Import AssetForm
+import PurchaseRequestMemoList from './modules/procurement/components/PurchaseRequestMemoList'; // Import Procurement List
+import PurchaseRequestMemoForm from './modules/procurement/components/PurchaseRequestMemoForm'; // Import Procurement Form
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -46,6 +48,10 @@ function AppContent() {
           <Route path="assets" element={<AssetsPage />} />
           <Route path="assets/new" element={<AssetForm />} />
           <Route path="assets/edit/:assetId" element={<AssetForm />} />
+          {/* Procurement Routes */}
+          <Route path="procurement/memos" element={<PurchaseRequestMemoList />} />
+          <Route path="procurement/memos/new" element={<PurchaseRequestMemoForm />} />
+          <Route path="procurement/memos/edit/:memoId" element={<PurchaseRequestMemoForm />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />
