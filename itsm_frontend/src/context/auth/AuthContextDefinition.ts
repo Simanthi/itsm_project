@@ -17,7 +17,7 @@ export interface AuthContextType {
   loading: boolean; // Indicates if authentication state is currently being loaded/initialized
   login: (username: string, password: string) => Promise<boolean>; // Function to handle user login
   logout: () => void; // Function to handle user logout
-  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<any>; // Function for making authenticated API calls
+  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 }
 
 // Creates the React Context object. Default value is undefined, to be provided by AuthProvider.

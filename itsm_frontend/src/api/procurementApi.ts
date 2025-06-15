@@ -4,7 +4,7 @@
 export type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<any>;
+) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 
 // 2. TypeScript Types/Interfaces
 
@@ -171,7 +171,7 @@ export const getPurchaseRequestMemos = async (
     });
   }
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<PurchaseRequestMemo>;
 };
 
 export const createPurchaseRequestMemo = async (
@@ -183,7 +183,7 @@ export const createPurchaseRequestMemo = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
+  }) as PurchaseRequestMemo;
 };
 
 export const getPurchaseRequestMemoById = async (
@@ -191,7 +191,7 @@ export const getPurchaseRequestMemoById = async (
   id: number,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PurchaseRequestMemo;
 };
 
 export const updatePurchaseRequestMemo = async (
@@ -204,7 +204,7 @@ export const updatePurchaseRequestMemo = async (
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
+  }) as PurchaseRequestMemo;
 };
 
 export const decidePurchaseRequestMemo = async (
@@ -217,7 +217,7 @@ export const decidePurchaseRequestMemo = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(decisionData),
-  });
+  }) as PurchaseRequestMemo;
 };
 
 export const cancelPurchaseRequestMemo = async (
@@ -228,7 +228,7 @@ export const cancelPurchaseRequestMemo = async (
   return await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-  });
+  }) as PurchaseRequestMemo;
 };
 
 
@@ -254,7 +254,7 @@ export const getPurchaseOrders = async (
     });
   }
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<PurchaseOrder>;
 };
 
 export const createPurchaseOrder = async (
@@ -266,7 +266,7 @@ export const createPurchaseOrder = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
+  }) as PurchaseOrder;
 };
 
 export const getPurchaseOrderById = async (
@@ -274,7 +274,7 @@ export const getPurchaseOrderById = async (
   id: number,
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PurchaseOrder;
 };
 
 export const updatePurchaseOrder = async (
@@ -287,7 +287,7 @@ export const updatePurchaseOrder = async (
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  });
+  }) as PurchaseOrder;
 };
 
 export const deletePurchaseOrder = async (
