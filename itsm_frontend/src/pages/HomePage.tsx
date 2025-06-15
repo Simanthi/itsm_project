@@ -260,10 +260,10 @@ function HomePage() {
                 }
               }}
               renderValue={(selectedValue) => (
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                <Box component="span" sx={{ display: 'flex', alignItems: 'center', mr: 1 }}> {/* Added mr: 1 and component span */}
                   {/* Optional: Show a small icon next to the text if desired */}
-                  {/* <PaletteOutlinedIcon sx={{ fontSize: '1.2rem' }} />  */}
-                  {selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1)}
+                  {/* <PaletteOutlinedIcon sx={{ fontSize: '1.2rem', mr: 0.5 }} /> */}
+                  {(selectedValue as string).charAt(0).toUpperCase() + (selectedValue as string).slice(1)}
                 </Box>
               )}
             >
