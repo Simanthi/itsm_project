@@ -63,8 +63,14 @@ const VendorManagement: React.FC = () => {
     try {
       const response: PaginatedResponse<Vendor> = await getVendors(authenticatedFetch, { page: 1, pageSize: 100 });
       setVendors(response.results);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch vendors.');
+    } catch (err: unknown) {
+      let message = 'Failed to fetch vendors.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to fetch vendors:", err);
     } finally {
       setIsLoading(false);
@@ -132,8 +138,14 @@ const VendorManagement: React.FC = () => {
       }
       fetchVendors();
       handleCloseFormDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save vendor.');
+    } catch (err: unknown) {
+      let message = 'Failed to save vendor.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to save vendor:", err);
     } finally {
       setIsLoading(false);
@@ -151,8 +163,14 @@ const VendorManagement: React.FC = () => {
       setSuccessMessage('Vendor deleted successfully!');
       fetchVendors();
       handleCloseDeleteDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete vendor.');
+    } catch (err: unknown) {
+      let message = 'Failed to delete vendor.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to delete vendor:", err);
     } finally {
       setIsLoading(false);

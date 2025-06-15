@@ -26,7 +26,7 @@ interface DateValueFormatterParams {
 
 const ServiceRequestList: React.FC = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch
   const { serviceRequests, loading, error, fetchServiceRequests } =
     useServiceRequests();
   const { showSnackbar, showConfirmDialog } = useUI(); // Use UI hooks
@@ -56,8 +56,8 @@ const ServiceRequestList: React.FC = () => {
       showSnackbar('Please select requests to delete.', 'warning'); // Use Snackbar
       return;
     }
-    if (!token) {
-      showSnackbar('Authentication token not found. Please log in.', 'error'); // Use Snackbar
+    if (!authenticatedFetch) { // Check for authenticatedFetch
+      showSnackbar('Authentication context not available. Please log in.', 'error'); // Use Snackbar
       return;
     }
 
@@ -75,9 +75,9 @@ const ServiceRequestList: React.FC = () => {
           await Promise.all(
             requestsToDelete.map((req) => {
               if (req.request_id) {
-                return deleteServiceRequest(req.request_id, token);
+                return deleteServiceRequest(authenticatedFetch, req.request_id); // Pass authenticatedFetch
               } else if (req.id) {
-                return deleteServiceRequest(String(req.id), token);
+                return deleteServiceRequest(authenticatedFetch, String(req.id)); // Pass authenticatedFetch
               }
               return Promise.resolve(); // Should not happen if data is valid
             }),

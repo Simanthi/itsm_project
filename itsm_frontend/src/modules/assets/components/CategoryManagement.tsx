@@ -59,8 +59,14 @@ const CategoryManagement: React.FC = () => {
       // Implement proper pagination if the number of categories grows significantly.
       const response: PaginatedResponse<AssetCategory> = await getAssetCategories(authenticatedFetch, { page: 1, pageSize: 100 });
       setCategories(response.results);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch categories.');
+    } catch (err: unknown) {
+      let message = 'Failed to fetch categories.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to fetch categories:", err);
     } finally {
       setIsLoading(false);
@@ -122,8 +128,14 @@ const CategoryManagement: React.FC = () => {
       }
       fetchCategories(); // Refresh list
       handleCloseFormDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save category.');
+    } catch (err: unknown) {
+      let message = 'Failed to save category.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to save category:", err);
     } finally {
       setIsLoading(false);
@@ -141,8 +153,14 @@ const CategoryManagement: React.FC = () => {
       setSuccessMessage('Category deleted successfully!');
       fetchCategories(); // Refresh list
       handleCloseDeleteDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete category.');
+    } catch (err: unknown) {
+      let message = 'Failed to delete category.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to delete category:", err);
     } finally {
       setIsLoading(false);

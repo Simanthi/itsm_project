@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react'; // Removed useMemo
 import {
   Box,
   Typography,
+  Dialog, // Added
+  DialogActions, // Added
+  DialogContent, // Added
+  DialogTitle, // Added
+  Grid, // Added
   Button,
   Table,
   TableBody,
@@ -39,7 +44,7 @@ import type {
   // Location, // Not directly used in AssetList columns from root, but via Asset.location
   // Vendor, // Not directly used in AssetList columns from root, but via Asset.vendor
   // User, // Not directly used in AssetList columns from root, but via Asset.assigned_to
-  PaginatedResponse
+  // PaginatedResponse // Removed as per instruction if not directly annotated
 } from '../../../api/assetApi';
 import { useNavigate } from 'react-router-dom'; // For navigation
 
@@ -103,9 +108,12 @@ const AssetList: React.FC = () => {
     try {
       const response = await getAssetCategories(authenticatedFetch, { page: 1, pageSize: 100 }); // Fetch all for filter
       setAssetCategories(response.results);
-    } catch (err) {
+    } catch (err: unknown) { // Changed to unknown
       console.error("Failed to fetch asset categories for filter:", err);
       // Non-critical error, so might not set main error state
+      // Optionally set a specific error state for this if needed:
+      // const message = err instanceof Error ? err.message : String(err);
+      // setFilterError(`Failed to load categories: ${message}`);
     }
   }, [authenticatedFetch]);
 
@@ -138,8 +146,9 @@ const AssetList: React.FC = () => {
       });
       setAssets(response.results);
       setTotalAssets(response.count);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch assets.');
+    } catch (err: unknown) { // Changed to unknown
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to fetch assets.');
       console.error("Failed to fetch assets:", err);
     } finally {
       setIsLoading(false);
@@ -154,7 +163,7 @@ const AssetList: React.FC = () => {
     fetchAssets();
   }, [fetchAssets]); // This will re-run when fetchAssets itself changes (due to its own dependencies)
 
-  const handlePageChange = (event: unknown, newPage: number) => {
+  const handlePageChange = (_event: unknown, newPage: number) => { // event changed to _event
     setPage(newPage);
   };
 
@@ -228,8 +237,9 @@ const AssetList: React.FC = () => {
       setSuccessMessage('Asset deleted successfully!');
       fetchAssets(); // Refresh list
       handleCloseDeleteDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete asset.');
+    } catch (err: unknown) { // Changed to unknown
+      const message = err instanceof Error ? err.message : String(err);
+      setError(message || 'Failed to delete asset.');
       console.error("Failed to delete asset:", err);
     } finally {
       setIsLoading(false);
