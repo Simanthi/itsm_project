@@ -147,7 +147,7 @@ const LocationManagement: React.FC = () => {
 
   return (
     <Box sx={{ p: 3 }}>
-      <Typography variant="h4" gutterBottom>
+      <Typography variant="h5" component="h2" gutterBottom>
         Manage Locations
       </Typography>
 

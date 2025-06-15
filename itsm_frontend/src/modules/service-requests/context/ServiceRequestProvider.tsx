@@ -22,7 +22,7 @@ interface ServiceRequestProviderProps {
 export const ServiceRequestProvider = ({
   children,
 }: ServiceRequestProviderProps) => {
-  const { token, isAuthenticated } = useAuth();
+  const { token, isAuthenticated, authenticatedFetch } = useAuth(); // Added authenticatedFetch
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   // Add totalCount and paginationModel states
   const [totalCount, setTotalCount] = useState<number>(0);
@@ -38,10 +38,10 @@ export const ServiceRequestProvider = ({
       'ServiceRequestProvider: fetchServiceRequests called with pagination:',
       paginationModel,
     );
-    if (!isAuthenticated || !token) {
+    if (!isAuthenticated || !authenticatedFetch) { // Check for authenticatedFetch
       setLoading(false);
       setError('Authentication required to fetch service requests.');
-      console.log('ServiceRequestProvider: Skipping fetch due to no auth.');
+      console.log('ServiceRequestProvider: Skipping fetch due to no auth or missing authenticatedFetch.');
       return;
     }
 
@@ -51,7 +51,7 @@ export const ServiceRequestProvider = ({
       // Call API with current pagination model (+1 for 1-indexed backend)
       // Correctly destructure results and count from the getServiceRequests response
       const { results, count } = await getServiceRequests(
-        token,
+        authenticatedFetch, // Pass authenticatedFetch
         paginationModel.page + 1,
         paginationModel.pageSize,
       );
@@ -82,7 +82,7 @@ export const ServiceRequestProvider = ({
     }
     // FIX: Changed dependency array to include paginationModel directly, as ESLint suggests.
     // This satisfies the exhaustive-deps rule, as the entire object is used in the callback.
-  }, [isAuthenticated, token, paginationModel]);
+  }, [isAuthenticated, authenticatedFetch, paginationModel]); // Added authenticatedFetch to dependencies
 
   useEffect(() => {
     fetchServiceRequests();
@@ -94,17 +94,17 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: addServiceRequest called with data:',
         newRequestData,
       );
-      if (!token) {
+      if (!authenticatedFetch) { // Check for authenticatedFetch
         const errorMessage =
-          'Authentication token not found. Cannot add request.';
+          'Authentication context not available. Cannot add request.';
         setError(errorMessage);
         console.error('ServiceRequestProvider: ' + errorMessage);
         throw new Error(errorMessage);
       }
       try {
         const createdRequest = await apiCreateServiceRequest(
+          authenticatedFetch, // Pass authenticatedFetch
           newRequestData,
-          token,
         );
         console.log(
           'ServiceRequestProvider: API returned created request:',
@@ -123,7 +123,7 @@ export const ServiceRequestProvider = ({
         throw new Error(errorMessage);
       }
     },
-    [token, fetchServiceRequests],
+    [authenticatedFetch, fetchServiceRequests], // Added authenticatedFetch
   );
 
   const updateServiceRequest = useCallback(
@@ -132,9 +132,9 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: updateServiceRequest called with data:',
         updatedRequest,
       );
-      if (!token) {
+      if (!authenticatedFetch) { // Check for authenticatedFetch
         const errorMessage =
-          'Authentication token not found. Cannot update request.';
+          'Authentication context not available. Cannot update request.';
         setError(errorMessage);
         console.error('ServiceRequestProvider: ' + errorMessage);
         throw new Error(errorMessage);
@@ -164,9 +164,9 @@ export const ServiceRequestProvider = ({
         );
         // Pass request_id for the update API call
         const updatedResponse = await apiUpdateServiceRequest(
+          authenticatedFetch, // Pass authenticatedFetch
           updatedRequest.request_id,
           payloadToSend,
-          token,
         );
         console.log(
           'ServiceRequestProvider: API returned updated request (from backend):',
@@ -185,7 +185,7 @@ export const ServiceRequestProvider = ({
         throw new Error(errorMessage);
       }
     },
-    [token, fetchServiceRequests],
+    [authenticatedFetch, fetchServiceRequests], // Added authenticatedFetch
   );
 
   const deleteServiceRequest = useCallback(
@@ -194,15 +194,15 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: deleteServiceRequest called for ID:',
         requestId,
       );
-      if (!token) {
+      if (!authenticatedFetch) { // Check for authenticatedFetch
         const errorMessage =
-          'Authentication token not found. Cannot delete request.';
+          'Authentication context not available. Cannot delete request.';
         setError(errorMessage);
         console.error('ServiceRequestProvider: ' + errorMessage);
         throw new Error(errorMessage);
       }
       try {
-        await apiDeleteServiceRequest(requestId, token);
+        await apiDeleteServiceRequest(authenticatedFetch, requestId); // Pass authenticatedFetch
         console.log(
           'ServiceRequestProvider: API returned success for deletion of ID:',
           requestId,
@@ -219,7 +219,7 @@ export const ServiceRequestProvider = ({
         throw new Error(errorMessage);
       }
     },
-    [token, fetchServiceRequests],
+    [authenticatedFetch, fetchServiceRequests], // Added authenticatedFetch
   );
 
   return (

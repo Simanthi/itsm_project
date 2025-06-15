@@ -19,7 +19,7 @@ import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import Se
 function NewServiceRequestPage() {
   const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch
 
   const [initialFormData, setInitialFormData] = useState<
     ServiceRequest | undefined
@@ -55,11 +55,11 @@ function NewServiceRequestPage() {
   // Effect to fetch initial data for editing
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (id && token) {
+      if (id && authenticatedFetch) { // Check for authenticatedFetch
         setLoading(true);
         setError(null);
         try {
-          const requestData = await getServiceRequestById(id, token);
+          const requestData = await getServiceRequestById(authenticatedFetch, id); // Pass authenticatedFetch
           setInitialFormData(requestData);
         } catch (err) {
           console.error('Error fetching service request data for edit:', err);
@@ -74,14 +74,14 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (token) {
-      // Only attempt to fetch if token is available
+    if (authenticatedFetch) { // Check for authenticatedFetch
+      // Only attempt to fetch if authenticatedFetch is available
       fetchInitialData();
     } else {
-      setError('Authentication token not found. Please log in.');
+      setError('Authentication context not available. Please log in.');
       setLoading(false);
     }
-  }, [id, token, parseError]);
+  }, [id, authenticatedFetch, parseError]); // Added authenticatedFetch to dependencies
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`
