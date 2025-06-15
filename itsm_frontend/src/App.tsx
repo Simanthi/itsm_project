@@ -12,6 +12,7 @@ import DashboardPage from './modules/dashboard/DashboardPage';
 import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequestsPage';
 import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
 import AssetsPage from './modules/assets/AssetsPage';
+import AssetForm from './modules/assets/components/AssetForm'; // Import AssetForm
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -43,6 +44,8 @@ function AppContent() {
             element={<ServiceRequestPrintView />}
           />
           <Route path="assets" element={<AssetsPage />} />
+          <Route path="assets/new" element={<AssetForm />} />
+          <Route path="assets/edit/:assetId" element={<AssetForm />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />

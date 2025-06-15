@@ -72,7 +72,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 }) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { token, user, loading: authLoading } = useAuth();
+  const { token, user, loading: authLoading, authenticatedFetch } = useAuth(); // Added authenticatedFetch
   const { showSnackbar } = useUI();
   // 👇 CHANGE 3: Get the addServiceRequest function from the context
   const { addServiceRequest } = useServiceRequests();
@@ -120,14 +120,14 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
-    if (!token) {
+    if (!authenticatedFetch) { // Check for authenticatedFetch
       setUsers([]);
-      setError('Authentication token not found. Please log in to fetch users.');
+      setError('Authentication context not available. Cannot fetch users.');
       setLoadingUsers(false);
       return;
     }
     try {
-      const usersData = await getUserList(token);
+      const usersData = await getUserList(authenticatedFetch); // Pass authenticatedFetch
       setUsers(usersData);
       setError(null);
     } catch (err) {
@@ -140,7 +140,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     } finally {
       setLoadingUsers(false);
     }
-  }, [token, parseError]);
+  }, [authenticatedFetch, parseError]); // Added authenticatedFetch to dependencies
 
   useEffect(() => {
     fetchUsers();
@@ -227,12 +227,15 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     setSubmitting(true);
     setError(null);
 
-    if (!token) {
-      setError('Authentication token not found. Please log in.');
-      showSnackbar('Authentication token not found. Please log in.', 'error');
-      setSubmitting(false);
-      return;
+    // The token check is removed here as authenticatedFetch handles auth concerns.
+    // If authenticatedFetch is undefined, it implies user is not properly authenticated or context is missing.
+    if (!authenticatedFetch && id) { // Only critical if trying to update directly using updateServiceRequest
+        setError('Authentication context not available. Please log in.');
+        showSnackbar('Authentication context not available. Please log in.', 'error');
+        setSubmitting(false);
+        return;
     }
+    // For creating new requests, addServiceRequest from context will handle its own auth checks internally.
 
     if (
       !id &&
@@ -276,9 +279,9 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
           assigned_to_id: formData.assigned_to_id,
         };
         await updateServiceRequest(
+          authenticatedFetch, // Pass authenticatedFetch
           formData.request_id_display,
           updatePayload,
-          token,
         );
         showSnackbar('Service Request updated successfully!', 'success');
       } else {

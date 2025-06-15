@@ -26,7 +26,7 @@ const SIDEBAR_WIDTH = 240; // Assuming a common sidebar width in pixels
 const ServiceRequestPrintView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch, token might still be used for other checks or can be removed if not.
   const theme = useTheme();
   const { selectedRequestIds, autoPrint } =
     (location.state as LocationState) || {
@@ -57,8 +57,8 @@ const ServiceRequestPrintView: React.FC = () => {
   }, []);
 
   const fetchRequestsForPrint = useCallback(async () => {
-    if (!token) {
-      setError('Authentication token not found. Please log in.');
+    if (!authenticatedFetch) { // Check for authenticatedFetch
+      setError('Authentication context not available. Please log in.');
       setLoading(false);
       return;
     }
@@ -74,7 +74,7 @@ const ServiceRequestPrintView: React.FC = () => {
       const fetchedRequests: ServiceRequest[] = [];
       for (const reqId of selectedRequestIds) {
         try {
-          const request = await getServiceRequestById(reqId, token);
+          const request = await getServiceRequestById(authenticatedFetch, reqId); // Pass authenticatedFetch
           fetchedRequests.push(request);
         } catch (singleFetchError) {
           console.error(`Failed to fetch request ${reqId}:`, singleFetchError);
@@ -94,7 +94,7 @@ const ServiceRequestPrintView: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedRequestIds, token]);
+  }, [selectedRequestIds, authenticatedFetch]); // Added authenticatedFetch to dependencies
 
   useEffect(() => {
     fetchRequestsForPrint();
