@@ -2,6 +2,18 @@
 
 import { API_BASE_URL } from '../config';
 
+// Custom AuthError class
+export class AuthError extends Error {
+  isAuthError: boolean;
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+    this.isAuthError = true;
+    // This line is important for instanceof to work correctly with custom errors in some environments
+    Object.setPrototypeOf(this, AuthError.prototype);
+  }
+}
+
 // A standard error response shape from our Django backend
 interface ErrorResponse {
   detail?: string;
@@ -39,10 +51,7 @@ export async function apiClient<T>(
     // If the response is not OK, parse the error and throw
     if (!response.ok) {
       if (response.status === 401) {
-        const authError = new Error("Authentication failed: Unauthorized");
-        // Add a custom property to identify this as an authentication error
-        (authError as any).isAuthError = true;
-        throw authError;
+        throw new AuthError("Authentication failed: Unauthorized");
       }
       const errorData: ErrorResponse = await response.json().catch(() => ({
         message: response.statusText,
