@@ -13,8 +13,11 @@ import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequest
 import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
 import AssetsPage from './modules/assets/AssetsPage';
 import AssetForm from './modules/assets/components/AssetForm'; // Import AssetForm
-import PurchaseRequestMemoList from './modules/procurement/components/PurchaseRequestMemoList'; // Import Procurement List
-import PurchaseRequestMemoForm from './modules/procurement/components/PurchaseRequestMemoForm'; // Import Procurement Form
+import PurchaseRequestMemoList from './modules/procurement/components/PurchaseRequestMemoList';
+import PurchaseRequestMemoForm from './modules/procurement/components/PurchaseRequestMemoForm';
+import ProcurementDashboardPage from './modules/procurement/pages/ProcurementDashboardPage';
+import PurchaseOrderList from './modules/procurement/components/PurchaseOrderList'; // Import PO List
+import PurchaseOrderForm from './modules/procurement/components/PurchaseOrderForm'; // Import PO Form
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -49,9 +52,13 @@ function AppContent() {
           <Route path="assets/new" element={<AssetForm />} />
           <Route path="assets/edit/:assetId" element={<AssetForm />} />
           {/* Procurement Routes */}
-          <Route path="procurement/memos" element={<PurchaseRequestMemoList />} />
-          <Route path="procurement/memos/new" element={<PurchaseRequestMemoForm />} />
-          <Route path="procurement/memos/edit/:memoId" element={<PurchaseRequestMemoForm />} />
+          <Route path="procurement" element={<ProcurementDashboardPage />} />
+          <Route path="procurement/iom" element={<PurchaseRequestMemoList />} />
+          <Route path="procurement/iom/new" element={<PurchaseRequestMemoForm />} />
+          <Route path="procurement/iom/edit/:memoId" element={<PurchaseRequestMemoForm />} />
+          <Route path="procurement/purchase-orders" element={<PurchaseOrderList />} />
+          <Route path="procurement/purchase-orders/new" element={<PurchaseOrderForm />} />
+          <Route path="procurement/purchase-orders/edit/:poId" element={<PurchaseOrderForm />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />

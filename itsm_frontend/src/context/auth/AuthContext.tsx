@@ -6,7 +6,7 @@ import {
   type AuthUser,
 } from './AuthContextDefinition';
 import { loginApi, logoutApi as backendLogoutApi } from '../../api/authApi'; // Renamed logoutApi to avoid conflict
-import { apiClient } from '../../api/apiClient';
+import { apiClient, AuthError } from '../../api/apiClient'; // Imported AuthError
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -188,10 +188,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
       try {
         return await apiClient(endpoint, token, options);
-      } catch (error: any) {
-        if (error.isAuthError) {
+      } catch (error: unknown) {
+        // Check if the error is an instance of AuthError
+        if (error instanceof AuthError) {
           console.warn(
-            'authenticatedFetch: Authentication error detected. Logging out.',
+            'authenticatedFetch: AuthError instance caught. Logging out.',
             error,
           );
           logout(); // Clear session and redirect

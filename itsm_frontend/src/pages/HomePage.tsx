@@ -183,7 +183,7 @@ function HomePage() {
     {
       text: 'Procurement',
       icon: <ShoppingCartIcon />,
-      path: '/procurement/memos',
+      path: '/procurement', // Updated path to point to the dashboard
     },
     { text: 'Manage Incidents', icon: <BugReportIcon />, path: '/incidents' },
     { text: 'Manage Changes', icon: <CompareArrowsIcon />, path: '/changes' },

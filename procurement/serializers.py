@@ -1,30 +1,14 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import PurchaseRequestMemo
+from .models import PurchaseRequestMemo, PurchaseOrder, OrderItem
+from ..assets.serializers import VendorSerializer # Assuming assets app is at the same level
 
 User = get_user_model()
 
 class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
     requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
-    # approver can be null, so allow_null=True for its username field
     approver_username = serializers.CharField(source='approver.username', read_only=True, allow_null=True)
-
-    # To allow setting requested_by via ID during creation if not handled by view (though view will handle it)
-    # And to allow setting approver by ID if needed by an admin directly (though action is preferred)
-    # We can make these fields writeable by default and they expect PKs.
-    # However, requested_by is set in perform_create.
-    # Approver is set by the 'decide' action.
-    # So, for the main serializer, they can appear as their PKs for relation representation,
-    # or we can make them read_only if we only want to rely on the custom logic.
-    # Let's include them as is, default DRF behavior will show PK or nested if depth is set.
-    # Since we have username fields for read, we can make the FK fields write_only or exclude for GETs if desired.
-    # For now, let's keep them and rely on read_only_fields for control.
-
-    # requested_by will be automatically set by the view using CurrentUserDefault or perform_create
-    # We don't want requested_by to be settable via the serializer directly during creation by the user.
-    # So, making it read_only=True here means it must be set programmatically (e.g. in perform_create).
     requested_by = serializers.PrimaryKeyRelatedField(read_only=True)
-
 
     class Meta:
         model = PurchaseRequestMemo
@@ -35,18 +19,89 @@ class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'request_date',
-            'status', # Initial status is 'pending', then managed by 'decide' action
-            'approver', # Set by 'decide' action
-            'approver_username', # Read-only as it's derived
-            'decision_date', # Set by 'decide' action
-            'approver_comments' # Set by 'decide' action or admin update
+            'status',
+            'approver',
+            'approver_username',
+            'decision_date',
+            'approver_comments'
         ]
-        # For creation, user provides: item_description, quantity, reason, estimated_cost.
-        # requested_by is set by the view.
-        # status defaults to 'pending'.
-        # Other fields (approver, decision_date, approver_comments) are set via the 'decide' action.
 
-        # If we want to allow an admin to update approver details directly via PUT/PATCH
-        # then 'approver', 'decision_date', 'approver_comments', 'status' might not be in read_only_fields globally
-        # but controlled by permissions or different serializers for actions.
-        # For simplicity now, these are read-only for standard PUT/PATCH.
+class OrderItemSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = OrderItem
+        fields = ['id', 'item_description', 'quantity', 'unit_price', 'total_price']
+        read_only_fields = ['total_price'] # total_price is a @property on the model
+
+class PurchaseOrderSerializer(serializers.ModelSerializer):
+    order_items = OrderItemSerializer(many=True)
+    # Assuming VendorSerializer from assets app provides sufficient detail for read-only purposes
+    vendor_details = VendorSerializer(source='vendor', read_only=True)
+    created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+
+    # internal_office_memo is a OneToOneField, can be PrimaryKeyRelatedField for writes
+    # If you want to show details of IOM on PO GET, you could add another read-only nested serializer:
+    # internal_office_memo_details = PurchaseRequestMemoSerializer(source='internal_office_memo', read_only=True)
+
+    class Meta:
+        model = PurchaseOrder
+        fields = [
+            'id', 'po_number',
+            'internal_office_memo', # Writable with IOM ID
+            # 'internal_office_memo_details', # Add if IOM details needed on PO GET
+            'vendor', # Writable with Vendor ID
+            'vendor_details',
+            'order_date', 'expected_delivery_date',
+            'total_amount', 'status',
+            'created_by', # Read-only, set by view
+            'created_by_username',
+            'created_at', 'updated_at',
+            'shipping_address', 'notes',
+            'order_items'
+        ]
+        read_only_fields = [
+            'total_amount', # Calculated based on items
+            'created_by', # Set by view
+            'created_by_username', # Derived
+            'created_at',
+            'updated_at'
+        ]
+        # po_number could also be read_only if generated by system, or writable on create.
+        # status is also typically managed by workflow/actions rather than direct update by user.
+
+    def create(self, validated_data):
+        order_items_data = validated_data.pop('order_items')
+        # created_by is handled by perform_create in the viewset
+        po = PurchaseOrder.objects.create(**validated_data)
+
+        current_total_amount = 0
+        for item_data in order_items_data:
+            item = OrderItem.objects.create(purchase_order=po, **item_data)
+            if item.unit_price is not None: # total_price property handles this
+                current_total_amount += item.total_price
+
+        po.total_amount = current_total_amount
+        po.save(update_fields=['total_amount'])
+        return po
+
+    def update(self, instance, validated_data):
+        order_items_data = validated_data.pop('order_items', None)
+
+        # Update PurchaseOrder instance fields (excluding order_items)
+        instance = super().update(instance, validated_data)
+
+        if order_items_data is not None:
+            # Simple update: delete existing items and create new ones
+            # For more sophisticated updates (e.g., updating existing items by ID, deleting specific items),
+            # you would need more complex logic here.
+            instance.order_items.all().delete()
+            current_total_amount = 0
+            for item_data in order_items_data:
+                item = OrderItem.objects.create(purchase_order=instance, **item_data)
+                if item.unit_price is not None: # total_price property handles this
+                    current_total_amount += item.total_price
+
+            instance.total_amount = current_total_amount
+            # instance.save() # super().update already saved instance. Re-save for total_amount.
+            instance.save(update_fields=['total_amount'])
+
+        return instance
