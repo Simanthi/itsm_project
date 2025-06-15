@@ -16,8 +16,10 @@ import AssetForm from './modules/assets/components/AssetForm'; // Import AssetFo
 import PurchaseRequestMemoList from './modules/procurement/components/PurchaseRequestMemoList';
 import PurchaseRequestMemoForm from './modules/procurement/components/PurchaseRequestMemoForm';
 import ProcurementDashboardPage from './modules/procurement/pages/ProcurementDashboardPage';
-import PurchaseOrderList from './modules/procurement/components/PurchaseOrderList'; // Import PO List
-import PurchaseOrderForm from './modules/procurement/components/PurchaseOrderForm'; // Import PO Form
+import PurchaseOrderList from './modules/procurement/components/PurchaseOrderList';
+import PurchaseOrderForm from './modules/procurement/components/PurchaseOrderForm';
+import PurchaseOrderDetailView from './modules/procurement/components/PurchaseOrderDetailView';
+import PurchaseRequestMemoDetailView from './modules/procurement/components/PurchaseRequestMemoDetailView'; // Import IOM Detail View
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -56,9 +58,11 @@ function AppContent() {
           <Route path="procurement/iom" element={<PurchaseRequestMemoList />} />
           <Route path="procurement/iom/new" element={<PurchaseRequestMemoForm />} />
           <Route path="procurement/iom/edit/:memoId" element={<PurchaseRequestMemoForm />} />
+          <Route path="procurement/iom/view/:memoId" element={<PurchaseRequestMemoDetailView />} /> {/* Added IOM Detail View Route */}
           <Route path="procurement/purchase-orders" element={<PurchaseOrderList />} />
           <Route path="procurement/purchase-orders/new" element={<PurchaseOrderForm />} />
           <Route path="procurement/purchase-orders/edit/:poId" element={<PurchaseOrderForm />} />
+          <Route path="procurement/purchase-orders/view/:poId" element={<PurchaseOrderDetailView />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />

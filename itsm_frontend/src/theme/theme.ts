@@ -18,10 +18,6 @@ const baseTypography = {
     fontSize: '15px',
     fontWeight: 'bold',
   },
-  h4: {
-    fontSize: '28px',
-    //fontWeight: 'bold',
-  },
   h6: {
     fontSize: '16px',
   },
@@ -71,12 +67,15 @@ export const lightTheme = createTheme({
           fontSize: baseTypography.body2.fontSize,
           // Apply the font size directly here for all TableCell components
         },
-        head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+        head: {
+          // <--- ADD THIS SECTION FOR TABLE HEADERS
           fontSize: baseTypography.th1.fontSize,
-          fontWeight: 'bold',
-          color: theme.palette.primary.main,
-          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-        }),
+          fontWeight: 'bold', // Example: Make headers bold
+          color: 'primary.main', // Example: Use your primary theme color for headers
+
+          // You can also adjust padding, background, etc.
+          backgroundColor: 'rgb(25, 118, 210)', // Example: a light primary background
+        },
       },
     },
     MuiListItemButton: {

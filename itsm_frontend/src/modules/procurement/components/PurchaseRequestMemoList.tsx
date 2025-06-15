@@ -25,7 +25,7 @@ import {
   TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-// import EditIcon from '@mui/icons-material/Edit'; // Or VisibilityIcon for view - EditIcon is unused
+import EditIcon from '@mui/icons-material/Edit'; // Re-enable EditIcon
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CancelIcon from '@mui/icons-material/CancelOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -112,11 +112,15 @@ const PurchaseRequestMemoList: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    navigate('/procurement/memos/new');
+    navigate('/procurement/iom/new'); // Corrected path to match App.tsx route
   };
 
-  const handleViewOrEdit = (memoId: number) => {
-    navigate(`/procurement/memos/edit/${memoId}`); // Or a dedicated view path
+  const handleViewMemoDetails = (memoId: number) => {
+    navigate(`/procurement/iom/view/${memoId}`);
+  };
+
+  const handleEditMemo = (memoId: number) => {
+    navigate(`/procurement/iom/edit/${memoId}`);
   };
 
   const handleOpenCancelDialog = (memo: PurchaseRequestMemo) => {
@@ -267,11 +271,18 @@ const PurchaseRequestMemoList: React.FC = () => {
                 <TableCell>{memo.estimated_cost != null ? `$${Number(memo.estimated_cost).toFixed(2)}` : '-'}</TableCell>
                 <TableCell>{memo.approver_username || '-'}</TableCell>
                 <TableCell align="right">
-                  <Tooltip title="View/Edit Details">
-                    <IconButton onClick={() => handleViewOrEdit(memo.id)} size="small">
+                  <Tooltip title="View Details">
+                    <IconButton onClick={() => handleViewMemoDetails(memo.id)} size="small">
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
+                  {memo.status === 'pending' && (user?.id === memo.requested_by || !!user?.is_staff) && (
+                    <Tooltip title="Edit Memo">
+                      <IconButton onClick={() => handleEditMemo(memo.id)} size="small">
+                        <EditIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
                   {memo.status === 'pending' && (user?.id === memo.requested_by || !!user?.is_staff) && (
                     <Tooltip title="Cancel Request">
                       <IconButton onClick={() => handleOpenCancelDialog(memo)} size="small" color="warning">

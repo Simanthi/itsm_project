@@ -259,14 +259,14 @@ const AssetList: React.FC = () => {
   };
 
   return (
-    <Box sx={{ p: 1, width: '100%' }}>
+    <Box sx={{ p: 3, width: '100%' }}>
       <Typography variant="h5" component="h2" gutterBottom>
         Asset List
       </Typography>
 
       {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
 
-      <Paper sx={{ mb: 1, p: 2 }} elevation={2}>
+      <Paper sx={{ mb: 2, p: 2 }} elevation={2}>
         <Toolbar>
           <Grid container spacing={2} alignItems="center">
             <Grid item xs={12} sm={4}>

@@ -143,3 +143,74 @@ class OrderItem(models.Model):
         if self.unit_price is not None:
             return self.quantity * self.unit_price
         return 0
+
+class CheckRequest(models.Model):
+    CHECK_REQUEST_STATUS_CHOICES = [
+        ('pending_submission', _('Pending Submission')),
+        ('pending_approval', _('Pending Accounts Approval')),
+        ('approved', _('Approved for Payment')),
+        ('rejected', _('Rejected')),
+        ('payment_processing', _('Payment Processing')),
+        ('paid', _('Paid')),
+        ('cancelled', _('Cancelled')),
+    ]
+
+    PAYMENT_METHOD_CHOICES = [
+        ('check', _('Check')),
+        ('ach', _('ACH Transfer')),
+        ('wire', _('Wire Transfer')),
+        ('cash', _('Cash')),
+        ('credit_card', _('Credit Card')),
+        ('other', _('Other')),
+    ]
+
+    purchase_order = models.ForeignKey(
+        PurchaseOrder,
+        on_delete=models.PROTECT,
+        related_name='check_requests',
+        verbose_name=_("Purchase Order"),
+        null=True, blank=True
+    )
+    invoice_number = models.CharField(_("Invoice Number"), max_length=100, null=True, blank=True)
+    invoice_date = models.DateField(_("Invoice Date"), null=True, blank=True)
+    amount = models.DecimalField(_("Amount"), max_digits=12, decimal_places=2)
+    payee_name = models.CharField(_("Payee Name"), max_length=255, help_text="Typically the Vendor name, but can be overridden.")
+    payee_address = models.TextField(_("Payee Address"), blank=True)
+    reason_for_payment = models.TextField(_("Reason for Payment / Description"))
+    requested_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL, null=True,
+        related_name='created_check_requests',
+        verbose_name=_("Requested By")
+    )
+    request_date = models.DateTimeField(_("Request Date"), auto_now_add=True)
+    status = models.CharField(
+        _("Status"),
+        max_length=30,
+        choices=CHECK_REQUEST_STATUS_CHOICES,
+        default='pending_submission'
+    )
+
+    approved_by_accounts = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        related_name='approved_check_requests',
+        null=True, blank=True,
+        verbose_name=_("Approved by Accounts")
+    )
+    accounts_approval_date = models.DateTimeField(_("Accounts Approval Date"), null=True, blank=True)
+    accounts_comments = models.TextField(_("Accounts Comments"), blank=True)
+
+    payment_method = models.CharField(_("Payment Method"), max_length=20, choices=PAYMENT_METHOD_CHOICES, null=True, blank=True)
+    payment_date = models.DateField(_("Payment Date"), null=True, blank=True)
+    transaction_id = models.CharField(_("Transaction ID / Check Number"), max_length=100, null=True, blank=True)
+    payment_notes = models.TextField(_("Payment Notes"), blank=True)
+
+    class Meta:
+        verbose_name = _("Check Request")
+        verbose_name_plural = _("Check Requests")
+        ordering = ['-request_date']
+
+    def __str__(self):
+        po_number_str = self.purchase_order.po_number if self.purchase_order else 'N/A'
+        return f"Check Request for {self.amount} to {self.payee_name} (PO: {po_number_str})"
