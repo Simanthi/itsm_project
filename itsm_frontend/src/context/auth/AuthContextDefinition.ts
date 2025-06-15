@@ -19,4 +19,6 @@ export interface AuthContextType {
 }
 
 // Creates the React Context object. Default value is undefined, to be provided by AuthProvider.
-export const AuthContext = createContext<AuthContextType | undefined>(undefined);
+export const AuthContext = createContext<AuthContextType | undefined>(
+  undefined,
+);

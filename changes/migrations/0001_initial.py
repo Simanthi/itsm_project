@@ -10,37 +10,152 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('configs', '0001_initial'),
+        ("configs", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ChangeRequest',
+            name="ChangeRequest",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(help_text='Brief title of the change', max_length=255)),
-                ('description', models.TextField(help_text='Detailed description of the proposed change')),
-                ('change_type', models.CharField(choices=[('standard', 'Standard Change'), ('normal', 'Normal Change'), ('emergency', 'Emergency Change')], default='normal', max_length=20)),
-                ('status', models.CharField(choices=[('draft', 'Draft'), ('pending_approval', 'Pending Approval'), ('approved', 'Approved'), ('scheduled', 'Scheduled'), ('in_progress', 'In Progress'), ('completed', 'Completed'), ('failed', 'Failed'), ('cancelled', 'Cancelled'), ('reviewed', 'Reviewed')], default='draft', max_length=20)),
-                ('impact', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium', help_text='Potential impact of the change', max_length=20)),
-                ('justification', models.TextField(blank=True, help_text='Reason for the change')),
-                ('planned_start_date', models.DateTimeField(help_text='Planned start date and time of the change')),
-                ('planned_end_date', models.DateTimeField(help_text='Planned end date and time of the change')),
-                ('rollback_plan', models.TextField(blank=True, help_text='Steps to revert the change if necessary')),
-                ('implementation_notes', models.TextField(blank=True, help_text='Notes from the change implementation', null=True)),
-                ('post_implementation_review', models.TextField(blank=True, help_text='Review of the change after completion', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('completed_at', models.DateTimeField(blank=True, null=True)),
-                ('affected_cis', models.ManyToManyField(blank=True, help_text='Configuration Items affected by this change', related_name='changes_affecting_cis', to='configs.configurationitem')),
-                ('assigned_to', models.ForeignKey(blank=True, help_text='Person responsible for implementing the change', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_changes', to=settings.AUTH_USER_MODEL)),
-                ('requested_by', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='submitted_changes', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        help_text="Brief title of the change", max_length=255
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(
+                        help_text="Detailed description of the proposed change"
+                    ),
+                ),
+                (
+                    "change_type",
+                    models.CharField(
+                        choices=[
+                            ("standard", "Standard Change"),
+                            ("normal", "Normal Change"),
+                            ("emergency", "Emergency Change"),
+                        ],
+                        default="normal",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("draft", "Draft"),
+                            ("pending_approval", "Pending Approval"),
+                            ("approved", "Approved"),
+                            ("scheduled", "Scheduled"),
+                            ("in_progress", "In Progress"),
+                            ("completed", "Completed"),
+                            ("failed", "Failed"),
+                            ("cancelled", "Cancelled"),
+                            ("reviewed", "Reviewed"),
+                        ],
+                        default="draft",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "impact",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                        ],
+                        default="medium",
+                        help_text="Potential impact of the change",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "justification",
+                    models.TextField(blank=True, help_text="Reason for the change"),
+                ),
+                (
+                    "planned_start_date",
+                    models.DateTimeField(
+                        help_text="Planned start date and time of the change"
+                    ),
+                ),
+                (
+                    "planned_end_date",
+                    models.DateTimeField(
+                        help_text="Planned end date and time of the change"
+                    ),
+                ),
+                (
+                    "rollback_plan",
+                    models.TextField(
+                        blank=True, help_text="Steps to revert the change if necessary"
+                    ),
+                ),
+                (
+                    "implementation_notes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Notes from the change implementation",
+                        null=True,
+                    ),
+                ),
+                (
+                    "post_implementation_review",
+                    models.TextField(
+                        blank=True,
+                        help_text="Review of the change after completion",
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("completed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "affected_cis",
+                    models.ManyToManyField(
+                        blank=True,
+                        help_text="Configuration Items affected by this change",
+                        related_name="changes_affecting_cis",
+                        to="configs.configurationitem",
+                    ),
+                ),
+                (
+                    "assigned_to",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Person responsible for implementing the change",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_changes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "requested_by",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="submitted_changes",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Change Request',
-                'verbose_name_plural': 'Change Requests',
-                'ordering': ['-created_at'],
+                "verbose_name": "Change Request",
+                "verbose_name_plural": "Change Requests",
+                "ordering": ["-created_at"],
             },
         ),
     ]

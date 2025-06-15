@@ -12,13 +12,22 @@ User = get_user_model()
 # - DashboardConfig: To store dashboard layouts and widgets for users
 # - ReportDataCache: If you need to cache complex report results
 
+
 class SavedReport(models.Model):
     name = models.CharField(max_length=255, unique=True)
     description = models.TextField(blank=True)
-    report_type = models.CharField(max_length=100, help_text="e.g., 'Incident Summary', 'Asset Inventory'")
+    report_type = models.CharField(
+        max_length=100, help_text="e.g., 'Incident Summary', 'Asset Inventory'"
+    )
     # Store parameters for the report (e.g., JSONField for filters)
     parameters = models.JSONField(blank=True, null=True)
-    created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='created_reports')
+    created_by = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="created_reports",
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 

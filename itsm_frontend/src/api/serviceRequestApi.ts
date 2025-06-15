@@ -2,7 +2,13 @@
 
 // 👇 CHANGE 1: Import our new centralized apiClient
 import { apiClient } from './apiClient';
-import type { ServiceRequest, NewServiceRequestData, ServiceRequestStatus, ServiceRequestCategory, ServiceRequestPriority } from '../modules/service-requests/types/ServiceRequestTypes';
+import type {
+  ServiceRequest,
+  NewServiceRequestData,
+  ServiceRequestStatus,
+  ServiceRequestCategory,
+  ServiceRequestPriority,
+} from '../modules/service-requests/types/ServiceRequestTypes';
 
 // We no longer need the base URL here, as apiClient handles it.
 const SERVICE_REQUESTS_ENDPOINT = '/service-requests';
@@ -39,10 +45,11 @@ interface PaginatedServiceRequestsResponse {
   results: RawServiceRequestResponse[];
 }
 
-
 // 👇 CHANGE 2: The local 'authFetch' helper function is now removed.
 
-const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse): ServiceRequest => {
+const transformServiceRequestResponse = (
+  rawRequest: RawServiceRequestResponse,
+): ServiceRequest => {
   return {
     id: rawRequest.id,
     request_id: rawRequest.request_id,
@@ -62,42 +69,72 @@ const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse):
   };
 };
 
-export const getServiceRequests = async (token: string, page: number = 1, pageSize: number = 10): Promise<{ results: ServiceRequest[]; count: number }> => {
+export const getServiceRequests = async (
+  token: string,
+  page: number = 1,
+  pageSize: number = 10,
+): Promise<{ results: ServiceRequest[]; count: number }> => {
   // 👇 CHANGE 3: Use the new apiClient and pass just the endpoint.
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/?page=${page}&page_size=${pageSize}`;
-  const rawData = await apiClient<PaginatedServiceRequestsResponse>(endpoint, token);
+  const rawData = await apiClient<PaginatedServiceRequestsResponse>(
+    endpoint,
+    token,
+  );
   return {
     results: rawData.results.map(transformServiceRequestResponse),
     count: rawData.count,
   };
 };
 
-export const createServiceRequest = async (newRequestData: NewServiceRequestData, token: string): Promise<ServiceRequest> => {
+export const createServiceRequest = async (
+  newRequestData: NewServiceRequestData,
+  token: string,
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/`;
   // 👇 CHANGE 4: Use the new apiClient for the POST request.
-  const rawResponse = await apiClient<RawServiceRequestResponse>(endpoint, token, {
-    method: 'POST',
-    body: JSON.stringify(newRequestData),
-  });
+  const rawResponse = await apiClient<RawServiceRequestResponse>(
+    endpoint,
+    token,
+    {
+      method: 'POST',
+      body: JSON.stringify(newRequestData),
+    },
+  );
   return transformServiceRequestResponse(rawResponse);
 };
 
-export const getServiceRequestById = async (id: number | string, token: string): Promise<ServiceRequest> => {
+export const getServiceRequestById = async (
+  id: number | string,
+  token: string,
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
   const rawData = await apiClient<RawServiceRequestResponse>(endpoint, token);
   return transformServiceRequestResponse(rawData);
 };
 
-export const updateServiceRequest = async (id: number | string, updatedData: Partial<NewServiceRequestData> & { status?: ServiceRequestStatus }, token: string): Promise<ServiceRequest> => {
+export const updateServiceRequest = async (
+  id: number | string,
+  updatedData: Partial<NewServiceRequestData> & {
+    status?: ServiceRequestStatus;
+  },
+  token: string,
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  const rawResponse = await apiClient<RawServiceRequestResponse>(endpoint, token, {
-    method: 'PATCH',
-    body: JSON.stringify(updatedData),
-  });
+  const rawResponse = await apiClient<RawServiceRequestResponse>(
+    endpoint,
+    token,
+    {
+      method: 'PATCH',
+      body: JSON.stringify(updatedData),
+    },
+  );
   return transformServiceRequestResponse(rawResponse);
 };
 
-export const deleteServiceRequest = async (id: number | string, token: string): Promise<void> => {
+export const deleteServiceRequest = async (
+  id: number | string,
+  token: string,
+): Promise<void> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
   await apiClient<void>(endpoint, token, {
     method: 'DELETE',

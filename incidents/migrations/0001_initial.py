@@ -10,53 +10,215 @@ class Migration(migrations.Migration):
     initial = True
 
     dependencies = [
-        ('assets', '0001_initial'),
-        ('configs', '0001_initial'),
+        ("assets", "0001_initial"),
+        ("configs", "0001_initial"),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='Incident',
+            name="Incident",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('title', models.CharField(help_text='Brief summary of the incident', max_length=255)),
-                ('description', models.TextField(help_text='Detailed description of the incident')),
-                ('status', models.CharField(choices=[('new', 'New'), ('in_progress', 'In Progress'), ('on_hold', 'On Hold'), ('resolved', 'Resolved'), ('closed', 'Closed'), ('cancelled', 'Cancelled')], default='new', max_length=20)),
-                ('priority', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('critical', 'Critical')], default='medium', max_length=20)),
-                ('impact', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium', help_text='Effect on business operations', max_length=20)),
-                ('urgency', models.CharField(choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High')], default='medium', help_text='Speed at which incident needs to be resolved', max_length=20)),
-                ('resolution_notes', models.TextField(blank=True, help_text='Details on how the incident was resolved', null=True)),
-                ('created_at', models.DateTimeField(auto_now_add=True)),
-                ('updated_at', models.DateTimeField(auto_now=True)),
-                ('resolved_at', models.DateTimeField(blank=True, null=True)),
-                ('closed_at', models.DateTimeField(blank=True, null=True)),
-                ('assigned_to', models.ForeignKey(blank=True, help_text='IT staff assigned to resolve the incident', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='assigned_incidents', to=settings.AUTH_USER_MODEL)),
-                ('related_asset', models.ForeignKey(blank=True, help_text='Primary asset affected by this incident', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incidents_affected', to='assets.asset')),
-                ('related_ci', models.ForeignKey(blank=True, help_text='Primary Configuration Item affected by this incident', null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incidents_affecting_ci', to='configs.configurationitem')),
-                ('reported_by', models.ForeignKey(help_text='User who reported the incident', on_delete=django.db.models.deletion.CASCADE, related_name='reported_incidents', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "title",
+                    models.CharField(
+                        help_text="Brief summary of the incident", max_length=255
+                    ),
+                ),
+                (
+                    "description",
+                    models.TextField(help_text="Detailed description of the incident"),
+                ),
+                (
+                    "status",
+                    models.CharField(
+                        choices=[
+                            ("new", "New"),
+                            ("in_progress", "In Progress"),
+                            ("on_hold", "On Hold"),
+                            ("resolved", "Resolved"),
+                            ("closed", "Closed"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        default="new",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "priority",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                            ("critical", "Critical"),
+                        ],
+                        default="medium",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "impact",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                        ],
+                        default="medium",
+                        help_text="Effect on business operations",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "urgency",
+                    models.CharField(
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                        ],
+                        default="medium",
+                        help_text="Speed at which incident needs to be resolved",
+                        max_length=20,
+                    ),
+                ),
+                (
+                    "resolution_notes",
+                    models.TextField(
+                        blank=True,
+                        help_text="Details on how the incident was resolved",
+                        null=True,
+                    ),
+                ),
+                ("created_at", models.DateTimeField(auto_now_add=True)),
+                ("updated_at", models.DateTimeField(auto_now=True)),
+                ("resolved_at", models.DateTimeField(blank=True, null=True)),
+                ("closed_at", models.DateTimeField(blank=True, null=True)),
+                (
+                    "assigned_to",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="IT staff assigned to resolve the incident",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="assigned_incidents",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
+                (
+                    "related_asset",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Primary asset affected by this incident",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="incidents_affected",
+                        to="assets.asset",
+                    ),
+                ),
+                (
+                    "related_ci",
+                    models.ForeignKey(
+                        blank=True,
+                        help_text="Primary Configuration Item affected by this incident",
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="incidents_affecting_ci",
+                        to="configs.configurationitem",
+                    ),
+                ),
+                (
+                    "reported_by",
+                    models.ForeignKey(
+                        help_text="User who reported the incident",
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="reported_incidents",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Incident',
-                'verbose_name_plural': 'Incidents',
-                'ordering': ['-created_at'],
+                "verbose_name": "Incident",
+                "verbose_name_plural": "Incidents",
+                "ordering": ["-created_at"],
             },
         ),
         migrations.CreateModel(
-            name='IncidentUpdate',
+            name="IncidentUpdate",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('timestamp', models.DateTimeField(auto_now_add=True)),
-                ('comment', models.TextField()),
-                ('new_status', models.CharField(blank=True, choices=[('new', 'New'), ('in_progress', 'In Progress'), ('on_hold', 'On Hold'), ('resolved', 'Resolved'), ('closed', 'Closed'), ('cancelled', 'Cancelled')], max_length=20, null=True)),
-                ('new_priority', models.CharField(blank=True, choices=[('low', 'Low'), ('medium', 'Medium'), ('high', 'High'), ('critical', 'Critical')], max_length=20, null=True)),
-                ('incident', models.ForeignKey(on_delete=django.db.models.deletion.CASCADE, related_name='updates', to='incidents.incident')),
-                ('updated_by', models.ForeignKey(null=True, on_delete=django.db.models.deletion.SET_NULL, related_name='incident_updates', to=settings.AUTH_USER_MODEL)),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                ("timestamp", models.DateTimeField(auto_now_add=True)),
+                ("comment", models.TextField()),
+                (
+                    "new_status",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("new", "New"),
+                            ("in_progress", "In Progress"),
+                            ("on_hold", "On Hold"),
+                            ("resolved", "Resolved"),
+                            ("closed", "Closed"),
+                            ("cancelled", "Cancelled"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "new_priority",
+                    models.CharField(
+                        blank=True,
+                        choices=[
+                            ("low", "Low"),
+                            ("medium", "Medium"),
+                            ("high", "High"),
+                            ("critical", "Critical"),
+                        ],
+                        max_length=20,
+                        null=True,
+                    ),
+                ),
+                (
+                    "incident",
+                    models.ForeignKey(
+                        on_delete=django.db.models.deletion.CASCADE,
+                        related_name="updates",
+                        to="incidents.incident",
+                    ),
+                ),
+                (
+                    "updated_by",
+                    models.ForeignKey(
+                        null=True,
+                        on_delete=django.db.models.deletion.SET_NULL,
+                        related_name="incident_updates",
+                        to=settings.AUTH_USER_MODEL,
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Incident Update',
-                'verbose_name_plural': 'Incident Updates',
-                'ordering': ['timestamp'],
+                "verbose_name": "Incident Update",
+                "verbose_name_plural": "Incident Updates",
+                "ordering": ["timestamp"],
             },
         ),
     ]

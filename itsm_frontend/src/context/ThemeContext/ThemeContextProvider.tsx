@@ -18,7 +18,10 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
     [],
   );
 
-  const theme = useMemo(() => (mode === 'light' ? lightTheme : darkTheme), [mode]);
+  const theme = useMemo(
+    () => (mode === 'light' ? lightTheme : darkTheme),
+    [mode],
+  );
 
   return (
     <ThemeContext.Provider value={{ mode, toggleColorMode }}>

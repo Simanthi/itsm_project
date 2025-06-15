@@ -2,7 +2,13 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ServiceRequestForm from '../components/ServiceRequestForm';
@@ -15,22 +21,28 @@ function NewServiceRequestPage() {
   const navigate = useNavigate();
   const { token } = useAuth();
 
-  const [initialFormData, setInitialFormData] = useState<ServiceRequest | undefined>(undefined);
+  const [initialFormData, setInitialFormData] = useState<
+    ServiceRequest | undefined
+  >(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const parseError = useCallback((err: unknown): string => {
     if (err instanceof Error) {
-      if (err.message.includes("API error: ") && err.message.includes("{")) {
+      if (err.message.includes('API error: ') && err.message.includes('{')) {
         try {
-          const errorPart = err.message.substring(err.message.indexOf("{"));
+          const errorPart = err.message.substring(err.message.indexOf('{'));
           const errorDetails = JSON.parse(errorPart);
           const firstKey = Object.keys(errorDetails)[0];
-          if (firstKey && Array.isArray(errorDetails[firstKey]) && typeof errorDetails[firstKey][0] === 'string') {
+          if (
+            firstKey &&
+            Array.isArray(errorDetails[firstKey]) &&
+            typeof errorDetails[firstKey][0] === 'string'
+          ) {
             return `${firstKey.replace(/_/g, ' ')}: ${errorDetails[firstKey][0]}`;
           }
           return `Details: ${JSON.stringify(errorDetails)}`;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           return err.message;
         }
@@ -50,7 +62,7 @@ function NewServiceRequestPage() {
           const requestData = await getServiceRequestById(id, token);
           setInitialFormData(requestData);
         } catch (err) {
-          console.error("Error fetching service request data for edit:", err);
+          console.error('Error fetching service request data for edit:', err);
           setError(parseError(err));
         } finally {
           setLoading(false);
@@ -62,15 +74,18 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (token) { // Only attempt to fetch if token is available
+    if (token) {
+      // Only attempt to fetch if token is available
       fetchInitialData();
     } else {
-      setError("Authentication token not found. Please log in.");
+      setError('Authentication token not found. Please log in.');
       setLoading(false);
     }
   }, [id, token, parseError]);
 
-  const pageTitle = id ? `Edit Service Request: ${id}` : 'Create New Service Request';
+  const pageTitle = id
+    ? `Edit Service Request: ${id}`
+    : 'Create New Service Request';
 
   const handleBack = () => {
     navigate('/service-requests');
@@ -78,9 +93,19 @@ function NewServiceRequestPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
-        <Typography sx={{ ml: 2, mt: 2 }}>Loading service request details...</Typography>
+        <Typography sx={{ ml: 2, mt: 2 }}>
+          Loading service request details...
+        </Typography>
       </Box>
     );
   }

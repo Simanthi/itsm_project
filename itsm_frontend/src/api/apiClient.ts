@@ -17,10 +17,14 @@ interface ErrorResponse {
  * @returns A Promise that resolves to the parsed JSON response of type T.
  * @throws An Error with a parsed message if the request fails.
  */
-export async function apiClient<T>(endpoint: string, token: string, options?: RequestInit): Promise<T> {
+export async function apiClient<T>(
+  endpoint: string,
+  token: string,
+  options?: RequestInit,
+): Promise<T> {
   const headers = {
     'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`,
+    Authorization: `Bearer ${token}`,
   };
 
   try {
@@ -38,7 +42,11 @@ export async function apiClient<T>(endpoint: string, token: string, options?: Re
         message: response.statusText,
       }));
       // Prefer the 'detail' field from Django REST Framework, otherwise use message or status.
-      throw new Error(errorData.detail || errorData.message || `API Error: ${response.status}`);
+      throw new Error(
+        errorData.detail ||
+          errorData.message ||
+          `API Error: ${response.status}`,
+      );
     }
 
     // Handle successful requests that don't return content (e.g., DELETE, PATCH with 204)
@@ -48,7 +56,10 @@ export async function apiClient<T>(endpoint: string, token: string, options?: Re
 
     return response.json();
   } catch (error) {
-    console.error(`API Client Error: Failed to fetch from endpoint ${endpoint}`, error);
+    console.error(
+      `API Client Error: Failed to fetch from endpoint ${endpoint}`,
+      error,
+    );
     // Re-throw the error so the calling function can handle it
     throw error;
   }

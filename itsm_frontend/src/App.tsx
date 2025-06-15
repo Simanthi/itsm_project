@@ -30,9 +30,18 @@ function AppContent() {
         <Route path="/" element={<HomePage />}>
           <Route index element={<DashboardPage />} />
           <Route path="service-requests" element={<ServiceRequestsPage />} />
-          <Route path="service-requests/new" element={<NewServiceRequestPage />} />
-          <Route path="service-requests/edit/:id" element={<NewServiceRequestPage />} />
-          <Route path="service-requests/print-preview" element={<ServiceRequestPrintView />} />
+          <Route
+            path="service-requests/new"
+            element={<NewServiceRequestPage />}
+          />
+          <Route
+            path="service-requests/edit/:id"
+            element={<NewServiceRequestPage />}
+          />
+          <Route
+            path="service-requests/print-preview"
+            element={<ServiceRequestPrintView />}
+          />
           <Route path="assets" element={<AssetsPage />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />

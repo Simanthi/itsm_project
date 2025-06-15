@@ -6,26 +6,58 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('service_requests', '0001_initial'),
+        ("service_requests", "0001_initial"),
     ]
 
     operations = [
         migrations.CreateModel(
-            name='ServiceRequestSequence',
+            name="ServiceRequestSequence",
             fields=[
-                ('id', models.BigAutoField(auto_created=True, primary_key=True, serialize=False, verbose_name='ID')),
-                ('current_alpha_part_char1', models.CharField(default='A', help_text="First character of the alphanumeric part (e.g., 'A' for SR-AA-0001)", max_length=1)),
-                ('current_alpha_part_char2', models.CharField(default='A', help_text="Second character of the alphanumeric part (e.g., 'A' for SR-AA-0001)", max_length=1)),
-                ('current_numeric_part', models.IntegerField(default=0, help_text='Current numeric value (0-9999)')),
+                (
+                    "id",
+                    models.BigAutoField(
+                        auto_created=True,
+                        primary_key=True,
+                        serialize=False,
+                        verbose_name="ID",
+                    ),
+                ),
+                (
+                    "current_alpha_part_char1",
+                    models.CharField(
+                        default="A",
+                        help_text="First character of the alphanumeric part (e.g., 'A' for SR-AA-0001)",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "current_alpha_part_char2",
+                    models.CharField(
+                        default="A",
+                        help_text="Second character of the alphanumeric part (e.g., 'A' for SR-AA-0001)",
+                        max_length=1,
+                    ),
+                ),
+                (
+                    "current_numeric_part",
+                    models.IntegerField(
+                        default=0, help_text="Current numeric value (0-9999)"
+                    ),
+                ),
             ],
             options={
-                'verbose_name': 'Service Request ID Sequence',
-                'verbose_name_plural': 'Service Request ID Sequences',
+                "verbose_name": "Service Request ID Sequence",
+                "verbose_name_plural": "Service Request ID Sequences",
             },
         ),
         migrations.AddField(
-            model_name='servicerequest',
-            name='request_id',
-            field=models.CharField(blank=True, help_text='Custom generated Service Request ID (e.g., SR-AA-0001)', max_length=15, unique=True),
+            model_name="servicerequest",
+            name="request_id",
+            field=models.CharField(
+                blank=True,
+                help_text="Custom generated Service Request ID (e.g., SR-AA-0001)",
+                max_length=15,
+                unique=True,
+            ),
         ),
     ]

@@ -6,13 +6,25 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('service_requests', '0002_servicerequestsequence_servicerequest_request_id'),
+        ("service_requests", "0002_servicerequestsequence_servicerequest_request_id"),
     ]
 
     operations = [
         migrations.AlterField(
-            model_name='servicerequest',
-            name='category',
-            field=models.CharField(choices=[('software', 'Software Request'), ('hardware', 'Hardware Request'), ('account', 'Account Management'), ('network', 'Network Access'), ('printer', 'Printer Issue'), ('system', 'Desktop/Laptop Issue'), ('information', 'Information Request'), ('other', 'Other')], max_length=50),
+            model_name="servicerequest",
+            name="category",
+            field=models.CharField(
+                choices=[
+                    ("software", "Software Request"),
+                    ("hardware", "Hardware Request"),
+                    ("account", "Account Management"),
+                    ("network", "Network Access"),
+                    ("printer", "Printer Issue"),
+                    ("system", "Desktop/Laptop Issue"),
+                    ("information", "Information Request"),
+                    ("other", "Other"),
+                ],
+                max_length=50,
+            ),
         ),
     ]
