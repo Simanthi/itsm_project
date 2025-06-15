@@ -28,7 +28,6 @@ import {
 } from '../../../api/assetApi';
 import { getUserList } from '../../../api/authApi'; // For fetching users
 import type {
-  Asset,
   AssetData,
   AssetCategory,
   Location,
@@ -245,7 +244,7 @@ const AssetForm: React.FC = () => {
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h4" gutterBottom sx={{ mb: 1 }}>
         {isEditMode ? `Edit Asset: ${formData.asset_tag || ''}` : 'Create New Asset'}
       </Typography>
       <Box component="form" onSubmit={handleSubmit} noValidate>

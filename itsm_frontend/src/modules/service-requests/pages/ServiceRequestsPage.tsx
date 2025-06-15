@@ -225,7 +225,7 @@ const ServiceRequestsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, width: '100%' }}>
+    <Box sx={{ p: 1, width: '100%' }}>
       {/* Add flexWrap: 'wrap' to allow buttons to wrap on smaller screens */}
       <Box
         sx={{

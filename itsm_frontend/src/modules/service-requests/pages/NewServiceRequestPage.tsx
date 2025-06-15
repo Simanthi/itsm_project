@@ -1,6 +1,6 @@
 // itsm_frontend/src/modules/service-requests/pages/NewServiceRequestPage.tsx
 
-import { useState, useEffect, useCallback } from 'react'; // Removed React default import
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -12,14 +12,14 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ServiceRequestForm from '../components/ServiceRequestForm';
-import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Import API call for fetching request
-import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth to get token
-import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import ServiceRequest type
+import { getServiceRequestById } from '../../../api/serviceRequestApi';
+import { useAuth } from '../../../context/auth/useAuth';
+import { type ServiceRequest } from '../types/ServiceRequestTypes';
 
 function NewServiceRequestPage() {
-  const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { authenticatedFetch } = useAuth(); // Removed token
+  const { authenticatedFetch } = useAuth();
 
   const [initialFormData, setInitialFormData] = useState<
     ServiceRequest | undefined
@@ -55,11 +55,14 @@ function NewServiceRequestPage() {
   // Effect to fetch initial data for editing
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (id) { // authenticatedFetch check is handled by the useEffect wrapper
+      // The `id` check already handles whether to fetch or not
+      // and `authenticatedFetch` is guaranteed to be a function by its type.
+      if (id) {
         setLoading(true);
         setError(null);
         try {
-          const requestData = await getServiceRequestById(authenticatedFetch, id); // Pass authenticatedFetch
+          // No need to check authenticatedFetch here again, it's a dependency of the useEffect
+          const requestData = await getServiceRequestById(authenticatedFetch, id);
           setInitialFormData(requestData);
         } catch (err) {
           console.error('Error fetching service request data for edit:', err);
@@ -74,17 +77,13 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (authenticatedFetch) {
-      // Only attempt to fetch if authenticatedFetch is available
-      fetchInitialData();
-    } else {
-      // If id is present but authenticatedFetch is not, it's an error condition for edit mode.
-      if (id) {
-          setError('Authentication context not available. Please log in to load this request.');
-      }
-      setLoading(false); // Ensure loading stops
-    }
-  }, [id, authenticatedFetch, parseError]);
+    // Call the async function. authenticatedFetch being in the dependency array
+    // means this effect will re-run if authenticatedFetch changes (which it shouldn't
+    // during a typical component lifecycle once it's established).
+    // The previous `if (authenticatedFetch)` check was redundant.
+    fetchInitialData();
+
+  }, [id, authenticatedFetch, parseError]); // Keep authenticatedFetch in dependency array
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`
@@ -138,11 +137,6 @@ function NewServiceRequestPage() {
           {pageTitle}
         </Typography>
       </Box>
-      {/*
-        Pass initialFormData to ServiceRequestForm only after it's loaded.
-        For new requests (id is undefined), initialFormData will be undefined,
-        and ServiceRequestForm will correctly initialize as a new request form.
-      */}
       <ServiceRequestForm initialData={initialFormData} />
     </Box>
   );
