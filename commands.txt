@@ -25,3 +25,23 @@ pip install -r requirements.txt
 install-extensions.bat
 
 open PowerShell as admin :  Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+
+for fresh db tables:
+
+sql: in db:
+DROP SCHEMA public CASCADE;
+CREATE SCHEMA public;
+
+interminal root folder:
+Get-ChildItem -Recurse -Filter *.py -Path . | Where-Object {
+    $_.FullName -like '*\migrations\*' -and $_.Name -ne '__init__.py'
+} | Remove-Item -Force
+--------
+
+Get-ChildItem -Recurse -Include *.pyc -Path . | Remove-Item -Force
+--------
+
+inside venv:
+python manage.py makemigrations
+python manage.py migrate
