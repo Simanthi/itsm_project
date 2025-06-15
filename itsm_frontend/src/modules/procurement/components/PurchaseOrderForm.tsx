@@ -19,6 +19,9 @@ import {
   TableRow,
   InputAdornment,
   Autocomplete,
+  FormControl, // Added
+  InputLabel,  // Added
+  Select,      // Added
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
@@ -42,7 +45,7 @@ import type {
   PurchaseRequestMemo, // For IOM selection
   // Vendor, // Removed from here
   PurchaseOrderStatus,
-  PaginatedResponse, // This might be unused if only results are directly used
+  // PaginatedResponse, // Removed as it's not directly used for annotations in this file
   VendorSummary, // This is available from procurementApi for vendor_details in PurchaseOrder
 } from '../../../api/procurementApi';
 
