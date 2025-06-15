@@ -1,7 +1,18 @@
 // itsm_frontend/src/modules/service-requests/components/ServiceRequestList.tsx
 import React, { useState, useEffect } from 'react';
-import { DataGrid, type GridColDef, type GridRowSelectionModel, type GridRowId } from '@mui/x-data-grid';
-import { Button, Box, Typography, CircularProgress, Alert } from '@mui/material';
+import {
+  DataGrid,
+  type GridColDef,
+  type GridRowSelectionModel,
+  type GridRowId,
+} from '@mui/x-data-grid';
+import {
+  Button,
+  Box,
+  Typography,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { deleteServiceRequest } from '../../../api/serviceRequestApi';
@@ -15,16 +26,29 @@ interface DateValueFormatterParams {
 
 const ServiceRequestList: React.FC = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
-  const { serviceRequests, loading, error, fetchServiceRequests } = useServiceRequests();
+  const { authenticatedFetch } = useAuth(); // Removed token
+  const { serviceRequests, loading, error, fetchServiceRequests } =
+    useServiceRequests();
   const { showSnackbar, showConfirmDialog } = useUI(); // Use UI hooks
-  const [selectedRequestIds, setSelectedRequestIds] = useState<Array<GridRowId>>([]);
+  const [selectedRequestIds, setSelectedRequestIds] = useState<
+    Array<GridRowId>
+  >([]);
   const [submitting, setSubmitting] = useState<boolean>(false);
 
   useEffect(() => {
-    console.log("ServiceRequestList: Component rendered. serviceRequests from context:", serviceRequests.length);
-    console.log("ServiceRequestList: Full serviceRequests array (passed to DataGrid):", serviceRequests);
-    serviceRequests.forEach(req => console.log(`  DataGrid Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`));
+    console.log(
+      'ServiceRequestList: Component rendered. serviceRequests from context:',
+      serviceRequests.length,
+    );
+    console.log(
+      'ServiceRequestList: Full serviceRequests array (passed to DataGrid):',
+      serviceRequests,
+    );
+    serviceRequests.forEach((req) =>
+      console.log(
+        `  DataGrid Input Req ID: ${req.id}, Req_ID: ${req.request_id}, Status: ${req.status}, Priority: ${req.priority}, Assigned To: ${req.assigned_to_username}`,
+      ),
+    );
   }, [serviceRequests]);
 
   const handleDelete = () => {
@@ -32,8 +56,8 @@ const ServiceRequestList: React.FC = () => {
       showSnackbar('Please select requests to delete.', 'warning'); // Use Snackbar
       return;
     }
-    if (!token) {
-      showSnackbar("Authentication token not found. Please log in.", 'error'); // Use Snackbar
+    if (!authenticatedFetch) { // Check for authenticatedFetch
+      showSnackbar('Authentication context not available. Please log in.', 'error'); // Use Snackbar
       return;
     }
 
@@ -41,31 +65,40 @@ const ServiceRequestList: React.FC = () => {
     showConfirmDialog(
       'Confirm Deletion',
       confirmMessage,
-      async () => { // onConfirm callback
+      async () => {
+        // onConfirm callback
         setSubmitting(true);
         try {
-          const requestsToDelete = serviceRequests.filter(req => selectedRequestIds.includes(String(req.id)));
-          await Promise.all(requestsToDelete.map(req => {
+          const requestsToDelete = serviceRequests.filter((req) =>
+            selectedRequestIds.includes(String(req.id)),
+          );
+          await Promise.all(
+            requestsToDelete.map((req) => {
               if (req.request_id) {
-                  return deleteServiceRequest(req.request_id, token);
+                return deleteServiceRequest(authenticatedFetch, req.request_id); // Pass authenticatedFetch
               } else if (req.id) {
-                  return deleteServiceRequest(String(req.id), token);
+                return deleteServiceRequest(authenticatedFetch, String(req.id)); // Pass authenticatedFetch
               }
               return Promise.resolve(); // Should not happen if data is valid
-          }));
+            }),
+          );
           await fetchServiceRequests();
           setSelectedRequestIds([]);
           showSnackbar('Selected requests deleted successfully!', 'success'); // Use Snackbar
         } catch (err) {
-          console.error("Error deleting service requests:", err);
-          showSnackbar(`Failed to delete requests: ${err instanceof Error ? err.message : String(err)}`, 'error'); // Use Snackbar
+          console.error('Error deleting service requests:', err);
+          showSnackbar(
+            `Failed to delete requests: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          ); // Use Snackbar
         } finally {
           setSubmitting(false);
         }
       },
-      () => { // onCancel callback
+      () => {
+        // onCancel callback
         showSnackbar('Deletion cancelled.', 'info'); // Optional: show info on cancel
-      }
+      },
     );
   };
 
@@ -75,11 +108,16 @@ const ServiceRequestList: React.FC = () => {
 
   const handleEdit = () => {
     if (selectedRequestIds.length === 1) {
-      const selectedRequest = serviceRequests.find(req => String(req.id) === String(selectedRequestIds[0]));
+      const selectedRequest = serviceRequests.find(
+        (req) => String(req.id) === String(selectedRequestIds[0]),
+      );
       if (selectedRequest) {
         navigate(`/service-requests/edit/${selectedRequest.request_id}`);
       } else {
-        showSnackbar('Selected request not found in current data. Please refresh.', 'warning'); // Use Snackbar
+        showSnackbar(
+          'Selected request not found in current data. Please refresh.',
+          'warning',
+        ); // Use Snackbar
       }
     } else {
       showSnackbar('Please select exactly one request to edit.', 'warning'); // Use Snackbar
@@ -107,13 +145,15 @@ const ServiceRequestList: React.FC = () => {
       field: 'created_at',
       headerName: 'Created At',
       width: 180,
-      valueFormatter: (params: DateValueFormatterParams) => params.value ? new Date(params.value).toLocaleString() : ''
+      valueFormatter: (params: DateValueFormatterParams) =>
+        params.value ? new Date(params.value).toLocaleString() : '',
     },
     {
       field: 'updated_at',
       headerName: 'Last Updated',
       width: 180,
-      valueFormatter: (params: DateValueFormatterParams) => params.value ? new Date(params.value).toLocaleString() : ''
+      valueFormatter: (params: DateValueFormatterParams) =>
+        params.value ? new Date(params.value).toLocaleString() : '',
     },
   ];
 
@@ -126,7 +166,9 @@ const ServiceRequestList: React.FC = () => {
   }
 
   if (error) {
-    return <Alert severity="error">Error loading service requests: {error}</Alert>;
+    return (
+      <Alert severity="error">Error loading service requests: {error}</Alert>
+    );
   }
 
   return (
@@ -138,13 +180,27 @@ const ServiceRequestList: React.FC = () => {
         <Button variant="contained" color="primary" onClick={handleCreateNew}>
           Create New Request
         </Button>
-        <Button variant="contained" color="secondary" onClick={handleEdit} disabled={selectedRequestIds.length !== 1}>
+        <Button
+          variant="contained"
+          color="secondary"
+          onClick={handleEdit}
+          disabled={selectedRequestIds.length !== 1}
+        >
           Edit Selected
         </Button>
-        <Button variant="contained" color="error" onClick={handleDelete} disabled={selectedRequestIds.length === 0 || submitting}>
+        <Button
+          variant="contained"
+          color="error"
+          onClick={handleDelete}
+          disabled={selectedRequestIds.length === 0 || submitting}
+        >
           Delete Selected ({selectedRequestIds.length})
         </Button>
-        <Button variant="outlined" onClick={fetchServiceRequests} disabled={submitting}>
+        <Button
+          variant="outlined"
+          onClick={fetchServiceRequests}
+          disabled={submitting}
+        >
           Refresh
         </Button>
       </Box>
@@ -154,17 +210,28 @@ const ServiceRequestList: React.FC = () => {
           columns={columns}
           getRowId={(row) => row.id!}
           checkboxSelection
-          onRowSelectionModelChange={(newSelectionModel: GridRowSelectionModel) => {
+          onRowSelectionModelChange={(
+            newSelectionModel: GridRowSelectionModel,
+          ) => {
             if (Array.isArray(newSelectionModel)) {
               setSelectedRequestIds(newSelectionModel);
-            } else if ('ids' in newSelectionModel && newSelectionModel.ids instanceof Set) {
+            } else if (
+              'ids' in newSelectionModel &&
+              newSelectionModel.ids instanceof Set
+            ) {
               setSelectedRequestIds(Array.from(newSelectionModel.ids));
             } else {
-              console.warn("Unexpected newSelectionModel type for DataGrid:", newSelectionModel);
+              console.warn(
+                'Unexpected newSelectionModel type for DataGrid:',
+                newSelectionModel,
+              );
               setSelectedRequestIds([]);
             }
           }}
-          rowSelectionModel={{ type: 'include', ids: new Set(selectedRequestIds) }}
+          rowSelectionModel={{
+            type: 'include',
+            ids: new Set(selectedRequestIds),
+          }}
           disableRowSelectionOnClick
           loading={loading || submitting}
           key={serviceRequests.length} // Force re-render of DataGrid when serviceRequests change

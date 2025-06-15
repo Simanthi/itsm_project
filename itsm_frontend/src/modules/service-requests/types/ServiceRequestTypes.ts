@@ -1,8 +1,22 @@
 // itsm_frontend/src/modules/service-requests/types/ServiceRequestTypes.ts
 
 // Define the types for various service request fields
-export type ServiceRequestStatus = 'new' | 'in_progress' | 'pending_approval' | 'resolved' | 'closed' | 'cancelled';
-export type ServiceRequestCategory = 'software' | 'hardware' | 'network' | 'information' | 'other' | 'account' | 'printer' | 'system';
+export type ServiceRequestStatus =
+  | 'new'
+  | 'in_progress'
+  | 'pending_approval'
+  | 'resolved'
+  | 'closed'
+  | 'cancelled';
+export type ServiceRequestCategory =
+  | 'software'
+  | 'hardware'
+  | 'network'
+  | 'information'
+  | 'other'
+  | 'account'
+  | 'printer'
+  | 'system';
 export type ServiceRequestPriority = 'low' | 'medium' | 'high';
 
 // Interface for the detailed Service Request object (as received from API or for display)

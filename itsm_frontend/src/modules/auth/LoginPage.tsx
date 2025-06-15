@@ -93,22 +93,26 @@ function LoginPage() {
           IT Service Management
         </Typography>
         <Typography
-        component="h1"
-        variant="h2"
-        sx={{
-          mb: 3,
-          textAlign: 'center',
-          color: theme.palette.text.secondary,
-        }}
-      >
-        Login
-      </Typography>
+          component="h1"
+          variant="h2"
+          sx={{
+            mb: 3,
+            textAlign: 'center',
+            color: theme.palette.text.secondary,
+          }}
+        >
+          Login
+        </Typography>
         {error && (
           <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
             {error}
           </Alert>
         )}
-        <Box component="form" onSubmit={handleLogin} sx={{ mt: 1, width: '100%' }}>
+        <Box
+          component="form"
+          onSubmit={handleLogin}
+          sx={{ mt: 1, width: '100%' }}
+        >
           <TextField
             margin="normal"
             required
@@ -227,7 +231,11 @@ function LoginPage() {
             sx={{ mt: 3, mb: 2, py: 1.5 }}
             disabled={loading}
           >
-            {loading ? <CircularProgress size={24} color="inherit" /> : 'Sign In'}
+            {loading ? (
+              <CircularProgress size={24} color="inherit" />
+            ) : (
+              'Sign In'
+            )}
           </Button>
         </Box>
       </Paper>

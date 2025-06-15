@@ -2,15 +2,32 @@
 import { useState, useEffect } from 'react';
 import {
   AppBar as MuiAppBar,
-  Box, Toolbar, IconButton, Typography, Drawer, List, ListItem,
-  ListItemButton, ListItemIcon, ListItemText, Divider, CssBaseline,
-  useTheme, Button, CircularProgress
+  Box,
+  Toolbar,
+  IconButton,
+  Typography,
+  Drawer,
+  List,
+  ListItem,
+  ListItemButton,
+  ListItemIcon,
+  ListItemText,
+  Divider,
+  CssBaseline,
+  useTheme,
+  Button,
+  CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  // InputLabel, // Removed as it's not used
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import { css } from '@emotion/react';
 import MenuIcon from '@mui/icons-material/Menu';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import Brightness4Icon from '@mui/icons-material/Brightness4'; // No longer needed
+// import Brightness7Icon from '@mui/icons-material/Brightness7'; // No longer needed
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'; // Icon for theme selector
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -62,7 +79,10 @@ const StyledAppBar = styled(MuiAppBar, {
 })<StyledAppBarProps>(({ theme, open }) => ({
   zIndex: theme.zIndex.drawer + 1,
   height: `${appBarHeight}px`,
-  backgroundColor: theme.palette.mode === 'light' ? theme.palette.primary.main : theme.palette.background.paper,
+  backgroundColor:
+    theme.palette.mode === 'light'
+      ? theme.palette.primary.main
+      : theme.palette.background.paper,
   transition: theme.transitions.create(['width', 'margin'], {
     easing: theme.transitions.easing.sharp,
     duration: theme.transitions.duration.leavingScreen,
@@ -91,13 +111,15 @@ interface StyledDrawerProps {
   open: boolean;
 }
 
-const StyledDrawer = styled(Drawer, { shouldForwardProp: (prop) => prop !== 'open' })<StyledDrawerProps>`
+const StyledDrawer = styled(Drawer, {
+  shouldForwardProp: (prop) => prop !== 'open',
+})<StyledDrawerProps>`
   flex-shrink: 0;
   white-space: nowrap;
   box-sizing: border-box;
-  ${({ theme, open }) => open ? openedMixin(theme) : closedMixin(theme)}
+  ${({ theme, open }) => (open ? openedMixin(theme) : closedMixin(theme))}
   & .MuiDrawer-paper {
-    ${({ theme, open }) => open ? openedMixin(theme) : closedMixin(theme)}
+    ${({ theme, open }) => (open ? openedMixin(theme) : closedMixin(theme))}
     height: 100%;
     overflow-y: auto;
     display: flex;
@@ -110,7 +132,7 @@ function HomePage() {
   const navigate = useNavigate();
   // Destructure `user` property from `useAuth`
   const { logout, user, isAuthenticated, loading: authLoading } = useAuth(); // Renamed loading to authLoading
-  const { toggleColorMode, mode } = useThemeContext();
+  const { currentThemeName, setCurrentTheme, availableThemes } = useThemeContext();
   const theme = useTheme();
   const [open, setOpen] = useState(true);
 
@@ -151,13 +173,25 @@ function HomePage() {
 
   const moduleLinks = [
     { text: 'Dashboard', icon: <DashboardIcon />, path: '/' },
-    { text: 'Service Requests', icon: <DesignServicesIcon />, path: '/service-requests' },
+    {
+      text: 'Service Requests',
+      icon: <DesignServicesIcon />,
+      path: '/service-requests',
+    },
     { text: 'Manage Assets', icon: <DevicesIcon />, path: '/assets' },
     { text: 'Manage Incidents', icon: <BugReportIcon />, path: '/incidents' },
     { text: 'Manage Changes', icon: <CompareArrowsIcon />, path: '/changes' },
-    { text: 'Manage Configs', icon: <SettingsApplicationsIcon />, path: '/configs' },
+    {
+      text: 'Manage Configs',
+      icon: <SettingsApplicationsIcon />,
+      path: '/configs',
+    },
     { text: 'Manage Workflows', icon: <ApprovalIcon />, path: '/workflows' },
-    { text: 'Security & Access', icon: <SecurityIcon />, path: '/security-access' },
+    {
+      text: 'Security & Access',
+      icon: <SecurityIcon />,
+      path: '/security-access',
+    },
     { text: 'Reports & Analytics', icon: <AssessmentIcon />, path: '/reports' },
   ];
 
@@ -165,42 +199,81 @@ function HomePage() {
     { text: 'Logout', icon: <ExitToAppIcon />, onClick: handleLogout },
   ];
 
-  const currentModule = moduleLinks.find(
-    (link) => {
-      if (link.path === '/') {
-        return location.pathname === '/';
-      }
-      return location.pathname.startsWith(link.path);
+  const currentModule = moduleLinks.find((link) => {
+    if (link.path === '/') {
+      return location.pathname === '/';
     }
-  ) || { text: 'ITSM Connect', icon: null };
+    return location.pathname.startsWith(link.path);
+  }) || { text: 'ITSM Connect', icon: null };
 
   return (
     <Box sx={{ display: 'flex' }}>
       <CssBaseline />
-      <StyledAppBar
-        id="app-bar"
-        position="fixed"
-        open={open}
-      >
+      <StyledAppBar id="app-bar" position="fixed" open={open}>
         <Toolbar>
-          <Box sx={{ flexGrow: 1, display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <Box
+            sx={{
+              flexGrow: 1,
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+            }}
+          >
             {currentModule.icon && (
-              <Box sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}>
+              <Box
+                sx={{ display: 'flex', alignItems: 'center', color: 'inherit' }}
+              >
                 {currentModule.icon}
               </Box>
             )}
-            <Typography
-              variant="h6"
-              noWrap
-              component="div"
-              color="inherit"
-            >
+            <Typography variant="h6" noWrap component="div" color="inherit">
               {currentModule.text}
             </Typography>
           </Box>
-          <IconButton color="inherit" onClick={toggleColorMode}>
-            {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          <FormControl
+            variant="outlined"
+            size="small"
+            sx={{ ml: 1, minWidth: 80, mr: 1 }}
+          >
+            <Select
+              value={currentThemeName}
+              onChange={(event) => setCurrentTheme(event.target.value as string)}
+              IconComponent={PaletteOutlinedIcon} // Show palette icon instead of default arrow
+              sx={{
+                color: 'inherit',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.23)', // Lighter border for visibility
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                },
+                '& .MuiSelect-icon': {
+                  color: 'inherit',
+                },
+                '& .MuiSelect-select': {
+                  paddingRight: '28px', // Ensure space for the icon
+                  display: 'flex',
+                  alignItems: 'center',
+                }
+              }}
+              renderValue={(selectedValue) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {/* Optional: Show a small icon next to the text if desired */}
+                  {/* <PaletteOutlinedIcon sx={{ fontSize: '1.2rem' }} />  */}
+                  {selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1)}
+                </Box>
+              )}
+            >
+              {availableThemes.map((themeName) => (
+                <MenuItem key={themeName} value={themeName}>
+                  {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <IconButton
             size="large"
             edge="end"
@@ -217,53 +290,56 @@ function HomePage() {
           )}
         </Toolbar>
       </StyledAppBar>
-      <StyledDrawer
-        id="side-drawer-desktop"
-        variant="permanent"
-        open={open}
-      >
-        <Toolbar sx={{
-          display: 'flex',
-          flexDirection: 'row',
-          justifyContent: open ? 'space-between' : 'flex-end',
-          alignItems: 'center',
-          height: `${appBarHeight}px`,
-          padding: open ? '0 0px' : '0 0px',
-          boxSizing: 'border-box',
-          borderStyle: 'hidden',
-          flexShrink: 0,
-          [theme.breakpoints.up('sm')]: {
-            paddingLeft: open ? '16px' : '0px',
-            paddingRight: open ? '16px' : '0px',
-          },
-        }}>
+      <StyledDrawer id="side-drawer-desktop" variant="permanent" open={open}>
+        <Toolbar
+          sx={{
+            display: 'flex',
+            flexDirection: 'row',
+            justifyContent: open ? 'space-between' : 'flex-end',
+            alignItems: 'center',
+            height: `${appBarHeight}px`,
+            padding: open ? '0 0px' : '0 0px',
+            boxSizing: 'border-box',
+            borderStyle: 'hidden',
+            flexShrink: 0,
+            [theme.breakpoints.up('sm')]: {
+              paddingLeft: open ? '16px' : '0px',
+              paddingRight: open ? '16px' : '0px',
+            },
+          }}
+        >
           {open && (
-            <Box sx={{
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              flexShrink: 0,
-              flexGrow: 1,
-              mr: 1
-            }}>
+            <Box
+              sx={{
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                flexShrink: 0,
+                flexGrow: 1,
+                mr: 1,
+              }}
+            >
               <img
                 src="/images/sblt_fav_icon.png"
                 alt="SBLT Logo"
                 style={{
-                  maxWidth: "120px",
-                  height: "auto",
-                  marginBottom: "0px",
-                  marginTop: "4px",
-                  paddingLeft:'40px',
+                  maxWidth: '120px',
+                  height: 'auto',
+                  marginBottom: '0px',
+                  marginTop: '4px',
+                  paddingLeft: '40px',
                 }}
               />
-              <Typography variant="h6" sx={{
-                textAlign: "center",
-                color: "primary.main",
-                fontSize: "12px",
-                paddingLeft : '40px',
-              }}>
+              <Typography
+                variant="h6"
+                sx={{
+                  textAlign: 'center',
+                  color: 'primary.main',
+                  fontSize: '12px',
+                  paddingLeft: '40px',
+                }}
+              >
                 IT Service Management
               </Typography>
             </Box>
@@ -293,21 +369,25 @@ function HomePage() {
               border: 'none',
               flexShrink: 0,
               ...(!open && {
-                  flexGrow: 1,
-                  justifyContent: 'center',
-                  minWidth: '64px',
-                  minHeight: '64px',
+                flexGrow: 1,
+                justifyContent: 'center',
+                minWidth: '64px',
+                minHeight: '64px',
               }),
               ...(open && {
                 flexGrow: 1,
-                  justifyContent: 'right',
-                minHeight:'64px',
+                justifyContent: 'right',
+                minHeight: '64px',
                 minWidth: '16px',
               }),
             }}
           >
             {open ? (
-              theme.direction === 'rtl' ? <ChevronRightIcon /> : <ChevronLeftIcon />
+              theme.direction === 'rtl' ? (
+                <ChevronRightIcon />
+              ) : (
+                <ChevronLeftIcon />
+              )
             ) : (
               <MenuIcon />
             )}
@@ -315,7 +395,16 @@ function HomePage() {
         </Toolbar>
         <List sx={{ flexGrow: 1, paddingTop: '12px' }}>
           {moduleLinks.map((item) => (
-            <ListItem key={item.text} sx={{ display: 'block' , paddingTop:'2px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0px', }}>
+            <ListItem
+              key={item.text}
+              sx={{
+                display: 'block',
+                paddingTop: '2px',
+                paddingLeft: '0px',
+                paddingRight: '0px',
+                paddingBottom: '0px',
+              }}
+            >
               <ListItemButton
                 component={Link}
                 to={item.path}
@@ -339,12 +428,24 @@ function HomePage() {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText
+                  primary={item.text}
+                  sx={{ opacity: open ? 1 : 0 }}
+                />
               </ListItemButton>
             </ListItem>
           ))}
         </List>
-        <Divider sx={{ paddingTop:'0px', paddingLeft:'0px', paddingRight:'0px',paddingBottom:'0px', mt: '0px', flexShrink: 0 }} />
+        <Divider
+          sx={{
+            paddingTop: '0px',
+            paddingLeft: '0px',
+            paddingRight: '0px',
+            paddingBottom: '0px',
+            mt: '0px',
+            flexShrink: 0,
+          }}
+        />
         <List sx={{ flexShrink: 0 }}>
           {settingsNavItems.map((item) => (
             <ListItem key={item.text} disablePadding sx={{ display: 'block' }}>
@@ -365,7 +466,10 @@ function HomePage() {
                 >
                   {item.icon}
                 </ListItemIcon>
-                <ListItemText primary={item.text} sx={{ opacity: open ? 1 : 0 }} />
+                <ListItemText
+                  primary={item.text}
+                  sx={{ opacity: open ? 1 : 0 }}
+                />
               </ListItemButton>
             </ListItem>
           ))}

@@ -7,7 +7,9 @@ import { ServiceRequestContext } from '../context/ServiceRequestContext'; // Imp
 export const useServiceRequests = () => {
   const context = useContext(ServiceRequestContext);
   if (context === undefined) {
-    throw new Error('useServiceRequests must be used within a ServiceRequestProvider');
+    throw new Error(
+      'useServiceRequests must be used within a ServiceRequestProvider',
+    );
   }
   return context;
 };

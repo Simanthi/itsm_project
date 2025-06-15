@@ -1,5 +1,5 @@
 // itsm_frontend/src/pages/SecurityAccessPage.tsx
-import React from 'react';
+// import React from 'react'; // Removed unused React import
 import { Box, Typography } from '@mui/material';
 
 function SecurityAccessPage() {

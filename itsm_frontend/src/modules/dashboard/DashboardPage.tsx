@@ -9,7 +9,8 @@ function DashboardPage() {
         Dashboard Overview
       </Typography>
       <Typography paragraph>
-        Welcome to your ITSM Dashboard! This is where you'll see key metrics and an overview of your system.
+        Welcome to your ITSM Dashboard! This is where you'll see key metrics and
+        an overview of your system.
       </Typography>
     </Box>
   );

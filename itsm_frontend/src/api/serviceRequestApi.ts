@@ -1,13 +1,24 @@
 // itsm_frontend/src/api/serviceRequestApi.ts
 
-// 👇 CHANGE 1: Import our new centralized apiClient
-import { apiClient } from './apiClient';
-import type { ServiceRequest, NewServiceRequestData, ServiceRequestStatus, ServiceRequestCategory, ServiceRequestPriority } from '../modules/service-requests/types/ServiceRequestTypes';
+import type {
+  ServiceRequest,
+  NewServiceRequestData,
+  ServiceRequestStatus,
+  ServiceRequestCategory,
+  ServiceRequestPriority,
+} from '../modules/service-requests/types/ServiceRequestTypes';
 
-// We no longer need the base URL here, as apiClient handles it.
-const SERVICE_REQUESTS_ENDPOINT = '/service-requests';
+// Define the type for the authenticatedFetch function
+type AuthenticatedFetch = (
+  endpoint: string,
+  options?: RequestInit,
+) => Promise<any>;
 
-// ... (interface definitions remain the same)
+const SERVICE_REQUESTS_ENDPOINT = '/service-requests'; // Removed trailing slash
+
+// Interface definitions remain the same
+// RawUserResponse, RawServiceRequestResponse, PaginatedServiceRequestsResponse
+// transformServiceRequestResponse also remains the same
 interface RawUserResponse {
   id: number;
   username: string;
@@ -39,10 +50,11 @@ interface PaginatedServiceRequestsResponse {
   results: RawServiceRequestResponse[];
 }
 
+// transformServiceRequestResponse remains the same
 
-// 👇 CHANGE 2: The local 'authFetch' helper function is now removed.
-
-const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse): ServiceRequest => {
+const transformServiceRequestResponse = (
+  rawRequest: RawServiceRequestResponse,
+): ServiceRequest => {
   return {
     id: rawRequest.id,
     request_id: rawRequest.request_id,
@@ -62,44 +74,63 @@ const transformServiceRequestResponse = (rawRequest: RawServiceRequestResponse):
   };
 };
 
-export const getServiceRequests = async (token: string, page: number = 1, pageSize: number = 10): Promise<{ results: ServiceRequest[]; count: number }> => {
-  // 👇 CHANGE 3: Use the new apiClient and pass just the endpoint.
+export const getServiceRequests = async (
+  authenticatedFetch: AuthenticatedFetch,
+  page: number = 1,
+  pageSize: number = 10,
+): Promise<{ results: ServiceRequest[]; count: number }> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/?page=${page}&page_size=${pageSize}`;
-  const rawData = await apiClient<PaginatedServiceRequestsResponse>(endpoint, token);
+  const rawData = await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedServiceRequestsResponse;
   return {
     results: rawData.results.map(transformServiceRequestResponse),
     count: rawData.count,
   };
 };
 
-export const createServiceRequest = async (newRequestData: NewServiceRequestData, token: string): Promise<ServiceRequest> => {
+export const createServiceRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  newRequestData: NewServiceRequestData,
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/`;
-  // 👇 CHANGE 4: Use the new apiClient for the POST request.
-  const rawResponse = await apiClient<RawServiceRequestResponse>(endpoint, token, {
+  const rawResponse = await authenticatedFetch(endpoint, {
     method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newRequestData),
-  });
+  }) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawResponse);
 };
 
-export const getServiceRequestById = async (id: number | string, token: string): Promise<ServiceRequest> => {
+export const getServiceRequestById = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number | string,
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  const rawData = await apiClient<RawServiceRequestResponse>(endpoint, token);
+  const rawData = await authenticatedFetch(endpoint, { method: 'GET' }) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawData);
 };
 
-export const updateServiceRequest = async (id: number | string, updatedData: Partial<NewServiceRequestData> & { status?: ServiceRequestStatus }, token: string): Promise<ServiceRequest> => {
+export const updateServiceRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number | string,
+  updatedData: Partial<NewServiceRequestData> & {
+    status?: ServiceRequestStatus;
+  },
+): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  const rawResponse = await apiClient<RawServiceRequestResponse>(endpoint, token, {
-    method: 'PATCH',
+  const rawResponse = await authenticatedFetch(endpoint, {
+    method: 'PATCH', // Assuming PATCH is preferred for partial updates
+    headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updatedData),
-  });
+  }) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawResponse);
 };
 
-export const deleteServiceRequest = async (id: number | string, token: string): Promise<void> => {
+export const deleteServiceRequest = async (
+  authenticatedFetch: AuthenticatedFetch,
+  id: number | string,
+): Promise<void> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  await apiClient<void>(endpoint, token, {
+  await authenticatedFetch(endpoint, {
     method: 'DELETE',
   });
 };

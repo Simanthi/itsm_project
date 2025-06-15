@@ -1,8 +1,14 @@
 // itsm_frontend/src/modules/service-requests/pages/NewServiceRequestPage.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Removed React default import
 import { useParams, useNavigate } from 'react-router-dom';
-import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Button,
+  CircularProgress,
+  Alert,
+} from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ServiceRequestForm from '../components/ServiceRequestForm';
@@ -13,24 +19,30 @@ import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import Se
 function NewServiceRequestPage() {
   const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { authenticatedFetch } = useAuth(); // Removed token
 
-  const [initialFormData, setInitialFormData] = useState<ServiceRequest | undefined>(undefined);
+  const [initialFormData, setInitialFormData] = useState<
+    ServiceRequest | undefined
+  >(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
   const parseError = useCallback((err: unknown): string => {
     if (err instanceof Error) {
-      if (err.message.includes("API error: ") && err.message.includes("{")) {
+      if (err.message.includes('API error: ') && err.message.includes('{')) {
         try {
-          const errorPart = err.message.substring(err.message.indexOf("{"));
+          const errorPart = err.message.substring(err.message.indexOf('{'));
           const errorDetails = JSON.parse(errorPart);
           const firstKey = Object.keys(errorDetails)[0];
-          if (firstKey && Array.isArray(errorDetails[firstKey]) && typeof errorDetails[firstKey][0] === 'string') {
+          if (
+            firstKey &&
+            Array.isArray(errorDetails[firstKey]) &&
+            typeof errorDetails[firstKey][0] === 'string'
+          ) {
             return `${firstKey.replace(/_/g, ' ')}: ${errorDetails[firstKey][0]}`;
           }
           return `Details: ${JSON.stringify(errorDetails)}`;
-        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
         } catch (_) {
           return err.message;
         }
@@ -43,14 +55,14 @@ function NewServiceRequestPage() {
   // Effect to fetch initial data for editing
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (id && token) {
+      if (id) { // authenticatedFetch check is handled by the useEffect wrapper
         setLoading(true);
         setError(null);
         try {
-          const requestData = await getServiceRequestById(id, token);
+          const requestData = await getServiceRequestById(authenticatedFetch, id); // Pass authenticatedFetch
           setInitialFormData(requestData);
         } catch (err) {
-          console.error("Error fetching service request data for edit:", err);
+          console.error('Error fetching service request data for edit:', err);
           setError(parseError(err));
         } finally {
           setLoading(false);
@@ -62,15 +74,18 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (token) { // Only attempt to fetch if token is available
+    if (authenticatedFetch) { // Check for authenticatedFetch
+      // Only attempt to fetch if authenticatedFetch is available
       fetchInitialData();
     } else {
-      setError("Authentication token not found. Please log in.");
+      setError('Authentication context not available. Please log in.');
       setLoading(false);
     }
-  }, [id, token, parseError]);
+  }, [id, authenticatedFetch, parseError]); // Added authenticatedFetch to dependencies
 
-  const pageTitle = id ? `Edit Service Request: ${id}` : 'Create New Service Request';
+  const pageTitle = id
+    ? `Edit Service Request: ${id}`
+    : 'Create New Service Request';
 
   const handleBack = () => {
     navigate('/service-requests');
@@ -78,9 +93,19 @@ function NewServiceRequestPage() {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
-        <Typography sx={{ ml: 2, mt: 2 }}>Loading service request details...</Typography>
+        <Typography sx={{ ml: 2, mt: 2 }}>
+          Loading service request details...
+        </Typography>
       </Box>
     );
   }

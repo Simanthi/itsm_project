@@ -2,8 +2,16 @@
 import { createContext } from 'react';
 
 export interface UIContextType {
-  showSnackbar: (message: string, severity?: 'success' | 'error' | 'warning' | 'info') => void;
-  showConfirmDialog: (title: string, message: string, onConfirm: () => void, onCancel?: () => void) => void;
+  showSnackbar: (
+    message: string,
+    severity?: 'success' | 'error' | 'warning' | 'info',
+  ) => void;
+  showConfirmDialog: (
+    title: string,
+    message: string,
+    onConfirm: () => void,
+    onCancel?: () => void,
+  ) => void;
   // State for snackbar
   snackbarOpen: boolean;
   snackbarMessage: string;

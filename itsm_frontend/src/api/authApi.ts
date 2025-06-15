@@ -17,7 +17,13 @@ interface PaginatedResponse<T> {
 
 // 👇 CHANGE 2: The local 'authFetch' helper function is now removed.
 
-export const loginApi = async (username: string, password: string): Promise<{ token: string; user: { name: string; role: string; id: number } }> => {
+export const loginApi = async (
+  username: string,
+  password: string,
+): Promise<{
+  token: string;
+  user: { name: string; role: string; id: number };
+}> => {
   try {
     // This first call is PUBLIC (no token), so we use the native fetch API.
     const tokenResponse = await fetch(`${API_BASE_URL}/token/`, {
@@ -44,57 +50,66 @@ export const loginApi = async (username: string, password: string): Promise<{ to
     try {
       // 👇 CHANGE 3: Use the new apiClient for the authenticated user details fetch.
       const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/?username=${username}`;
-      const paginatedUserResponse = await apiClient<PaginatedResponse<User>>(endpoint, token);
-      
+      const paginatedUserResponse = await apiClient<PaginatedResponse<User>>(
+        endpoint,
+        token,
+      );
+
       if (paginatedUserResponse && paginatedUserResponse.results.length > 0) {
         const currentUser = paginatedUserResponse.results[0];
         loggedInUser.id = currentUser.id;
-        loggedInUser.name = currentUser.first_name && currentUser.last_name
-          ? `${currentUser.first_name} ${currentUser.last_name}`
-          : currentUser.username;
+        loggedInUser.name =
+          currentUser.first_name && currentUser.last_name
+            ? `${currentUser.first_name} ${currentUser.last_name}`
+            : currentUser.username;
       } else {
-        console.warn(`loginApi: Could not find user details for username: ${username}.`);
+        console.warn(
+          `loginApi: Could not find user details for username: ${username}.`,
+        );
       }
     } catch (userFetchError) {
-      console.error("loginApi: Error fetching full user details after login.", userFetchError);
+      console.error(
+        'loginApi: Error fetching full user details after login.',
+        userFetchError,
+      );
     }
 
     return { token, user: loggedInUser };
   } catch (error) {
-    console.error("Login API error:", error);
+    console.error('Login API error:', error);
     throw error;
   }
 };
 
-export const getUserList = async (token: string): Promise<User[]> => {
-  if (!token) {
-    return Promise.reject(new Error('Authentication required to fetch user list.'));
-  }
+export const getUserList = async (
+  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<any>,
+): Promise<User[]> => {
+  // Token check is now handled by authenticatedFetch
   try {
-    // 👇 CHANGE 4: Use the new apiClient for fetching the user list.
     const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/`;
-    const paginatedUsersData = await apiClient<PaginatedResponse<User>>(endpoint, token);
-    
+    // Use authenticatedFetch instead of apiClient directly
+    const paginatedUsersData = await authenticatedFetch(endpoint) as PaginatedResponse<User>;
+
     return paginatedUsersData?.results || [];
   } catch (error) {
-    console.error("Error fetching user list:", error);
+    console.error('Error fetching user list:', error);
     throw error;
   }
 };
 
 export const logoutApi = async (token: string): Promise<void> => {
-    // This is a fire-and-forget call, can be a simple fetch.
-    // Or you could use apiClient and ignore the response.
-    try {
-        await fetch(`${API_BASE_URL}/auth/logout/`, {
-            method: 'POST',
-            headers: {
-                'Authorization': `Bearer ${token}`,
-                'Content-Type': 'application/json',
-            },
-        });
-        console.log("Successfully logged out on backend.");
-    } catch (error) {
-        console.error("Logout API error:", error);
-    }
+  // This is a fire-and-forget call, can be a simple fetch.
+  // Or you could use apiClient and ignore the response.
+  try {
+    await fetch(`${API_BASE_URL}/auth/logout/`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+    });
+    console.log('Successfully logged out on backend.');
+  } catch (error) {
+    console.error('Logout API error:', error);
+  }
 };
