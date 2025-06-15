@@ -28,7 +28,6 @@ import {
 } from '../../../api/assetApi';
 import { getUserList } from '../../../api/authApi'; // For fetching users
 import type {
-  Asset,
   AssetData,
   AssetCategory,
   Location,
