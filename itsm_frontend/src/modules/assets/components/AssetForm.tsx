@@ -10,8 +10,11 @@ import {
   Alert,
   Grid,
   Paper,
-  SelectChangeEvent, // For Select onChange
+  FormControl, // Added
+  InputLabel, // Added
+  // SelectChangeEvent removed from here
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select'; // Corrected import
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
