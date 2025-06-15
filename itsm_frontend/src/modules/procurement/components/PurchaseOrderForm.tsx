@@ -46,7 +46,7 @@ import type {
   // Vendor, // Removed from here
   PurchaseOrderStatus,
   // PaginatedResponse, // Removed as it's not directly used for annotations in this file
-  VendorSummary, // This is available from procurementApi for vendor_details in PurchaseOrder
+  // VendorSummary, // Removed as it's only used as a nested type within PurchaseOrder
 } from '../../../api/procurementApi';
 
 // PO Status choices for the dropdown
@@ -299,7 +299,7 @@ const PurchaseOrderForm: React.FC = () => {
     return <Box sx={{p:3}}><Alert severity="error">{error}</Alert><Button onClick={() => navigate('/procurement/memos')} sx={{mt:2}}>Back to List</Button></Box>;
   }
 
-  // const currentTotalAmount = calculateOverallTotal(); // Variable is unused, direct call in JSX
+  // const currentTotalAmount = calculateOverallTotal(); // Variable was confirmed unused and removed. Direct call in JSX.
   const effectiveViewOnly = viewOnlyMode || (isEditMode && formData.status !== 'draft' && formData.status !== 'pending_approval');
 
 
