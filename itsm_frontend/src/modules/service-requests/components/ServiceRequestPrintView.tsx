@@ -26,7 +26,7 @@ const SIDEBAR_WIDTH = 240; // Assuming a common sidebar width in pixels
 const ServiceRequestPrintView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch, token might still be used for other checks or can be removed if not.
+  const { authenticatedFetch } = useAuth(); // Removed token
   const theme = useTheme();
   const { selectedRequestIds, autoPrint } =
     (location.state as LocationState) || {

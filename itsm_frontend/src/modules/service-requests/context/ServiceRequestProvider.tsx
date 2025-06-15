@@ -22,7 +22,7 @@ interface ServiceRequestProviderProps {
 export const ServiceRequestProvider = ({
   children,
 }: ServiceRequestProviderProps) => {
-  const { token, isAuthenticated, authenticatedFetch } = useAuth(); // Added authenticatedFetch
+  const { isAuthenticated, authenticatedFetch } = useAuth(); // Removed token
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   // Add totalCount and paginationModel states
   const [totalCount, setTotalCount] = useState<number>(0);

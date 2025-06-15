@@ -57,8 +57,14 @@ const LocationManagement: React.FC = () => {
     try {
       const response: PaginatedResponse<Location> = await getLocations(authenticatedFetch, { page: 1, pageSize: 100 });
       setLocations(response.results);
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch locations.');
+    } catch (err: unknown) {
+      let message = 'Failed to fetch locations.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to fetch locations:", err);
     } finally {
       setIsLoading(false);
@@ -118,8 +124,14 @@ const LocationManagement: React.FC = () => {
       }
       fetchLocations();
       handleCloseFormDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to save location.');
+    } catch (err: unknown) {
+      let message = 'Failed to save location.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to save location:", err);
     } finally {
       setIsLoading(false);
@@ -137,8 +149,14 @@ const LocationManagement: React.FC = () => {
       setSuccessMessage('Location deleted successfully!');
       fetchLocations();
       handleCloseDeleteDialog();
-    } catch (err: any) {
-      setError(err.message || 'Failed to delete location.');
+    } catch (err: unknown) {
+      let message = 'Failed to delete location.';
+      if (err instanceof Error) {
+        message = err.message || message;
+      } else if (typeof err === 'string') {
+        message = err || message;
+      }
+      setError(message);
       console.error("Failed to delete location:", err);
     } finally {
       setIsLoading(false);

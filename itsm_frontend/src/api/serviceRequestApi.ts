@@ -14,7 +14,7 @@ type AuthenticatedFetch = (
   options?: RequestInit,
 ) => Promise<any>;
 
-const SERVICE_REQUESTS_ENDPOINT = '/api/service-requests'; // Ensure this matches the project's URL structure
+const SERVICE_REQUESTS_ENDPOINT = '/service-requests/'; // Corrected: Relative to API_BASE_URL which is /api
 
 // Interface definitions remain the same
 // RawUserResponse, RawServiceRequestResponse, PaginatedServiceRequestsResponse

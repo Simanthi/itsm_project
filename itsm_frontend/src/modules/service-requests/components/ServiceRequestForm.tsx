@@ -72,7 +72,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 }) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { token, user, loading: authLoading, authenticatedFetch } = useAuth(); // Added authenticatedFetch
+  const { user, loading: authLoading, authenticatedFetch } = useAuth(); // Removed token
   const { showSnackbar } = useUI();
   // 👇 CHANGE 3: Get the addServiceRequest function from the context
   const { addServiceRequest } = useServiceRequests();

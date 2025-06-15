@@ -10,11 +10,11 @@ import {
   Alert,
   Grid,
   Paper,
-  FormControl, // Added
-  InputLabel, // Added
-  // SelectChangeEvent removed from here
+  FormControl,
+  InputLabel,
+  Select, // Added Select here
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select'; // Corrected import
+import type { SelectChangeEvent } from '@mui/material/Select';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -91,9 +91,10 @@ const AssetForm: React.FC = () => {
       setLocations(locationsRes.results);
       setVendors(vendorsRes.results);
       setUsers(usersRes); // getUserList might not return paginated response, adjust if it does
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed to unknown
       console.error("Failed to fetch supporting data:", err);
-      setError("Failed to load data for dropdowns. " + (err.message || ''));
+      const message = err instanceof Error ? err.message : String(err);
+      setError("Failed to load data for dropdowns. " + message);
     } finally {
         // Keep loading true if we are in edit mode and asset data is still to be fetched
         if (!assetId) setIsLoading(false);
@@ -121,9 +122,10 @@ const AssetForm: React.FC = () => {
         description: asset.description || null,
       });
       setIsEditMode(true);
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed to unknown
       console.error("Failed to fetch asset for editing:", err);
-      setError("Failed to load asset details. " + (err.message || ''));
+      const message = err instanceof Error ? err.message : String(err);
+      setError("Failed to load asset details. " + message);
       navigate("/assets"); // Navigate away if asset not found or error
     } finally {
       setIsLoading(false);
@@ -209,9 +211,10 @@ const AssetForm: React.FC = () => {
         showSnackbar('Asset created successfully!', 'success');
       }
       navigate('/assets'); // Navigate to asset list page
-    } catch (err: any) {
+    } catch (err: unknown) { // Changed to unknown
       console.error("Failed to save asset:", err);
-      const apiError = err.message || (typeof err === 'string' ? err : 'An unknown error occurred');
+      const message = err instanceof Error ? err.message : String(err);
+      const apiError = message || (typeof err === 'string' ? err : 'An unknown error occurred');
       setError(`Failed to save asset: ${apiError}`);
       showSnackbar(`Failed to save asset: ${apiError}`, 'error');
     } finally {
@@ -229,7 +232,8 @@ const AssetForm: React.FC = () => {
   }
 
   // Separate error display for critical load errors (e.g. asset not found in edit mode)
-  if (error && !openFormDialog) { // A bit of a misnomer, form is always open here. Condition for initial load error.
+  // This block is for when fetching the asset in edit mode fails.
+  if (isEditMode && error && !formData.asset_tag && !isLoading) {
     return (
         <Box sx={{ p:3 }}>
             <Alert severity="error">{error}</Alert>
