@@ -38,6 +38,12 @@ export async function apiClient<T>(
 
     // If the response is not OK, parse the error and throw
     if (!response.ok) {
+      if (response.status === 401) {
+        const authError = new Error("Authentication failed: Unauthorized");
+        // Add a custom property to identify this as an authentication error
+        (authError as any).isAuthError = true;
+        throw authError;
+      }
       const errorData: ErrorResponse = await response.json().catch(() => ({
         message: response.statusText,
       }));

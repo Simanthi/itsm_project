@@ -2,8 +2,9 @@
 import { createContext } from 'react';
 
 export interface ThemeContextType {
-  mode: 'light' | 'dark';
-  toggleColorMode: () => void;
+  currentThemeName: string;
+  setCurrentTheme: (themeName: string) => void;
+  availableThemes: string[]; // List of theme names like ['light', 'dark', 'oceanic', etc.]
 }
 
 export const ThemeContext = createContext<ThemeContextType | undefined>(

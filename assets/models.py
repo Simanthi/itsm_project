@@ -5,6 +5,42 @@ from django.contrib.auth import get_user_model  # To reference your User model
 User = get_user_model()  # Get the currently active User model
 
 
+class AssetCategory(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Asset Categories"
+
+    def __str__(self):
+        return self.name
+
+
+class Location(models.Model):
+    name = models.CharField(max_length=100, unique=True, help_text="e.g., Building A, 1st Floor, Server Room XYZ")
+    description = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Locations"
+
+    def __str__(self):
+        return self.name
+
+
+class Vendor(models.Model):
+    name = models.CharField(max_length=255)
+    contact_person = models.CharField(max_length=255, blank=True)
+    email = models.EmailField(blank=True)
+    phone_number = models.CharField(max_length=50, blank=True)
+    address = models.TextField(blank=True)
+
+    class Meta:
+        verbose_name_plural = "Vendors"
+
+    def __str__(self):
+        return self.name
+
+
 class Asset(models.Model):
     ASSET_STATUS_CHOICES = [
         ("in_use", "In Use"),
@@ -13,14 +49,7 @@ class Asset(models.Model):
         ("retired", "Retired"),
         ("disposed", "Disposed"),
     ]
-    ASSET_CATEGORY_CHOICES = [
-        ("hardware", "Hardware"),
-        ("software", "Software"),
-        ("network", "Network Device"),
-        ("server", "Server"),
-        ("peripheral", "Peripheral"),
-        ("other", "Other"),
-    ]
+    # ASSET_CATEGORY_CHOICES removed
 
     name = models.CharField(
         max_length=255, help_text="Name of the asset (e.g., Dell XPS 15)"
@@ -33,8 +62,12 @@ class Asset(models.Model):
     serial_number = models.CharField(
         max_length=255, blank=True, null=True, help_text="Manufacturer's serial number"
     )
-    category = models.CharField(
-        max_length=50, choices=ASSET_CATEGORY_CHOICES, default="hardware"
+    category = models.ForeignKey(
+        AssetCategory,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assets'
     )
     status = models.CharField(
         max_length=20, choices=ASSET_STATUS_CHOICES, default="in_use"
@@ -47,8 +80,19 @@ class Asset(models.Model):
         related_name="assigned_assets",
         help_text="User currently assigned to this asset",
     )
-    location = models.CharField(
-        max_length=255, blank=True, help_text="Physical location of the asset"
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assets'
+    )
+    vendor = models.ForeignKey(
+        Vendor,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='assets'
     )
     purchase_date = models.DateField(null=True, blank=True)
     warranty_end_date = models.DateField(null=True, blank=True)

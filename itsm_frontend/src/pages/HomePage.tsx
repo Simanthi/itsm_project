@@ -17,12 +17,17 @@ import {
   useTheme,
   Button,
   CircularProgress,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import type { Theme } from '@mui/material';
 import { css } from '@emotion/react';
 import MenuIcon from '@mui/icons-material/Menu';
-import Brightness4Icon from '@mui/icons-material/Brightness4';
-import Brightness7Icon from '@mui/icons-material/Brightness7';
+// import Brightness4Icon from '@mui/icons-material/Brightness4'; // No longer needed
+// import Brightness7Icon from '@mui/icons-material/Brightness7'; // No longer needed
+import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'; // Icon for theme selector
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
@@ -127,7 +132,7 @@ function HomePage() {
   const navigate = useNavigate();
   // Destructure `user` property from `useAuth`
   const { logout, user, isAuthenticated, loading: authLoading } = useAuth(); // Renamed loading to authLoading
-  const { toggleColorMode, mode } = useThemeContext();
+  const { currentThemeName, setCurrentTheme, availableThemes } = useThemeContext();
   const theme = useTheme();
   const [open, setOpen] = useState(true);
 
@@ -225,9 +230,50 @@ function HomePage() {
               {currentModule.text}
             </Typography>
           </Box>
-          <IconButton color="inherit" onClick={toggleColorMode}>
-            {mode === 'dark' ? <Brightness7Icon /> : <Brightness4Icon />}
-          </IconButton>
+          <FormControl
+            variant="outlined"
+            size="small"
+            sx={{ ml: 1, minWidth: 80, mr: 1 }}
+          >
+            <Select
+              value={currentThemeName}
+              onChange={(event) => setCurrentTheme(event.target.value as string)}
+              IconComponent={PaletteOutlinedIcon} // Show palette icon instead of default arrow
+              sx={{
+                color: 'inherit',
+                '& .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.23)', // Lighter border for visibility
+                },
+                '&:hover .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.5)',
+                },
+                '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+                  borderColor: 'rgba(255, 255, 255, 0.8)',
+                },
+                '& .MuiSelect-icon': {
+                  color: 'inherit',
+                },
+                '& .MuiSelect-select': {
+                  paddingRight: '28px', // Ensure space for the icon
+                  display: 'flex',
+                  alignItems: 'center',
+                }
+              }}
+              renderValue={(selectedValue) => (
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                  {/* Optional: Show a small icon next to the text if desired */}
+                  {/* <PaletteOutlinedIcon sx={{ fontSize: '1.2rem' }} />  */}
+                  {selectedValue.charAt(0).toUpperCase() + selectedValue.slice(1)}
+                </Box>
+              )}
+            >
+              {availableThemes.map((themeName) => (
+                <MenuItem key={themeName} value={themeName}>
+                  {themeName.charAt(0).toUpperCase() + themeName.slice(1)}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
           <IconButton
             size="large"
             edge="end"
