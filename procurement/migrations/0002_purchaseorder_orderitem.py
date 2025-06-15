@@ -9,7 +9,7 @@ from django.db import migrations, models
 class Migration(migrations.Migration):
 
     dependencies = [
-        ('assets', '0002_assetcategory_location_vendor_alter_asset_category_and_more'),
+        ('assets', '0001_initial'), # Changed from 0002_...
         ('procurement', '0001_initial'),
         migrations.swappable_dependency(settings.AUTH_USER_MODEL),
     ]
