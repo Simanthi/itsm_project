@@ -1,6 +1,6 @@
 // itsm_frontend/src/modules/service-requests/pages/NewServiceRequestPage.tsx
 
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react'; // Removed React default import
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Box,
@@ -19,7 +19,7 @@ import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import Se
 function NewServiceRequestPage() {
   const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
   const navigate = useNavigate();
-  const { token, authenticatedFetch } = useAuth(); // Added authenticatedFetch
+  const { authenticatedFetch } = useAuth(); // Removed token
 
   const [initialFormData, setInitialFormData] = useState<
     ServiceRequest | undefined
@@ -55,7 +55,7 @@ function NewServiceRequestPage() {
   // Effect to fetch initial data for editing
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (id && authenticatedFetch) { // Check for authenticatedFetch
+      if (id) { // authenticatedFetch check is handled by the useEffect wrapper
         setLoading(true);
         setError(null);
         try {
