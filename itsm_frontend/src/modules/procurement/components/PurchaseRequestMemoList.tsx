@@ -25,7 +25,7 @@ import {
   TextField,
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
-import EditIcon from '@mui/icons-material/Edit'; // Or VisibilityIcon for view
+// import EditIcon from '@mui/icons-material/Edit'; // Or VisibilityIcon for view - EditIcon is unused
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import CancelIcon from '@mui/icons-material/CancelOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -272,15 +272,15 @@ const PurchaseRequestMemoList: React.FC = () => {
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
-                  {memo.status === 'pending' && (user?.id === memo.requested_by || user?.is_staff) && (
+                  {memo.status === 'pending' && (user?.id === memo.requested_by || !!user?.is_staff) && (
                     <Tooltip title="Cancel Request">
                       <IconButton onClick={() => handleOpenCancelDialog(memo)} size="small" color="warning">
                         <CancelIcon />
                       </IconButton>
                     </Tooltip>
                   )}
-                  {/* Example: Show approve/reject only for staff/admin and if pending */}
-                  {memo.status === 'pending' && (user?.is_staff || user?.is_superuser) && (
+                  {/* Show approve/reject only for staff and if pending */}
+                  {memo.status === 'pending' && !!user?.is_staff && (
                     <>
                       <Tooltip title="Approve Request">
                         <IconButton onClick={() => handleOpenDecisionDialog(memo, 'approved')} size="small" color="success">

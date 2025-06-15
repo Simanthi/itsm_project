@@ -22,7 +22,7 @@ export const loginApi = async (
   password: string,
 ): Promise<{
   token: string;
-  user: { name: string; role: string; id: number };
+  user: { name: string; role: string; id: number; is_staff: boolean }; // Added is_staff
 }> => {
   try {
     // This first call is PUBLIC (no token), so we use the native fetch API.
@@ -41,10 +41,12 @@ export const loginApi = async (
     const token: string = data.access;
 
     // Now that we have a token, we can use our new apiClient for the authenticated call.
-    const loggedInUser: { id: number; name: string; role: string } = {
+    // Update the type of loggedInUser to include is_staff
+    const loggedInUser: { id: number; name: string; role: string; is_staff: boolean } = {
       id: 0,
       name: username,
-      role: 'user', // Default role
+      role: 'user', // Default role, will be updated based on is_staff
+      is_staff: false, // Default is_staff
     };
 
     try {
@@ -62,9 +64,11 @@ export const loginApi = async (
           currentUser.first_name && currentUser.last_name
             ? `${currentUser.first_name} ${currentUser.last_name}`
             : currentUser.username;
+        loggedInUser.is_staff = currentUser.is_staff; // Store is_staff status
+        loggedInUser.role = currentUser.is_staff ? 'admin' : 'user'; // Update role based on is_staff
       } else {
         console.warn(
-          `loginApi: Could not find user details for username: ${username}.`,
+          `loginApi: Could not find user details for username: ${username}. Defaulting role to 'user' and is_staff to false.`,
         );
       }
     } catch (userFetchError) {

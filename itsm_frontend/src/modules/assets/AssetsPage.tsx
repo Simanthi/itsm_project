@@ -41,7 +41,7 @@ function a11yProps(index: number) {
 const AssetsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => { // event changed to _event
     setActiveTab(newValue);
   };
 
