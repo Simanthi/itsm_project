@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import PurchaseRequestMemo, PurchaseOrder, OrderItem
-from ..assets.serializers import VendorSerializer # Assuming assets app is at the same level
+from assets.serializers import VendorSerializer # Corrected import path
 
 User = get_user_model()
 
