@@ -89,12 +89,12 @@ const ProcurementDashboardPage: React.FC = () => {
               alignItems: 'center',
               height: '100%',
               justifyContent: 'space-between',
-              opacity: 0.6 // Indicate disabled/coming soon
+              // opacity: 0.6 // Removed: No longer disabled
             }}
             elevation={3}
           >
             <Box sx={{ textAlign: 'center' }}>
-              <PaymentsIcon sx={{ fontSize: 40, mb: 1, color: 'text.secondary' }} />
+              <PaymentsIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} /> {/* Changed color */}
               <Typography variant="h6" component="h2" gutterBottom>
                 Check Requests
               </Typography>
@@ -103,12 +103,15 @@ const ProcurementDashboardPage: React.FC = () => {
               </Typography>
             </Box>
             <Button
+              component={RouterLink}
+              to="/procurement/check-requests"
               variant="contained"
+              color="primary" // Added color
               sx={{ mt: 1 }}
-              disabled
+              // disabled // Removed disabled
               fullWidth
             >
-              Manage CRs (Coming Soon)
+              Manage Check Requests
             </Button>
           </Paper>
         </Grid>

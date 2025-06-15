@@ -2,9 +2,11 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   TextField, Button, Box, Typography, MenuItem, CircularProgress,
-  Alert, Grid, Paper, Autocomplete, InputAdornment, FormControl, InputLabel, Select
+  Alert, Grid, Paper, Autocomplete, InputAdornment,
+  Divider,
+  Chip,
 } from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
+// SelectChangeEvent, MenuItem, FormControl, InputLabel, Select are not used
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -32,16 +34,14 @@ const initialFormData: CheckRequestData = {
   reason_for_payment: '',
 };
 
-// Status choices for read-only display or specific scenarios if form handles status
-const CR_STATUS_CHOICES_DISPLAY: { value: CheckRequestStatus; label: string }[] = [
-    { value: 'pending_submission', label: 'Pending Submission' },
-    { value: 'pending_approval', label: 'Pending Accounts Approval' },
-    { value: 'approved', label: 'Approved for Payment' },
-    { value: 'rejected', label: 'Rejected' },
-    { value: 'payment_processing', label: 'Payment Processing' },
-    { value: 'paid', label: 'Paid' },
-    { value: 'cancelled', label: 'Cancelled' },
-];
+// const CR_STATUS_CHOICES_DISPLAY ... (This entire constant is removed as it's unused)
+
+const CheckRequestForm: React.FC = () => {
+//     { value: 'rejected', label: 'Rejected' },
+//     { value: 'payment_processing', label: 'Payment Processing' },
+//     { value: 'paid', label: 'Paid' },
+//     { value: 'cancelled', label: 'Cancelled' },
+// ];
 
 
 const CheckRequestForm: React.FC = () => {
@@ -138,10 +138,16 @@ const CheckRequestForm: React.FC = () => {
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value || null }));
   };
 
-  const handlePOSelect = (event: any, selectedPO: PurchaseOrder | null) => {
+  const handlePOSelect = (_event: React.SyntheticEvent, selectedPO: PurchaseOrder | null) => { // Changed event to _event and typed
     if (selectedPO) {
       setFormData(prev => ({
         ...prev,
@@ -248,17 +254,18 @@ const CheckRequestForm: React.FC = () => {
           {isEditMode && (
             <>
               <Grid item xs={12}><Divider sx={{my:1}} /><Typography variant="subtitle1" color="text.secondary">Request Details</Typography></Grid>
-              <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Status:</strong> <Chip label={displayData.status?.replace(/_/g, ' ') || "N/A"} size="small"/></Typography></Grid>
+            <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Status:</strong> <Chip label={displayData.status?.replace(/_/g, ' ').toUpperCase() || "N/A"} color={getStatusChipColor(displayData.status)} size="small"/></Typography></Grid>
               <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Requested By:</strong> {displayData.requested_by_username || 'N/A'}</Typography></Grid>
               <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Request Date:</strong> {displayData.request_date || 'N/A'}</Typography></Grid>
-              {displayData.status !== 'pending_submission' && displayData.status !== 'pending_approval' && (
+            {displayData.status !== 'pending_submission' && displayData.status !== 'cancelled' && ( // Updated condition
                 <>
                   <Grid item xs={12}><Divider sx={{my:1}} /><Typography variant="subtitle1" color="text.secondary">Approval & Payment Details</Typography></Grid>
                   <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Approved By (Accounts):</strong> {displayData.approved_by_accounts_username || 'N/A'}</Typography></Grid>
                   <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Accounts Approval Date:</strong> {displayData.accounts_approval_date || 'N/A'}</Typography></Grid>
                   <Grid item xs={12}><Typography variant="body2"><strong>Accounts Comments:</strong> {displayData.accounts_comments || 'N/A'}</Typography></Grid>
-                  {displayData.status === 'paid' && (
+              {(displayData.status === 'paid' || displayData.status === 'payment_processing') && ( // Show payment details if processing or paid
                     <>
+                  <Grid item xs={12}><Divider sx={{my:1}} /><Typography variant="subtitle1" color="text.secondary">Payment Confirmation</Typography></Grid>
                       <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Payment Method:</strong> {displayData.payment_method || 'N/A'}</Typography></Grid>
                       <Grid item xs={12} sm={6}><Typography variant="body2"><strong>Payment Date:</strong> {displayData.payment_date || 'N/A'}</Typography></Grid>
                       <Grid item xs={12}><Typography variant="body2"><strong>Transaction ID/Check #:</strong> {displayData.transaction_id || 'N/A'}</Typography></Grid>
@@ -285,5 +292,21 @@ const CheckRequestForm: React.FC = () => {
     </Paper>
   );
 };
+
+// Helper function for status chip color (can be moved to a utils file if shared)
+const getStatusChipColor = (status?: CheckRequestStatus) => {
+    if (!status) return 'default';
+    const mapping: Record<CheckRequestStatus, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
+        pending_submission: 'default',
+        pending_approval: 'warning',
+        approved: 'success',
+        rejected: 'error',
+        payment_processing: 'info',
+        paid: 'primary',
+        cancelled: 'default',
+    };
+    return mapping[status] || 'default';
+};
+
 
 export default CheckRequestForm;
