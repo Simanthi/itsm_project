@@ -431,7 +431,7 @@ const AssetList: React.FC = () => {
               <TableRow
                 key={asset.id}
                 hover
-                onClick={(event) => {
+                onClick={(_event) => { // Changed event to _event
                   // If you want row click to toggle checkbox:
                   // if (event.target instanceof HTMLTableCellElement && !event.target.querySelector('input[type="checkbox"]')) {
                   //  handleRowCheckboxChange({ target: { checked: !isSelected } } as React.ChangeEvent<HTMLInputElement>, asset.id);
@@ -475,7 +475,7 @@ const AssetList: React.FC = () => {
                   </Tooltip>
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
             {!isLoading && assets.length === 0 && (
               <TableRow>
                 <TableCell colSpan={headCells.length + 1} align="center">
