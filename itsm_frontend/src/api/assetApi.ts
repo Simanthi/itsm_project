@@ -16,6 +16,9 @@ import type {
   GetAssetsParams,
 } from '../modules/assets/types/assetTypes';
 
+// Re-export specific types if they are intended to be available from this API file
+export type { Vendor } from '../modules/assets/types/assetTypes';
+
 const API_BASE_PATH = '/assets'; // Corrected: Relative to global API_BASE_URL (e.g., /api)
 
 // --- AssetCategory Functions ---

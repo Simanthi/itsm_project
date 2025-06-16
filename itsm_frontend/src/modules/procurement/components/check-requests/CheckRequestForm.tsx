@@ -138,7 +138,7 @@ const CheckRequestForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, showSnackbar]);
+  }, [authenticatedFetch, showSnackbar, purchaseOrders]);
 
   useEffect(() => {
     if (checkRequestId) {
@@ -151,9 +151,8 @@ const CheckRequestForm: React.FC = () => {
       try {
         // Fetch POs that might need a check request (e.g., approved or fully_received)
         // Adjust statuses as per your application's logic
-        // Casting to 'any' for status_in assuming backend supports status__in
         const poData = await getPurchaseOrders(authenticatedFetch, {
-          status_in: ['approved', 'fully_received'] as any,
+          status__in: ['approved', 'fully_received'],
         });
         setPurchaseOrders(poData.results || []);
       } catch (err: unknown) {

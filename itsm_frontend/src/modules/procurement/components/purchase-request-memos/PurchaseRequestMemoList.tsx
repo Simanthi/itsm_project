@@ -230,12 +230,12 @@ const PurchaseRequestMemoList: React.FC = () => {
           <TableHead>
             <TableRow>
               {headCells.map((headCell) => (
-                <TableCell key={headCell.id} sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}>
+                <TableCell key={String(headCell.id)} sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}>
                   {headCell.sortable ? (
                     <TableSortLabel
                       active={sortConfigKey === headCell.id}
                       direction={sortConfigKey === headCell.id ? sortConfigDirection : 'asc'}
-                      onClick={() => handleSortRequest(headCell.id)}
+                      onClick={() => handleSortRequest(String(headCell.id))}
                     >
                       {headCell.label}
                     </TableSortLabel>
