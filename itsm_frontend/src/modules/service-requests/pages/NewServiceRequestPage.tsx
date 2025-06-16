@@ -74,14 +74,17 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (authenticatedFetch) { // Check for authenticatedFetch
+    if (authenticatedFetch) {
       // Only attempt to fetch if authenticatedFetch is available
       fetchInitialData();
     } else {
-      setError('Authentication context not available. Please log in.');
-      setLoading(false);
+      // If id is present but authenticatedFetch is not, it's an error condition for edit mode.
+      if (id) {
+          setError('Authentication context not available. Please log in to load this request.');
+      }
+      setLoading(false); // Ensure loading stops
     }
-  }, [id, authenticatedFetch, parseError]); // Added authenticatedFetch to dependencies
+  }, [id, authenticatedFetch, parseError]);
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`

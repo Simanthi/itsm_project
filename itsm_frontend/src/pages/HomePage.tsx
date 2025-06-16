@@ -41,6 +41,7 @@ import SettingsApplicationsIcon from '@mui/icons-material/SettingsApplications';
 import ApprovalIcon from '@mui/icons-material/Approval';
 import AssessmentIcon from '@mui/icons-material/Assessment';
 import ExitToAppIcon from '@mui/icons-material/ExitToApp';
+import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'; // Icon for Procurement
 import { styled } from '@mui/material/styles';
 import { Outlet, useLocation, Link, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/auth/useAuth'; // Updated import path for useAuth
@@ -179,6 +180,11 @@ function HomePage() {
       path: '/service-requests',
     },
     { text: 'Manage Assets', icon: <DevicesIcon />, path: '/assets' },
+    {
+      text: 'Procurement',
+      icon: <ShoppingCartIcon />,
+      path: '/procurement', // Updated path to point to the dashboard
+    },
     { text: 'Manage Incidents', icon: <BugReportIcon />, path: '/incidents' },
     { text: 'Manage Changes', icon: <CompareArrowsIcon />, path: '/changes' },
     {

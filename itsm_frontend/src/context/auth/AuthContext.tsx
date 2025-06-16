@@ -6,7 +6,7 @@ import {
   type AuthUser,
 } from './AuthContextDefinition';
 import { loginApi, logoutApi as backendLogoutApi } from '../../api/authApi'; // Renamed logoutApi to avoid conflict
-import { apiClient } from '../../api/apiClient';
+import { apiClient, AuthError } from '../../api/apiClient'; // Imported AuthError
 
 interface AuthProviderProps {
   children: ReactNode;
@@ -178,7 +178,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [token]); // 'token' is a dependency because backendLogoutApi uses it.
 
   const authenticatedFetch = useCallback(
-    async (endpoint: string, options?: RequestInit): Promise<any> => {
+    async <T = unknown>(endpoint: string, options?: RequestInit): Promise<T> => { // Made generic with T = unknown
       if (!token) {
         console.error('authenticatedFetch: No token available.');
         // Optionally, call logout() here if missing token should always force logout
@@ -187,11 +187,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       try {
-        return await apiClient(endpoint, token, options);
-      } catch (error: any) {
-        if (error.isAuthError) {
+        // Pass generic type T to apiClient
+        const result = await apiClient<T>(endpoint, token!, options);
+        return result;
+      } catch (error: unknown) {
+        // Check if the error is an instance of AuthError
+        if (error instanceof AuthError) {
           console.warn(
-            'authenticatedFetch: Authentication error detected. Logging out.',
+            'authenticatedFetch: AuthError instance caught. Logging out.',
             error,
           );
           logout(); // Clear session and redirect

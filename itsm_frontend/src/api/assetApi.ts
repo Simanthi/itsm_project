@@ -4,7 +4,7 @@
 type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<any>;
+) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 
 // --- Common Types ---
 export interface PaginatedResponse<T> {
@@ -89,12 +89,12 @@ export interface GetListParams {
 }
 
 export interface GetAssetsParams extends GetListParams {
-  filters?: Record<string, string | number>; // e.g., { status: "in_use", category_id: 1 }
+  filters?: Record<string, string | number | boolean>; // Refined to include boolean for filter values
   sortBy?: string; // e.g., "name", "asset_tag"
   sortOrder?: 'asc' | 'desc'; // Default to 'asc' if not provided
 }
 
-const API_BASE_PATH = '/assets';
+const API_BASE_PATH = '/assets'; // Corrected: Relative to global API_BASE_URL (e.g., /api)
 
 // --- AssetCategory Functions ---
 
@@ -105,9 +105,9 @@ export const getAssetCategories = async (
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append('page', params.page.toString());
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString()); // Standard DRF page size param
-
+  
   const endpoint = `${API_BASE_PATH}/categories/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<AssetCategory>;
 };
 
 export const createAssetCategory = async (
@@ -119,7 +119,7 @@ export const createAssetCategory = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory;
 };
 
 export const updateAssetCategory = async (
@@ -132,7 +132,7 @@ export const updateAssetCategory = async (
     method: 'PUT', // Or PATCH if partial updates are preferred and supported
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(categoryData),
-  });
+  }) as AssetCategory;
 };
 
 export const deleteAssetCategory = async (
@@ -152,9 +152,9 @@ export const getLocations = async (
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append('page', params.page.toString());
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString());
-
+  
   const endpoint = `${API_BASE_PATH}/locations/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Location>;
 };
 
 export const createLocation = async (
@@ -166,7 +166,7 @@ export const createLocation = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location;
 };
 
 export const updateLocation = async (
@@ -179,7 +179,7 @@ export const updateLocation = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(locationData),
-  });
+  }) as Location;
 };
 
 export const deleteLocation = async (
@@ -199,9 +199,9 @@ export const getVendors = async (
   const queryParams = new URLSearchParams();
   if (params?.page) queryParams.append('page', params.page.toString());
   if (params?.pageSize) queryParams.append('page_size', params.pageSize.toString());
-
+  
   const endpoint = `${API_BASE_PATH}/vendors/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Vendor>;
 };
 
 export const createVendor = async (
@@ -213,7 +213,7 @@ export const createVendor = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor;
 };
 
 export const updateVendor = async (
@@ -226,7 +226,7 @@ export const updateVendor = async (
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(vendorData),
-  });
+  }) as Vendor;
 };
 
 export const deleteVendor = async (
@@ -256,9 +256,9 @@ export const getAssets = async (
       }
     }
   }
-
+  
   const endpoint = `${API_BASE_PATH}/assets/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<Asset>;
 };
 
 export const getAssetById = async (
@@ -266,7 +266,7 @@ export const getAssetById = async (
   id: number,
 ): Promise<Asset> => {
   const endpoint = `${API_BASE_PATH}/assets/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' });
+  return await authenticatedFetch(endpoint, { method: 'GET' }) as Asset;
 };
 
 export const createAsset = async (
@@ -278,7 +278,7 @@ export const createAsset = async (
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset;
 };
 
 export const updateAsset = async (
@@ -291,7 +291,7 @@ export const updateAsset = async (
     method: 'PUT', // Or PATCH
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(assetData),
-  });
+  }) as Asset;
 };
 
 export const deleteAsset = async (

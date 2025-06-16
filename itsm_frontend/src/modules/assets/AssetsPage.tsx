@@ -41,13 +41,13 @@ function a11yProps(index: number) {
 const AssetsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const handleTabChange = (event: React.SyntheticEvent, newValue: number) => {
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => { // event changed to _event
     setActiveTab(newValue);
   };
 
   return (
-    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 1 } }}> {/* Responsive padding */}
-      <Typography variant="h4" gutterBottom sx={{ mb: 1 , mx: { xs: 1, sm: 1 } }}>
+    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 3 } }}> {/* Responsive padding */}
+      <Typography variant="h4" gutterBottom sx={{ mb: 2 }}>
         Asset Management
       </Typography>
       <Paper elevation={2} sx={{ width: '100%'}}>
