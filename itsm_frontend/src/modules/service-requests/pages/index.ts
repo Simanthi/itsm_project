@@ -1,3 +1,3 @@
 // itsm_frontend/src/modules/service-requests/pages/index.ts
-export * from './NewServiceRequestPage';
-export * from './ServiceRequestsPage';
+export { default as NewServiceRequestPage } from './NewServiceRequestPage';
+export { default as ServiceRequestsPage } from './ServiceRequestsPage';
