@@ -5,3 +5,5 @@ export { default as CategoryManagement } from './CategoryManagement';
 export { default as LocationManagement } from './LocationManagement';
 export { default as VendorManagement } from './VendorManagement';
 export { default as AssetPrintView } from './AssetPrintView';
+export { default as CategoryPrintView } from './CategoryPrintView';
+export { default as LocationPrintView } from './LocationPrintView';
