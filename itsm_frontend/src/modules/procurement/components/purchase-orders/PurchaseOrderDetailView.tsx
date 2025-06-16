@@ -136,7 +136,7 @@ const PurchaseOrderDetailView: React.FC = () => {
             >
                 Back
             </Button>
-            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()}>
+            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => navigate('/procurement/purchase-orders/print-preview', { state: { poId: purchaseOrder.id, autoPrint: false } })}>
                 Print PO
             </Button>
         </Box>
