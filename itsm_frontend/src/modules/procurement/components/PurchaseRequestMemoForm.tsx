@@ -80,7 +80,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [memoId, authenticatedFetch, showSnackbar, user?.id]); // Removed navigate
+  }, [memoId, authenticatedFetch, showSnackbar, user?.id]);
 
   useEffect(() => {
     if (memoId) {
@@ -144,7 +144,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
         await createPurchaseRequestMemo(authenticatedFetch, payload as PurchaseRequestMemoData);
         showSnackbar('Purchase request created successfully!', 'success');
       }
-      navigate('/procurement/memos');
+      navigate('/procurement/iom');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(`Failed to save purchase request: ${message}`);
@@ -170,7 +170,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
     return (
         <Box sx={{ p:3 }}>
             <Alert severity="error">{error}</Alert>
-            <Button onClick={() => navigate('/procurement/memos')} sx={{mt: 2}}>Back to List</Button>
+            <Button onClick={() => navigate('/procurement/iom')} sx={{mt: 2}}>Back to List</Button>
         </Box>
     );
   }
@@ -259,7 +259,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
           )}
 
           <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" color="secondary" onClick={() => navigate('/procurement/memos')} disabled={isSubmitting}>
+            <Button variant="outlined" color="secondary" onClick={() => navigate('/procurement/iom')} disabled={isSubmitting}>
               Cancel
             </Button>
             {!viewOnly && (
