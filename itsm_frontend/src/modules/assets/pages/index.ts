@@ -1,2 +1,2 @@
 // index.ts for assets pages
-export * from './AssetsPage';
+export { default as AssetsPage } from './AssetsPage';
