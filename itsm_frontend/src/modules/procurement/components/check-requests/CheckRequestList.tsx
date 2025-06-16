@@ -181,7 +181,7 @@ const CheckRequestList: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, width: '100%' }}>
-      <Typography variant="h5" component="h2" gutterBottom>Check Requests</Typography>
+      <Typography variant="h6" component="h2" gutterBottom>Check Requests</Typography>
       <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/procurement/check-requests/new')} sx={{ mb: 2 }}>
         Create New Check Request
       </Button>

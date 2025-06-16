@@ -126,7 +126,7 @@ const CheckRequestDetailView: React.FC = () => {
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3} id="check-request-detail-print-area">
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }} className="no-print">
-        <Typography variant="h4" component="h1">
+        <Typography variant="h5" component="h1">
           Check Request Details
         </Typography>
         <Box>

@@ -182,7 +182,7 @@ const PurchaseOrderList: React.FC = () => {
 
   return (
     <Box sx={{ p: 3, width: '100%' }}>
-      <Typography variant="h5" component="h2" gutterBottom>
+      <Typography variant="h6" component="h2" gutterBottom>
         Purchase Orders
       </Typography>
 

@@ -12,7 +12,7 @@ import DashboardPage from './modules/dashboard/DashboardPage';
 import { ServiceRequestsPage } from './modules/service-requests/pages';
 import { NewServiceRequestPage } from './modules/service-requests/pages';
 import { AssetsPage } from './modules/assets/pages';
-import { AssetForm, AssetPrintView, CategoryPrintView, LocationPrintView } from './modules/assets/components'; // Import LocationPrintView
+import { AssetForm, AssetPrintView, CategoryPrintView, LocationPrintView, VendorPrintView } from './modules/assets/components'; // Import VendorPrintView
 import { PurchaseRequestMemoList } from './modules/procurement/components/purchase-request-memos';
 import { PurchaseRequestMemoForm } from './modules/procurement/components/purchase-request-memos';
 import { ProcurementDashboardPage } from './modules/procurement/pages';
@@ -59,7 +59,8 @@ function AppContent() {
           <Route path="assets/edit/:assetId" element={<AssetForm />} />
           <Route path="assets/print-preview" element={<AssetPrintView />} />
           <Route path="assets/categories/print-preview" element={<CategoryPrintView />} />
-          <Route path="assets/locations/print-preview" element={<LocationPrintView />} /> {/* Added Location Print Preview Route */}
+          <Route path="assets/locations/print-preview" element={<LocationPrintView />} />
+          <Route path="assets/vendors/print-preview" element={<VendorPrintView />} /> {/* Added Vendor Print Preview Route */}
           {/* Procurement Routes */}
           <Route path="procurement" element={<ProcurementDashboardPage />} />
           <Route path="procurement/iom" element={<PurchaseRequestMemoList />} />

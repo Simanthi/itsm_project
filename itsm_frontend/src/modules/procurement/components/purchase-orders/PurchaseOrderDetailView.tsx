@@ -124,7 +124,7 @@ const PurchaseOrderDetailView: React.FC = () => {
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h5" component="h1">
           Purchase Order Details
         </Typography>
         <Box>

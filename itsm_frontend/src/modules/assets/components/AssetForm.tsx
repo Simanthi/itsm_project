@@ -253,7 +253,7 @@ const AssetForm: React.FC = () => {
         >
             Back
         </Button>
-        <Typography variant="h4" component="h1">
+        <Typography variant="h5" component="h1">
           {isEditMode ? `Edit Asset: ${formData.asset_tag || ''}` : 'Create New Asset'}
         </Typography>
       </Box>
