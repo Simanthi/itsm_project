@@ -32,7 +32,7 @@ import {
   updateVendor,
   deleteVendor,
 } from '../../../api/assetApi';
-import type { Vendor, VendorData, PaginatedResponse } from '../../../api/assetApi';
+import type { Vendor, VendorData, PaginatedResponse } from '../types';
 
 const initialFormData: VendorData = {
   name: '',

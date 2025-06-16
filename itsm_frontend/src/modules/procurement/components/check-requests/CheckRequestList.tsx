@@ -34,7 +34,7 @@ import type {
   PaymentMethod,
   // AccountsDecisionPayload, // Not directly used for typing in this file
   ConfirmPaymentPayload,
-} from '../../../api/procurementApi';
+} from '../../types';
 import { useNavigate } from 'react-router-dom';
 
 type Order = 'asc' | 'desc';

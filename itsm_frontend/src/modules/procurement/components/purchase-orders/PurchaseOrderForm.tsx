@@ -47,7 +47,7 @@ import type {
   PurchaseOrderStatus,
   // PaginatedResponse, // Removed as it's not directly used for annotations in this file
   // VendorSummary, // Removed as it's only used as a nested type within PurchaseOrder
-} from '../../../api/procurementApi';
+} from '../../types';
 
 // PO Status choices for the dropdown
 const PO_STATUS_CHOICES: { value: PurchaseOrderStatus; label: string }[] = [

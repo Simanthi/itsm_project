@@ -31,7 +31,7 @@ import {
   updateAssetCategory,
   deleteAssetCategory,
 } from '../../../api/assetApi';
-import type { AssetCategory, AssetCategoryData, PaginatedResponse } from '../../../api/assetApi';
+import type { AssetCategory, AssetCategoryData, PaginatedResponse } from '../types';
 
 const CategoryManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();

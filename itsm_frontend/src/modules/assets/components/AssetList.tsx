@@ -46,7 +46,7 @@ import type {
   // Vendor, // Not directly used in AssetList columns from root, but via Asset.vendor
   // User, // Not directly used in AssetList columns from root, but via Asset.assigned_to
   // PaginatedResponse // Removed as per instruction if not directly annotated
-} from '../../../api/assetApi';
+} from '../types';
 import { useNavigate } from 'react-router-dom'; // For navigation
 
 // Mimic Django choices for status filter

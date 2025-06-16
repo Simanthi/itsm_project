@@ -35,7 +35,7 @@ import type { // TS1484
   PurchaseOrder,
   // PaymentMethod, // Unused TS6196
   // PurchaseOrderStatus, // Unused TS6196
-} from '../../../api/procurementApi';
+} from '../../types';
 import { formatDateString, formatCurrency } from '../../../utils/formatters'; // TS2307 (should be fixed now)
 
 // Constants

@@ -23,7 +23,7 @@ import type {
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
   PurchaseRequestMemoUpdateData
-} from '../../../api/procurementApi';
+} from '../../types';
 
 const initialFormData: PurchaseRequestMemoData = {
   item_description: '',

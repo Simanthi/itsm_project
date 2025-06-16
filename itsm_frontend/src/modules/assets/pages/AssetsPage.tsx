@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import { Box, Tabs, Tab, Paper, Typography } from '@mui/material';
-import AssetList from './components/AssetList';
-import CategoryManagement from './components/CategoryManagement';
-import LocationManagement from './components/LocationManagement';
-import VendorManagement from './components/VendorManagement';
+import AssetList from '../components/AssetList';
+import CategoryManagement from '../components/CategoryManagement';
+import LocationManagement from '../components/LocationManagement';
+import VendorManagement from '../components/VendorManagement';
 
 interface TabPanelProps {
   children?: React.ReactNode;
