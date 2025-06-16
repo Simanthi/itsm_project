@@ -32,6 +32,74 @@ const baseTypography = {
   },
 };
 
+// --- Common Component Overrides for new themes ---
+
+// For new LIGHT mode themes
+const commonLightModeComponents: ThemeOptions['components'] = {
+  MuiTableCell: {
+    styleOverrides: {
+      root: { fontSize: baseTypography.body2.fontSize },
+      head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+        fontSize: baseTypography.th1.fontSize,
+        fontWeight: 'bold',
+        color: theme.palette.primary.main,
+        backgroundColor: alpha(theme.palette.primary.main, 0.08), // Adjusted alpha for light themes
+      }),
+    },
+  },
+  MuiListItemButton: {
+    styleOverrides: {
+      root: {
+        '&.Mui-selected': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
+        }),
+        '&.Mui-selected:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+          backgroundColor: alpha(theme.palette.primary.dark, 0.12),
+        }),
+        '&:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter for color
+          backgroundColor: 'rgba(0, 0, 0, 0.04)',
+          color: theme.palette.primary.dark,
+        }),
+      },
+    },
+  },
+};
+
+// For new DARK mode themes (reusing structure from darkTheme with generic palette access)
+const commonDarkModeComponents: ThemeOptions['components'] = {
+  MuiTableCell: {
+    styleOverrides: {
+      root: {
+        fontSize: baseTypography.body2.fontSize,
+      },
+      head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+        fontSize: baseTypography.th1.fontSize,
+        fontWeight: 'bold',
+        color: theme.palette.primary.main,
+        backgroundColor: alpha(theme.palette.primary.main, 0.1),
+      }),
+    },
+  },
+  MuiListItemButton: {
+    styleOverrides: {
+      root: {
+        '&.Mui-selected': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+          backgroundColor: theme.palette.primary.main,
+          color: theme.palette.primary.contrastText,
+        }),
+        '&.Mui-selected:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
+          backgroundColor: alpha(theme.palette.primary.main, 0.24),
+        }),
+        '&:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter for color
+          backgroundColor: 'rgba(255, 255, 255, 0.08)',
+          color: theme.palette.primary.light,
+        }),
+      },
+    },
+  },
+};
+
 // --- Light Theme Definition ---
 export const lightTheme = createTheme({
   palette: {
@@ -128,75 +196,6 @@ export const darkTheme = createTheme({
   typography: baseTypography,
   components: commonDarkModeComponents, // Use the common dark mode components
 });
-
-// --- Common Component Overrides for new themes ---
-
-// For new LIGHT mode themes
-const commonLightModeComponents: ThemeOptions['components'] = {
-  MuiTableCell: {
-    styleOverrides: {
-      root: { fontSize: baseTypography.body2.fontSize },
-      head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-        fontSize: baseTypography.th1.fontSize,
-        fontWeight: 'bold',
-        color: theme.palette.primary.main,
-        backgroundColor: alpha(theme.palette.primary.main, 0.08), // Adjusted alpha for light themes
-      }),
-    },
-  },
-  MuiListItemButton: {
-    styleOverrides: {
-      root: {
-        '&.Mui-selected': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
-        }),
-        '&.Mui-selected:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-          backgroundColor: alpha(theme.palette.primary.dark, 0.12),
-        }),
-        '&:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter for color
-          backgroundColor: 'rgba(0, 0, 0, 0.04)',
-          color: theme.palette.primary.dark,
-        }),
-      },
-    },
-  },
-};
-
-// For new DARK mode themes (reusing structure from darkTheme with generic palette access)
-const commonDarkModeComponents: ThemeOptions['components'] = {
-  MuiTableCell: {
-    styleOverrides: {
-      root: {
-        fontSize: baseTypography.body2.fontSize,
-      },
-      head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-        fontSize: baseTypography.th1.fontSize,
-        fontWeight: 'bold',
-        color: theme.palette.primary.main,
-        backgroundColor: alpha(theme.palette.primary.main, 0.1),
-      }),
-    },
-  },
-  MuiListItemButton: {
-    styleOverrides: {
-      root: {
-        '&.Mui-selected': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-          backgroundColor: theme.palette.primary.main,
-          color: theme.palette.primary.contrastText,
-        }),
-        '&.Mui-selected:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-          backgroundColor: alpha(theme.palette.primary.main, 0.24),
-        }),
-        '&:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter for color
-          backgroundColor: 'rgba(255, 255, 255, 0.08)',
-          color: theme.palette.primary.light,
-        }),
-      },
-    },
-  },
-};
-
 
 // --- Oceanic Theme (Light Mode) ---
 export const oceanicTheme = createTheme({

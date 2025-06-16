@@ -31,13 +31,13 @@ import CancelIcon from '@mui/icons-material/CancelOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { useUI } from '../../../../context/UIContext/useUI';
 import {
   getPurchaseRequestMemos,
   cancelPurchaseRequestMemo,
   decidePurchaseRequestMemo
-} from '../../../api/procurementApi';
+} from '../../../../api/procurementApi';
 import type {
   PurchaseRequestMemo,
   PurchaseRequestDecisionData,

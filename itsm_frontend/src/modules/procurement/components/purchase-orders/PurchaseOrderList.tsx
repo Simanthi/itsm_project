@@ -22,9 +22,9 @@ import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
 
-import { useAuth } from '../../../context/auth/useAuth';
+import { useAuth } from '../../../../context/auth/useAuth';
 // import { useUI } from '../../../context/UIContext/useUI'; // Not strictly needed if only snackbar for error/success
-import { getPurchaseOrders } from '../../../api/procurementApi';
+import { getPurchaseOrders } from '../../../../api/procurementApi';
 import type { PurchaseOrder, GetPurchaseOrdersParams, PurchaseOrderStatus } from '../../types';
 import { useNavigate } from 'react-router-dom';
 

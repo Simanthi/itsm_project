@@ -12,13 +12,13 @@ import {
   InputAdornment,
 } from '@mui/material';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { useUI } from '../../../../context/UIContext/useUI';
 import {
   getPurchaseRequestMemoById,
   createPurchaseRequestMemo,
   updatePurchaseRequestMemo,
-} from '../../../api/procurementApi';
+} from '../../../../api/procurementApi';
 import type {
   PurchaseRequestMemo,
   PurchaseRequestMemoData,

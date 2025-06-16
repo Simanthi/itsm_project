@@ -16,8 +16,8 @@ import PaymentsIcon from '@mui/icons-material/Payments'; // Mark processing or c
 import PriceCheckIcon from '@mui/icons-material/PriceCheck'; // Confirm payment
 import CancelIcon from '@mui/icons-material/CancelOutlined';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { useUI } from '../../../../context/UIContext/useUI';
 import {
   getCheckRequests,
   submitCheckRequestForApproval,
@@ -26,7 +26,7 @@ import {
   markCheckRequestPaymentProcessing,
   confirmCheckRequestPayment,
   cancelCheckRequest,
-} from '../../../api/procurementApi';
+} from '../../../../api/procurementApi';
 import type {
   CheckRequest,
   GetCheckRequestsParams,
