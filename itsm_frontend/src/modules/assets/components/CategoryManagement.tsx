@@ -19,10 +19,14 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
 
 import { useAuth } from '../../../context/auth/useAuth';
 import {
@@ -35,8 +39,11 @@ import type { AssetCategory, AssetCategoryData, PaginatedResponse } from '../typ
 
 const CategoryManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();
+  const navigate = useNavigate(); // useNavigate for printing
+  const { showSnackbar } = useUI(); // useUI for snackbar
 
   const [categories, setCategories] = useState<AssetCategory[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<number[]>([]); // State for selection
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -167,6 +174,38 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = categories.map((category) => category.id);
+      setSelectedCategoryIds(newSelectedIds);
+      return;
+    }
+    setSelectedCategoryIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, categoryId: number) => {
+    if (event.target.checked) {
+      setSelectedCategoryIds((prevSelected) => [...prevSelected, categoryId]);
+    } else {
+      setSelectedCategoryIds((prevSelected) => prevSelected.filter((id) => id !== categoryId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedCategoryIds.length === 0) {
+      showSnackbar('Please select categories to print.', 'warning');
+      return;
+    }
+    const selectedCategoriesData = categories.filter(cat => selectedCategoryIds.includes(cat.id));
+    if (selectedCategoriesData.length === 0) {
+        showSnackbar('Selected categories not found. Please refresh.', 'warning');
+        return;
+    }
+    navigate('/assets/categories/print-preview', {
+      state: { selectedCategories: selectedCategoriesData, autoPrint: autoPrint }
+    });
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" component="h2" gutterBottom>
@@ -176,16 +215,32 @@ const CategoryManagement: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
 
-
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => handleOpenFormDialog()}
-        sx={{ mb: 2 }}
-        disabled={isLoading}
-      >
-        Add Category
-      </Button>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenFormDialog()}
+          disabled={isLoading}
+        >
+          Add Category
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(false)}
+          disabled={selectedCategoryIds.length === 0 || isLoading}
+        >
+          Print Preview Selected ({selectedCategoryIds.length})
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(true)}
+          disabled={selectedCategoryIds.length === 0 || isLoading}
+        >
+          Print Selected ({selectedCategoryIds.length})
+        </Button>
+      </Box>
 
       {isLoading && !categories.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
 
@@ -193,15 +248,39 @@ const CategoryManagement: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedCategoryIds.length > 0 && selectedCategoryIds.length < categories.length}
+                  checked={categories.length > 0 && selectedCategoryIds.length === categories.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all categories' }}
+                />
+              </TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {categories.map((category) => (
-              <TableRow key={category.id}>
-                <TableCell>{category.name}</TableCell>
+            {categories.map((category) => {
+              const isSelected = selectedCategoryIds.includes(category.id);
+              return (
+              <TableRow
+                key={category.id}
+                hover
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, category.id)}
+                    inputProps={{ 'aria-labelledby': `category-checkbox-${category.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`category-checkbox-${category.id}`}>{category.name}</TableCell>
                 <TableCell>{category.description || '-'}</TableCell>
                 <TableCell align="right">
                   <IconButton onClick={() => handleOpenFormDialog(category)} disabled={isLoading} size="small">
@@ -212,10 +291,11 @@ const CategoryManagement: React.FC = () => {
                   </IconButton>
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
             {!isLoading && !categories.length && (
                 <TableRow>
-                    <TableCell colSpan={3} align="center">No categories found.</TableCell>
+                    <TableCell colSpan={4} align="center">No categories found.</TableCell>
                 </TableRow>
             )}
           </TableBody>

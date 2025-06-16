@@ -29,15 +29,18 @@ import {
   Chip,
   Toolbar, // For filter bar layout
   Tooltip,
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select'; // Added for typed Select events
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 import AddIcon from '@mui/icons-material/Add';
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear'; // For clearing filters
 
 import { useAuth } from '../../../context/auth/useAuth';
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
 import { getAssets, deleteAsset, getAssetCategories } from '../../../api/assetApi';
 import type {
   Asset,
@@ -62,13 +65,15 @@ const ASSET_STATUS_CHOICES = [
 type Order = 'asc' | 'desc';
 
 interface HeadCell {
-  id: keyof Asset | 'assigned_to_username' | 'category_name' | 'location_name' | 'actions'; // Include pseudo-fields for sorting
+  id: keyof Asset | 'assigned_to_username' | 'category_name' | 'location_name' | 'actions' | 'select'; // Include pseudo-fields for sorting
   label: string;
   numeric: boolean;
   sortable?: boolean;
+  padding?: 'none' | 'normal';
 }
 
 const headCells: readonly HeadCell[] = [
+  { id: 'select', label: '', sortable: false, numeric: false, padding: 'none' },
   { id: 'asset_tag', numeric: false, label: 'Asset Tag', sortable: true },
   { id: 'name', numeric: false, label: 'Name', sortable: true },
   { id: 'category_name', numeric: false, label: 'Category', sortable: true }, // For sorting by category.name
@@ -83,8 +88,10 @@ const headCells: readonly HeadCell[] = [
 const AssetList: React.FC = () => {
   const { authenticatedFetch } = useAuth();
   const navigate = useNavigate();
+  const { showSnackbar } = useUI(); // Import useUI
 
   const [assets, setAssets] = useState<Asset[]>([]);
+  const [selectedAssetIds, setSelectedAssetIds] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -201,6 +208,33 @@ const AssetList: React.FC = () => {
     // Optionally reset sort to default
     // setSortConfigKey('asset_tag');
     // setSortConfigDirection('asc');
+  };
+
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = assets.map((asset) => asset.id);
+      setSelectedAssetIds(newSelectedIds);
+      return;
+    }
+    setSelectedAssetIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, assetId: number) => {
+    if (event.target.checked) {
+      setSelectedAssetIds((prevSelected) => [...prevSelected, assetId]);
+    } else {
+      setSelectedAssetIds((prevSelected) => prevSelected.filter((id) => id !== assetId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedAssetIds.length === 0) {
+      showSnackbar('Please select assets to print.', 'warning');
+      return;
+    }
+    navigate('/assets/print-preview', {
+      state: { selectedAssetIds: selectedAssetIds, autoPrint: autoPrint }
+    });
   };
 
   const handleSortRequest = (property: keyof Asset | string) => {
@@ -334,6 +368,24 @@ const AssetList: React.FC = () => {
       >
         Add New Asset
       </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(false)}
+        disabled={selectedAssetIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Preview Selected ({selectedAssetIds.length})
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(true)}
+        disabled={selectedAssetIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Selected ({selectedAssetIds.length})
+      </Button>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {isLoading && assets.length === 0 && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
@@ -342,10 +394,19 @@ const AssetList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              {headCells.map((headCell) => (
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedAssetIds.length > 0 && selectedAssetIds.length < assets.length}
+                  checked={assets.length > 0 && selectedAssetIds.length === assets.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all assets' }}
+                />
+              </TableCell>
+              {headCells.slice(1).map((headCell) => ( // Slice to skip 'select' cell
                 <TableCell
                   key={headCell.id}
                   align={headCell.numeric ? 'right' : 'left'}
+                  padding={headCell.padding === 'none' ? 'none' : 'normal'}
                   sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}
                 >
                   {headCell.sortable ? (
@@ -364,9 +425,31 @@ const AssetList: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {!isLoading && assets.map((asset) => (
-              <TableRow key={asset.id} hover>
-                <TableCell>{asset.asset_tag}</TableCell>
+            {!isLoading && assets.map((asset) => {
+              const isSelected = selectedAssetIds.includes(asset.id);
+              return (
+              <TableRow
+                key={asset.id}
+                hover
+                onClick={(event) => {
+                  // If you want row click to toggle checkbox:
+                  // if (event.target instanceof HTMLTableCellElement && !event.target.querySelector('input[type="checkbox"]')) {
+                  //  handleRowCheckboxChange({ target: { checked: !isSelected } } as React.ChangeEvent<HTMLInputElement>, asset.id);
+                  // }
+                }}
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, asset.id)}
+                    inputProps={{ 'aria-labelledby': `asset-checkbox-${asset.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`asset-checkbox-${asset.id}`}>{asset.asset_tag}</TableCell>
                 <TableCell>{asset.name}</TableCell>
                 <TableCell>{asset.category?.name || '-'}</TableCell>
                 <TableCell>
@@ -395,14 +478,14 @@ const AssetList: React.FC = () => {
             ))}
             {!isLoading && assets.length === 0 && (
               <TableRow>
-                <TableCell colSpan={headCells.length} align="center">
+                <TableCell colSpan={headCells.length + 1} align="center">
                   No assets found. Try adjusting your filters.
                 </TableCell>
               </TableRow>
             )}
              {isLoading && (
               <TableRow>
-                <TableCell colSpan={headCells.length} align="center">
+                <TableCell colSpan={headCells.length + 1} align="center">
                   <CircularProgress sx={{my: 2}}/>
                 </TableCell>
               </TableRow>

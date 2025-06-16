@@ -19,10 +19,14 @@ import {
   CircularProgress,
   Alert,
   Snackbar,
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
 
 import { useAuth } from '../../../context/auth/useAuth';
 import {
@@ -35,8 +39,11 @@ import type { Location, LocationData, PaginatedResponse } from '../types';
 
 const LocationManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();
+  const navigate = useNavigate(); // useNavigate for printing
+  const { showSnackbar } = useUI(); // useUI for snackbar
 
   const [locations, setLocations] = useState<Location[]>([]);
+  const [selectedLocationIds, setSelectedLocationIds] = useState<number[]>([]); // State for selection
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -163,6 +170,38 @@ const LocationManagement: React.FC = () => {
     }
   };
 
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = locations.map((loc) => loc.id);
+      setSelectedLocationIds(newSelectedIds);
+      return;
+    }
+    setSelectedLocationIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, locationId: number) => {
+    if (event.target.checked) {
+      setSelectedLocationIds((prevSelected) => [...prevSelected, locationId]);
+    } else {
+      setSelectedLocationIds((prevSelected) => prevSelected.filter((id) => id !== locationId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedLocationIds.length === 0) {
+      showSnackbar('Please select locations to print.', 'warning');
+      return;
+    }
+    const selectedLocationsData = locations.filter(loc => selectedLocationIds.includes(loc.id));
+    if (selectedLocationsData.length === 0) {
+        showSnackbar('Selected locations not found. Please refresh.', 'warning');
+        return;
+    }
+    navigate('/assets/locations/print-preview', {
+      state: { selectedLocations: selectedLocationsData, autoPrint: autoPrint }
+    });
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" component="h2" gutterBottom>
@@ -172,15 +211,32 @@ const LocationManagement: React.FC = () => {
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
 
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => handleOpenFormDialog()}
-        sx={{ mb: 2 }}
-        disabled={isLoading}
-      >
-        Add Location
-      </Button>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenFormDialog()}
+          disabled={isLoading}
+        >
+          Add Location
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(false)}
+          disabled={selectedLocationIds.length === 0 || isLoading}
+        >
+          Print Preview Selected ({selectedLocationIds.length})
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(true)}
+          disabled={selectedLocationIds.length === 0 || isLoading}
+        >
+          Print Selected ({selectedLocationIds.length})
+        </Button>
+      </Box>
 
       {isLoading && !locations.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
 
@@ -188,29 +244,54 @@ const LocationManagement: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedLocationIds.length > 0 && selectedLocationIds.length < locations.length}
+                  checked={locations.length > 0 && selectedLocationIds.length === locations.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all locations' }}
+                />
+              </TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Description</TableCell>
               <TableCell align="right">Actions</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
-            {locations.map((location) => (
-              <TableRow key={location.id}>
-                <TableCell>{location.name}</TableCell>
-                <TableCell>{location.description || '-'}</TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => handleOpenFormDialog(location)} disabled={isLoading} size="small">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(location)} disabled={isLoading} size="small">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            ))}
+            {locations.map((location) => {
+              const isSelected = selectedLocationIds.includes(location.id);
+              return (
+                <TableRow
+                  key={location.id}
+                  hover
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={-1}
+                  selected={isSelected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={(event) => handleRowCheckboxChange(event, location.id)}
+                      inputProps={{ 'aria-labelledby': `location-checkbox-${location.id}` }}
+                    />
+                  </TableCell>
+                  <TableCell id={`location-checkbox-${location.id}`}>{location.name}</TableCell>
+                  <TableCell>{location.description || '-'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton onClick={() => handleOpenFormDialog(location)} disabled={isLoading} size="small">
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton onClick={() => handleOpenDeleteDialog(location)} disabled={isLoading} size="small">
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
+            })}
             {!isLoading && !locations.length && (
                 <TableRow>
-                    <TableCell colSpan={3} align="center">No locations found.</TableCell>
+                    <TableCell colSpan={4} align="center">No locations found.</TableCell>
                 </TableRow>
             )}
           </TableBody>
