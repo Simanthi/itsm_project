@@ -1,4 +1,4 @@
 // itsm_frontend/src/modules/procurement/components/purchase-orders/index.ts
-export * from './PurchaseOrderDetailView';
-export * from './PurchaseOrderForm';
-export * from './PurchaseOrderList';
+export { default as PurchaseOrderDetailView } from './PurchaseOrderDetailView';
+export { default as PurchaseOrderForm } from './PurchaseOrderForm';
+export { default as PurchaseOrderList } from './PurchaseOrderList';
