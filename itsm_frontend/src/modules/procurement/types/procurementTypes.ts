@@ -147,9 +147,10 @@ export interface GetPurchaseOrdersParams {
   pageSize?: number;
   ordering?: string;
   status?: PurchaseOrderStatus;
+  status__in?: PurchaseOrderStatus[]; // Added this line
   vendor_id?: number;
   // Add other relevant filter fields
-  [key: string]: string | number | boolean | undefined | PurchaseOrderStatus;
+  [key: string]: string | number | boolean | undefined | PurchaseOrderStatus | PurchaseOrderStatus[];
 }
 
 // --- Check Request Types ---
