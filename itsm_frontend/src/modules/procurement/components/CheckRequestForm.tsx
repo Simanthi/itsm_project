@@ -303,21 +303,22 @@ const CheckRequestForm: React.FC = () => {
     };
 
     try {
-      let response: CheckRequest;
+      // let response: CheckRequest; // 'response' is declared but its value is never read.
       if (isEditMode && formData.id) {
         // For update, only send fields that are part of CheckRequestUpdateData
         // and are actually editable in this form's context.
         // Example: amount, payee_name, reason_for_payment etc.
         // Do not send 'status' or payment details as part of a general update.
         const updatePayload: Partial<CheckRequestData> = { ...commonPayload };
-        response = await updateCheckRequest(authenticatedFetch, formData.id, updatePayload);
+        await updateCheckRequest(authenticatedFetch, formData.id, updatePayload);
         showSnackbar('Check Request updated successfully!', 'success');
       } else {
         const createPayload: CheckRequestData = { ...commonPayload };
-        response = await createCheckRequest(authenticatedFetch, createPayload);
+        await createCheckRequest(authenticatedFetch, createPayload);
         showSnackbar('Check Request created successfully!', 'success');
       }
-      navigate(`/procurement/check-requests/${response.id}`);
+      // Navigate to the list view after successful creation or update
+      navigate('/procurement/check-requests');
     } catch (err: unknown) {
       let message = 'Failed to save check request.';
       if (err instanceof Error) {
