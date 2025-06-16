@@ -6,8 +6,8 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { getCheckRequestById } from '../../../api/procurementApi';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { getCheckRequestById } from '../../../../api/procurementApi';
 import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
 
 // Helper to format date strings

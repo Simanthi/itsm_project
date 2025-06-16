@@ -14,8 +14,8 @@ import {
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { getPurchaseRequestMemoById } from '../../../api/procurementApi';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { getPurchaseRequestMemoById } from '../../../../api/procurementApi';
 import type { PurchaseRequestMemo, PurchaseRequestStatus } from '../../types';
 
 // Helper to format date strings

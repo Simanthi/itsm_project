@@ -20,14 +20,14 @@ import {
 } from '@mui/material';
 // import type { SelectChangeEvent } from '@mui/material'; // Unused TS6133
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { useAuth } from '../../../context/auth/useAuth'; // TS2307
-import { useUI } from '../../../context/UIContext/useUI'; // TS2307
+import { useAuth } from '../../../../context/auth/useAuth'; // TS2307
+import { useUI } from '../../../../context/UIContext/useUI'; // TS2307
 import {
   getCheckRequestById,
   createCheckRequest,
   updateCheckRequest,
   getPurchaseOrders,
-} from '../../../api/procurementApi';
+} from '../../../../api/procurementApi';
 import type { // TS1484
   CheckRequest,
   CheckRequestData,
@@ -36,7 +36,7 @@ import type { // TS1484
   // PaymentMethod, // Unused TS6196
   // PurchaseOrderStatus, // Unused TS6196
 } from '../../types';
-import { formatDateString, formatCurrency } from '../../../utils/formatters'; // TS2307 (should be fixed now)
+import { formatDateString, formatCurrency } from '../../../../utils/formatters'; // TS2307 (should be fixed now)
 
 // Constants
 // const PAYMENT_METHOD_CHOICES: { value: PaymentMethod; label: string }[] = [ // Unused TS6133

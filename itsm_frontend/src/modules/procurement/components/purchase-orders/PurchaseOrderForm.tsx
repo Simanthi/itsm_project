@@ -27,17 +27,17 @@ import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import type { SelectChangeEvent } from '@mui/material/Select';
 
-import { useAuth } from '../../../context/auth/useAuth';
-import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../../context/auth/useAuth';
+import { useUI } from '../../../../context/UIContext/useUI';
 import {
   getPurchaseOrderById,
   createPurchaseOrder,
   updatePurchaseOrder,
   getPurchaseRequestMemos, // To fetch approved IOMs
   // getVendors,
-} from '../../../api/procurementApi';
-import { getVendors } from '../../../api/assetApi'; // Using Vendor list from assetApi
-import type { Vendor } from '../../../api/assetApi'; // Import full Vendor type from assetApi
+} from '../../../../api/procurementApi';
+import { getVendors } from '../../../../api/assetApi'; // Using Vendor list from assetApi
+import type { Vendor } from '../../../../api/assetApi'; // Import full Vendor type from assetApi
 import type {
   PurchaseOrder,
   PurchaseOrderData,
@@ -136,7 +136,7 @@ const PurchaseOrderForm: React.FC = () => {
         shipping_address: po.shipping_address || '',
         notes: po.notes || '',
       });
-      setOrderItems(po.order_items.map(item => ({
+      setOrderItems(po.order_items.map((item: OrderItemData) => ({
         id: item.id,
         item_description: item.item_description,
         quantity: item.quantity,
@@ -231,7 +231,7 @@ const PurchaseOrderForm: React.FC = () => {
   };
 
   const calculateOverallTotal = useCallback(() => {
-    return orderItems.reduce((total, item) => {
+    return orderItems.reduce((total, item: OrderItemData) => {
       const itemTotal = (item.quantity || 0) * (item.unit_price || 0);
       return total + itemTotal;
     }, 0);
@@ -263,7 +263,7 @@ const PurchaseOrderForm: React.FC = () => {
       status: formData.status as PurchaseOrderStatus, // Cast as it's from state
       shipping_address: formData.shipping_address || null,
       notes: formData.notes || null,
-      order_items: orderItems.map(item => ({ // Ensure items are numbers
+      order_items: orderItems.map((item: OrderItemData) => ({ // Ensure items are numbers
           item_description: item.item_description,
           quantity: Number(item.quantity),
           unit_price: item.unit_price != null ? Number(item.unit_price) : null,
@@ -390,7 +390,7 @@ const PurchaseOrderForm: React.FC = () => {
                 </TableRow>
               </TableHead>
               <TableBody>
-                {orderItems.map((item, index) => (
+                {orderItems.map((item: OrderItemData, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
                       <TextField value={item.item_description} name="item_description" onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{readOnly: effectiveViewOnly}} disabled={effectiveViewOnly}/>
