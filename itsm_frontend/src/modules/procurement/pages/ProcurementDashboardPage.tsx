@@ -9,7 +9,7 @@ import PaymentsIcon from '@mui/icons-material/Payments'; // For Check Requests
 const ProcurementDashboardPage: React.FC = () => {
   return (
     <Box sx={{ p: 3, flexGrow: 1 }}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
+      <Typography variant="h5" gutterBottom sx={{ mb: 3 }}>
         Procurement Dashboard
       </Typography>
       <Grid container spacing={3}>

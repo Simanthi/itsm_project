@@ -7,3 +7,4 @@ export { default as VendorManagement } from './VendorManagement';
 export { default as AssetPrintView } from './AssetPrintView';
 export { default as CategoryPrintView } from './CategoryPrintView';
 export { default as LocationPrintView } from './LocationPrintView';
+export { default as VendorPrintView } from './VendorPrintView';

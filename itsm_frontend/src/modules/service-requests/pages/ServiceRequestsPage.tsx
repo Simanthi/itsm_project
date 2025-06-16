@@ -297,7 +297,7 @@ const ServiceRequestsPage: React.FC = () => {
         }}
       >
         <Typography
-          variant="h4"
+          variant="h5"
           component="h1"
           sx={{ minWidth: 0, mb: { xs: 1, sm: 0 }, flexShrink: 1 }}
         >

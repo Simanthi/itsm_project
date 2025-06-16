@@ -20,10 +20,14 @@ import {
   Alert,
   Snackbar,
   Grid, // For form layout
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
 
 import { useAuth } from '../../../context/auth/useAuth';
 import {
@@ -44,8 +48,11 @@ const initialFormData: VendorData = {
 
 const VendorManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();
+  const navigate = useNavigate(); // useNavigate for printing
+  const { showSnackbar } = useUI(); // useUI for snackbar
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
+  const [selectedVendorIds, setSelectedVendorIds] = useState<number[]>([]); // State for selection
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
@@ -177,6 +184,38 @@ const VendorManagement: React.FC = () => {
     }
   };
 
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = vendors.map((vendor) => vendor.id);
+      setSelectedVendorIds(newSelectedIds);
+      return;
+    }
+    setSelectedVendorIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, vendorId: number) => {
+    if (event.target.checked) {
+      setSelectedVendorIds((prevSelected) => [...prevSelected, vendorId]);
+    } else {
+      setSelectedVendorIds((prevSelected) => prevSelected.filter((id) => id !== vendorId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedVendorIds.length === 0) {
+      showSnackbar('Please select vendors to print.', 'warning');
+      return;
+    }
+    const selectedVendorsData = vendors.filter(vendor => selectedVendorIds.includes(vendor.id));
+    if (selectedVendorsData.length === 0) {
+        showSnackbar('Selected vendors not found. Please refresh.', 'warning');
+        return;
+    }
+    navigate('/assets/vendors/print-preview', {
+      state: { selectedVendors: selectedVendorsData, autoPrint: autoPrint }
+    });
+  };
+
   return (
     <Box sx={{ p: 3 }}>
       <Typography variant="h5" component="h2" gutterBottom>
@@ -186,15 +225,32 @@ const VendorManagement: React.FC = () => {
       {error && !openFormDialog && !openDeleteDialog && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
 
-      <Button
-        variant="contained"
-        startIcon={<AddIcon />}
-        onClick={() => handleOpenFormDialog()}
-        sx={{ mb: 2 }}
-        disabled={isLoading}
-      >
-        Add Vendor
-      </Button>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+        <Button
+          variant="contained"
+          startIcon={<AddIcon />}
+          onClick={() => handleOpenFormDialog()}
+          disabled={isLoading}
+        >
+          Add Vendor
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(false)}
+          disabled={selectedVendorIds.length === 0 || isLoading}
+        >
+          Print Preview Selected ({selectedVendorIds.length})
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(true)}
+          disabled={selectedVendorIds.length === 0 || isLoading}
+        >
+          Print Selected ({selectedVendorIds.length})
+        </Button>
+      </Box>
 
       {isLoading && !vendors.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
 
@@ -202,6 +258,14 @@ const VendorManagement: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedVendorIds.length > 0 && selectedVendorIds.length < vendors.length}
+                  checked={vendors.length > 0 && selectedVendorIds.length === vendors.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all vendors' }}
+                />
+              </TableCell>
               <TableCell>Name</TableCell>
               <TableCell>Contact Person</TableCell>
               <TableCell>Email</TableCell>
@@ -211,9 +275,25 @@ const VendorManagement: React.FC = () => {
             </TableRow>
           </TableHead>
           <TableBody>
-            {vendors.map((vendor) => (
-              <TableRow key={vendor.id}>
-                <TableCell>{vendor.name}</TableCell>
+            {vendors.map((vendor) => {
+              const isSelected = selectedVendorIds.includes(vendor.id);
+              return (
+              <TableRow
+                key={vendor.id}
+                hover
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, vendor.id)}
+                    inputProps={{ 'aria-labelledby': `vendor-checkbox-${vendor.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`vendor-checkbox-${vendor.id}`}>{vendor.name}</TableCell>
                 <TableCell>{vendor.contact_person || '-'}</TableCell>
                 <TableCell>{vendor.email || '-'}</TableCell>
                 <TableCell>{vendor.phone_number || '-'}</TableCell>
@@ -229,10 +309,11 @@ const VendorManagement: React.FC = () => {
                   </IconButton>
                 </TableCell>
               </TableRow>
-            ))}
+            );
+            })}
             {!isLoading && !vendors.length && (
                 <TableRow>
-                    <TableCell colSpan={6} align="center">No vendors found.</TableCell>
+                    <TableCell colSpan={7} align="center">No vendors found.</TableCell>
                 </TableRow>
             )}
           </TableBody>
