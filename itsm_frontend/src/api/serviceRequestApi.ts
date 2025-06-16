@@ -4,10 +4,6 @@ import type {
   ServiceRequest,
   NewServiceRequestData,
   ServiceRequestStatus,
-  ServiceRequestCategory,
-  ServiceRequestPriority,
-  // Added Raw types here
-  RawUserResponse,
   RawServiceRequestResponse,
   PaginatedServiceRequestsResponse,
 } from '../modules/service-requests/types/ServiceRequestTypes';
