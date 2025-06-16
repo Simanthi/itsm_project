@@ -31,7 +31,7 @@ import {
   updateLocation,
   deleteLocation,
 } from '../../../api/assetApi';
-import type { Location, LocationData, PaginatedResponse } from '../../../api/assetApi';
+import type { Location, LocationData, PaginatedResponse } from '../types';
 
 const LocationManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();

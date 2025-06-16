@@ -42,7 +42,7 @@ import type {
   PurchaseRequestMemo,
   PurchaseRequestDecisionData,
   GetPurchaseRequestMemosParams
-} from '../../../api/procurementApi';
+} from '../../types';
 import { useNavigate } from 'react-router-dom';
 
 type Order = 'asc' | 'desc';

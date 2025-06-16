@@ -24,7 +24,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { getPurchaseOrderById } from '../../../api/procurementApi';
-import type { PurchaseOrder, PurchaseOrderStatus, OrderItem } from '../../../api/procurementApi';
+import type { PurchaseOrder, PurchaseOrderStatus, OrderItem } from '../../types';
 
 // Helper to format date strings
 const formatDateString = (isoString: string | null | undefined): string => {

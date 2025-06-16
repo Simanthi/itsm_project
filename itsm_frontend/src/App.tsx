@@ -2,34 +2,34 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline } from '@mui/material';
 import { AuthProvider } from './context/auth/AuthContext';
 import { ThemeContextProvider } from './context/ThemeContext/ThemeContextProvider';
-import { ServiceRequestProvider } from './modules/service-requests/context/ServiceRequestProvider';
+import { ServiceRequestProvider } from './modules/service-requests/context';
 import { UIContextProvider } from './context/UIContext/UIContextProvider'; // Import the new UIContextProvider
 
 import LoginPage from './modules/auth/LoginPage';
 import HomePage from './pages/HomePage';
 import NotFoundPage from './pages/NotFoundPage';
 import DashboardPage from './modules/dashboard/DashboardPage';
-import ServiceRequestsPage from './modules/service-requests/pages/ServiceRequestsPage';
-import NewServiceRequestPage from './modules/service-requests/pages/NewServiceRequestPage';
-import AssetsPage from './modules/assets/AssetsPage';
-import AssetForm from './modules/assets/components/AssetForm'; // Import AssetForm
-import PurchaseRequestMemoList from './modules/procurement/components/PurchaseRequestMemoList';
-import PurchaseRequestMemoForm from './modules/procurement/components/PurchaseRequestMemoForm';
-import ProcurementDashboardPage from './modules/procurement/pages/ProcurementDashboardPage';
-import PurchaseOrderList from './modules/procurement/components/PurchaseOrderList';
-import PurchaseOrderForm from './modules/procurement/components/PurchaseOrderForm';
-import PurchaseOrderDetailView from './modules/procurement/components/PurchaseOrderDetailView';
-import PurchaseRequestMemoDetailView from './modules/procurement/components/PurchaseRequestMemoDetailView'; // Import IOM Detail View
-import CheckRequestList from './modules/procurement/components/CheckRequestList';
-import CheckRequestForm from './modules/procurement/components/CheckRequestForm';
-import CheckRequestDetailView from './modules/procurement/components/CheckRequestDetailView';
+import { ServiceRequestsPage } from './modules/service-requests/pages';
+import { NewServiceRequestPage } from './modules/service-requests/pages';
+import { AssetsPage } from './modules/assets/pages';
+import { AssetForm } from './modules/assets/components'; // Import AssetForm
+import { PurchaseRequestMemoList } from './modules/procurement/components/purchase-request-memos';
+import { PurchaseRequestMemoForm } from './modules/procurement/components/purchase-request-memos';
+import { ProcurementDashboardPage } from './modules/procurement/pages';
+import { PurchaseOrderList } from './modules/procurement/components/purchase-orders';
+import { PurchaseOrderForm } from './modules/procurement/components/purchase-orders';
+import { PurchaseOrderDetailView } from './modules/procurement/components/purchase-orders';
+import { PurchaseRequestMemoDetailView } from './modules/procurement/components/purchase-request-memos';
+import { CheckRequestList } from './modules/procurement/components/check-requests';
+import { CheckRequestForm } from './modules/procurement/components/check-requests';
+import { CheckRequestDetailView } from './modules/procurement/components/check-requests';
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
 import ConfigurationManagementPage from './modules/configs/ConfigurationManagementPage';
 import ApprovalWorkflowPage from './modules/workflows/ApprovalWorkflowPage';
 import ReportsAnalyticsPage from './modules/reports/ReportsAnalyticsPage';
-import ServiceRequestPrintView from './modules/service-requests/components/ServiceRequestPrintView';
+import { ServiceRequestPrintView } from './modules/service-requests/components';
 
 function AppContent() {
   return (

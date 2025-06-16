@@ -33,7 +33,7 @@ import type {
   Location,
   Vendor,
   User as ApiUser, // Rename to avoid conflict with potential local User type
-} from '../../../api/assetApi';
+} from '../types';
 
 // Mimic Django choices for status filter - ensure these match backend model choices
 const ASSET_STATUS_CHOICES = [

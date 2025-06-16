@@ -57,3 +57,35 @@ export interface NewServiceRequestData {
 export type UpdateServiceRequestData = Partial<NewServiceRequestData> & {
   status?: ServiceRequestStatus; // Status is often updatable
 };
+
+// Raw response types from the API, before transformation
+export interface RawUserResponse {
+  id: number;
+  username: string;
+  first_name: string;
+  last_name: string;
+  email: string;
+}
+
+export interface RawServiceRequestResponse {
+  id: number;
+  request_id: string;
+  title: string;
+  description: string;
+  requested_by: RawUserResponse;
+  assigned_to: RawUserResponse | null;
+  status: ServiceRequestStatus;
+  category: ServiceRequestCategory;
+  priority: ServiceRequestPriority;
+  resolution_notes: string | null;
+  created_at: string;
+  updated_at: string;
+  resolved_at?: string | null;
+}
+
+export interface PaginatedServiceRequestsResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: RawServiceRequestResponse[];
+}

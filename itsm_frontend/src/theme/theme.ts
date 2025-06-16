@@ -102,62 +102,31 @@ export const darkTheme = createTheme({
   palette: {
     mode: 'dark',
     primary: {
-      main: 'rgb(144, 202, 249)',
-      light: 'rgb(227, 242, 253)',
-      dark: 'rgb(108, 4, 129)',
-      contrastText: 'rgb(0, 0, 0)',
+      main: 'rgb(144, 202, 249)', // Light Blue - good for primary actions on dark background
+      light: lighten('rgb(144, 202, 249)', 0.2), // Lighter blue for hover states or highlights
+      dark: darken('rgb(144, 202, 249)', 0.2),  // Darker blue
+      contrastText: 'rgb(0, 0, 0)', // Black text on primary color buttons
     },
     secondary: {
-      main: 'rgb(206, 147, 216)',
-      light: 'rgb(243, 229, 245)',
-      dark: 'rgb(171, 71, 188)',
-      contrastText: 'rgb(0, 0, 0)',
+      main: 'rgb(206, 147, 216)', // Light Purple - for secondary actions
+      light: lighten('rgb(206, 147, 216)', 0.2), // Lighter purple
+      dark: darken('rgb(206, 147, 216)', 0.2),   // Darker purple
+      contrastText: 'rgb(0, 0, 0)', // Black text on secondary color buttons
     },
     background: {
-      default: 'rgb(18, 18, 18)',
-      paper: 'rgb(29, 29, 29)',
+      default: 'rgb(18, 18, 18)', // Very dark grey, almost black for main background
+      paper: 'rgb(29, 29, 29)',   // Dark grey for cards, dialogs, etc.
     },
     text: {
-      primary: 'rgb(255, 255, 255)',
-      secondary: 'rgb(176, 176, 176)',
+      primary: 'rgb(255, 255, 255)', // White for main text
+      secondary: 'rgb(190, 190, 190)', // Lighter grey for secondary text (slightly increased visibility)
     },
   },
   shape: {
     borderRadius: 3,
   },
   typography: baseTypography,
-  components: {
-    MuiTableCell: {
-      styleOverrides: {
-        root: {
-          fontSize: baseTypography.body2.fontSize,
-        },
-        head: ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-          fontSize: baseTypography.th1.fontSize,
-          fontWeight: 'bold',
-          color: theme.palette.primary.main,
-          backgroundColor: alpha(theme.palette.primary.main, 0.1),
-        }),
-      },
-    },
-    MuiListItemButton: {
-      styleOverrides: {
-        root: {
-          '&.Mui-selected': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-            backgroundColor: theme.palette.primary.main,
-            color: theme.palette.primary.contrastText,
-          }),
-          '&.Mui-selected:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter
-            backgroundColor: alpha(theme.palette.primary.main, 0.24),
-          }),
-          '&:hover': ({ theme }: { theme: Theme }) => ({ // Typed theme parameter for color
-            backgroundColor: 'rgba(255, 255, 255, 0.08)',
-            color: theme.palette.primary.light,
-          }),
-        },
-      },
-    },
-  },
+  components: commonDarkModeComponents, // Use the common dark mode components
 });
 
 // --- Common Component Overrides for new themes ---
@@ -379,6 +348,96 @@ export const vintageTheme = createTheme({
   components: commonLightModeComponents,
 });
 
+// --- Arctic Blue Theme (Dark Mode) ---
+export const arcticBlueTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: 'rgb(120, 180, 230)', // Cool Blue
+      light: lighten('rgb(120, 180, 230)', 0.2),
+      dark: darken('rgb(120, 180, 230)', 0.2),
+      contrastText: 'rgb(0, 0, 0)',
+    },
+    secondary: {
+      main: 'rgb(180, 200, 220)', // Light Steel Blue/Grey
+      light: lighten('rgb(180, 200, 220)', 0.2),
+      dark: darken('rgb(180, 200, 220)', 0.2),
+      contrastText: 'rgb(0, 0, 0)',
+    },
+    background: {
+      default: 'rgb(15, 20, 30)', // Very Dark Blue
+      paper: 'rgb(25, 30, 40)',   // Dark Blue/Grey
+    },
+    text: {
+      primary: 'rgb(230, 230, 240)', // Light Grey/White
+      secondary: 'rgb(190, 190, 200)', // Muted Light Grey
+    },
+  },
+  typography: baseTypography,
+  shape: { borderRadius: 3 },
+  components: commonDarkModeComponents,
+});
+
+// --- Desert Amber Theme (Light Mode) ---
+export const desertAmberTheme = createTheme({
+  palette: {
+    mode: 'light',
+    primary: {
+      main: 'rgb(255, 179, 64)', // Warm Amber
+      light: lighten('rgb(255, 179, 64)', 0.15),
+      dark: darken('rgb(255, 179, 64)', 0.15),
+      contrastText: 'rgb(40, 40, 40)',
+    },
+    secondary: {
+      main: 'rgb(168, 135, 88)', // Muted Brown/Beige
+      light: lighten('rgb(168, 135, 88)', 0.15),
+      dark: darken('rgb(168, 135, 88)', 0.15),
+      contrastText: 'rgb(255, 255, 255)',
+    },
+    background: {
+      default: 'rgb(250, 245, 235)', // Off-white/Very Light Beige
+      paper: 'rgb(255, 250, 240)',   // Lighter Beige
+    },
+    text: {
+      primary: 'rgb(70, 50, 30)',    // Dark Brown
+      secondary: 'rgb(100, 80, 60)',  // Muted Brown/Grey
+    },
+  },
+  typography: baseTypography,
+  shape: { borderRadius: 3 },
+  components: commonLightModeComponents,
+});
+
+// --- Cyber Purple Theme (Dark Mode) ---
+export const cyberPurpleTheme = createTheme({
+  palette: {
+    mode: 'dark',
+    primary: {
+      main: 'rgb(186, 85, 211)',   // Vibrant Purple (Orchid)
+      light: lighten('rgb(186, 85, 211)', 0.2),
+      dark: darken('rgb(186, 85, 211)', 0.2),
+      contrastText: 'rgb(255, 255, 255)',
+    },
+    secondary: {
+      main: 'rgb(255, 105, 180)',   // Hot Pink
+      light: lighten('rgb(255, 105, 180)', 0.2),
+      dark: darken('rgb(255, 105, 180)', 0.2),
+      contrastText: 'rgb(0, 0, 0)',
+    },
+    background: {
+      default: 'rgb(20, 0, 30)',    // Very Dark Purple/Black
+      paper: 'rgb(30, 10, 40)',     // Dark Purple
+    },
+    text: {
+      primary: 'rgb(230, 230, 250)', // Lavender White
+      secondary: 'rgb(200, 160, 220)', // Light Purple/Pinkish Grey
+    },
+  },
+  typography: baseTypography,
+  shape: { borderRadius: 3 },
+  components: commonDarkModeComponents,
+});
+
 // Export all themes
 export const themes = {
   light: lightTheme,
@@ -388,4 +447,7 @@ export const themes = {
   sunset: sunsetTheme,
   matrix: matrixTheme,
   vintage: vintageTheme,
+  arcticBlue: arcticBlueTheme,     // Added
+  desertAmber: desertAmberTheme,   // Added
+  cyberPurple: cyberPurpleTheme,   // Added
 };

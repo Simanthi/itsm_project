@@ -8,7 +8,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { getCheckRequestById } from '../../../api/procurementApi';
-import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../../api/procurementApi';
+import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
 
 // Helper to format date strings
 const formatDateString = (isoString: string | null | undefined): string => {

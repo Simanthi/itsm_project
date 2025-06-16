@@ -485,7 +485,7 @@ function HomePage() {
         component="main"
         sx={{
           flexGrow: 1,
-          p: 1,
+          p: 0.5,
           marginTop: `${appBarHeight}px`,
           height: `calc(100vh - ${appBarHeight}px)`,
           overflowY: 'auto',

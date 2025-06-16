@@ -6,6 +6,10 @@ import type {
   ServiceRequestStatus,
   ServiceRequestCategory,
   ServiceRequestPriority,
+  // Added Raw types here
+  RawUserResponse,
+  RawServiceRequestResponse,
+  PaginatedServiceRequestsResponse,
 } from '../modules/service-requests/types/ServiceRequestTypes';
 
 // Define the type for the authenticatedFetch function
@@ -16,39 +20,7 @@ type AuthenticatedFetch = (
 
 const SERVICE_REQUESTS_ENDPOINT = '/service-requests'; // Removed trailing slash
 
-// Interface definitions remain the same
-// RawUserResponse, RawServiceRequestResponse, PaginatedServiceRequestsResponse
-// transformServiceRequestResponse also remains the same
-interface RawUserResponse {
-  id: number;
-  username: string;
-  first_name: string;
-  last_name: string;
-  email: string;
-}
-
-interface RawServiceRequestResponse {
-  id: number;
-  request_id: string;
-  title: string;
-  description: string;
-  requested_by: RawUserResponse;
-  assigned_to: RawUserResponse | null;
-  status: ServiceRequestStatus;
-  category: ServiceRequestCategory;
-  priority: ServiceRequestPriority;
-  resolution_notes: string | null;
-  created_at: string;
-  updated_at: string;
-  resolved_at?: string | null;
-}
-
-interface PaginatedServiceRequestsResponse {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: RawServiceRequestResponse[];
-}
+// Interface definitions moved to ServiceRequestTypes.ts
 
 // transformServiceRequestResponse remains the same
 
