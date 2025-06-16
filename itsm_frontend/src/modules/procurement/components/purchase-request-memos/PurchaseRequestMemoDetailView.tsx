@@ -92,8 +92,8 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>
-        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/procurement/iom')} sx={{ mt: 2 }}>
-          Back to IOM List
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
         </Button>
       </Box>
     );
@@ -103,8 +103,8 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">Internal Office Memo not found.</Alert>
-         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/procurement/iom')} sx={{ mt: 2 }}>
-          Back to IOM List
+         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
         </Button>
       </Box>
     );
@@ -120,10 +120,10 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
             <Button
                 variant="outlined"
                 startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/procurement/iom')}
+                onClick={() => navigate(-1)}
                 sx={{ mr: 2 }}
             >
-                Back to List
+                Back
             </Button>
             <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()}>
                 Print IOM

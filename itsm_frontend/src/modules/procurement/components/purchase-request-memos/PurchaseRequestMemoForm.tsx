@@ -11,6 +11,7 @@ import {
   Paper,
   InputAdornment,
 } from '@mui/material';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI';
@@ -170,16 +171,25 @@ const PurchaseRequestMemoForm: React.FC = () => {
     return (
         <Box sx={{ p:3 }}>
             <Alert severity="error">{error}</Alert>
-            <Button onClick={() => navigate('/procurement/iom')} sx={{mt: 2}}>Back to List</Button>
+            <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{mt: 2}}>Back</Button>
         </Box>
     );
   }
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
-      <Typography variant="h5" component="h2" gutterBottom sx={{ mb: 3 }}>
-        {isEditMode ? (viewOnly ? 'View Purchase Request' : 'Edit Purchase Request') : 'Create New Purchase Request'}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(-1)}
+        >
+            Back
+        </Button>
+        <Typography variant="h5" component="h1">
+          {isEditMode ? (viewOnly ? 'View Purchase Request' : 'Edit Purchase Request') : 'Create New Purchase Request'}
+        </Typography>
+      </Box>
       <Box component="form" onSubmit={handleSubmit} noValidate>
         {error && isSubmitting && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
         <Grid container spacing={3}>
@@ -259,7 +269,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
           )}
 
           <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" color="secondary" onClick={() => navigate('/procurement/iom')} disabled={isSubmitting}>
+            <Button variant="outlined" color="secondary" onClick={() => navigate(-1)} disabled={isSubmitting}>
               Cancel
             </Button>
             {!viewOnly && (

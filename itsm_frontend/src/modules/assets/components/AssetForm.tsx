@@ -15,6 +15,7 @@ import {
   Select, // Added Select here
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import ArrowBackIcon from '@mui/icons-material/ArrowBack'; // Added for back button
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -236,7 +237,7 @@ const AssetForm: React.FC = () => {
     return (
         <Box sx={{ p:3 }}>
             <Alert severity="error">{error}</Alert>
-            <Button onClick={() => navigate('/assets')} sx={{mt: 2}}>Back to Asset List</Button>
+            <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{mt: 2}}>Back</Button>
         </Box>
     );
   }
@@ -244,9 +245,18 @@ const AssetForm: React.FC = () => {
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
-      <Typography variant="h4" gutterBottom sx={{ mb: 3 }}>
-        {isEditMode ? `Edit Asset: ${formData.asset_tag || ''}` : 'Create New Asset'}
-      </Typography>
+      <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
+        <Button
+            variant="outlined"
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate(-1)}
+        >
+            Back
+        </Button>
+        <Typography variant="h4" component="h1">
+          {isEditMode ? `Edit Asset: ${formData.asset_tag || ''}` : 'Create New Asset'}
+        </Typography>
+      </Box>
       <Box component="form" onSubmit={handleSubmit} noValidate>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>} {/* For submission errors */}
         <Grid container spacing={3}>
@@ -408,7 +418,7 @@ const AssetForm: React.FC = () => {
             />
           </Grid>
           <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" color="secondary" onClick={() => navigate('/assets')} disabled={isSubmitting}>
+            <Button variant="outlined" color="secondary" onClick={() => navigate(-1)} disabled={isSubmitting}>
               Cancel
             </Button>
             <Button type="submit" variant="contained" color="primary" disabled={isSubmitting || isLoading}>

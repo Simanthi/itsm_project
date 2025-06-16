@@ -21,10 +21,11 @@ import {
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
+import CancelIcon from '@mui/icons-material/CancelOutlined'; // Import CancelIcon
 
 import { useAuth } from '../../../../context/auth/useAuth';
-// import { useUI } from '../../../context/UIContext/useUI'; // Not strictly needed if only snackbar for error/success
-import { getPurchaseOrders } from '../../../../api/procurementApi';
+import { useUI } from '../../../../context/UIContext/useUI'; // Import useUI
+import { getPurchaseOrders, updatePurchaseOrder } from '../../../../api/procurementApi'; // Import updatePurchaseOrder
 import type { PurchaseOrder, GetPurchaseOrdersParams, PurchaseOrderStatus } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -33,7 +34,7 @@ type Order = 'asc' | 'desc';
 const PurchaseOrderList: React.FC = () => {
   const { authenticatedFetch } = useAuth();
   const navigate = useNavigate();
-  // const { showSnackbar } = useUI(); // If we want to use context-based snackbars
+  const { showSnackbar, showConfirmDialog } = useUI(); // Destructure showConfirmDialog
 
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -100,6 +101,28 @@ const PurchaseOrderList: React.FC = () => {
 
   const handleEditPO = (poId: number) => {
     navigate(`/procurement/purchase-orders/edit/${poId}`);
+  };
+
+  const handleCancelPO = async (poId: number) => {
+    showConfirmDialog(
+      'Confirm Cancellation',
+      'Are you sure you want to cancel this purchase order? This action cannot be undone.',
+      async () => {
+        if (!authenticatedFetch) {
+          showSnackbar('Authentication required.', 'error');
+          return;
+        }
+        try {
+          await updatePurchaseOrder(authenticatedFetch, poId, { status: 'cancelled' });
+          showSnackbar('Purchase Order cancelled successfully!', 'success');
+          fetchPurchaseOrders(); // Refresh the list
+        } catch (err) {
+          const message = err instanceof Error ? err.message : 'Failed to cancel purchase order.';
+          showSnackbar(message, 'error');
+          console.error("Error cancelling PO:", err);
+        }
+      }
+    );
   };
 
   const getStatusChipColor = (status: PurchaseOrderStatus) => {
@@ -202,7 +225,14 @@ const PurchaseOrderList: React.FC = () => {
                       </IconButton>
                     </Tooltip>
                   )}
-                  {/* Add other relevant actions like 'Cancel PO', 'Receive Items' based on status and permissions */}
+                  {(po.status === 'draft' || po.status === 'pending_approval' || po.status === 'approved') && (
+                    <Tooltip title="Cancel Purchase Order">
+                      <IconButton onClick={() => handleCancelPO(po.id)} size="small" color="error">
+                        <CancelIcon />
+                      </IconButton>
+                    </Tooltip>
+                  )}
+                  {/* Add other relevant actions like 'Receive Items' based on status and permissions */}
                 </TableCell>
               </TableRow>
             ))}

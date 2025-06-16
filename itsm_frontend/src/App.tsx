@@ -23,6 +23,7 @@ import { PurchaseRequestMemoDetailView } from './modules/procurement/components/
 import { CheckRequestList } from './modules/procurement/components/check-requests';
 import { CheckRequestForm } from './modules/procurement/components/check-requests';
 import { CheckRequestDetailView } from './modules/procurement/components/check-requests';
+import { CheckRequestPrintView } from './modules/procurement/components/check-requests'; // Import CheckRequestPrintView
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -71,6 +72,7 @@ function AppContent() {
           <Route path="procurement/check-requests/new" element={<CheckRequestForm />} />
           <Route path="procurement/check-requests/edit/:checkRequestId" element={<CheckRequestForm />} />
           <Route path="procurement/check-requests/view/:checkRequestId" element={<CheckRequestDetailView />} />
+          <Route path="procurement/check-requests/print-preview" element={<CheckRequestPrintView />} /> {/* Added Print Preview Route */}
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />

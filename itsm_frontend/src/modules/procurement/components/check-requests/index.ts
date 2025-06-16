@@ -2,3 +2,4 @@
 export { default as CheckRequestDetailView } from './CheckRequestDetailView';
 export { default as CheckRequestForm } from './CheckRequestForm';
 export { default as CheckRequestList } from './CheckRequestList';
+export { default as CheckRequestPrintView } from './CheckRequestPrintView';

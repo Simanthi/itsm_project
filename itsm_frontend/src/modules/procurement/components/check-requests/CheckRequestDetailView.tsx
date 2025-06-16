@@ -105,8 +105,8 @@ const CheckRequestDetailView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>
-        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/procurement/check-requests')} sx={{ mt: 2 }}>
-          Back to List
+        <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
         </Button>
       </Box>
     );
@@ -116,8 +116,8 @@ const CheckRequestDetailView: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="info">Check Request not found.</Alert>
-         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate('/procurement/check-requests')} sx={{ mt: 2 }}>
-          Back to List
+         <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
         </Button>
       </Box>
     );
@@ -133,12 +133,12 @@ const CheckRequestDetailView: React.FC = () => {
             <Button
                 variant="outlined"
                 startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/procurement/check-requests')}
+                onClick={() => navigate(-1)}
                 sx={{ mr: 2 }}
             >
-                Back to List
+                Back
             </Button>
-            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()}>
+            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => navigate('/procurement/check-requests/print-preview', { state: { checkRequestId: checkRequest.id, autoPrint: false } })}>
                 Print
             </Button>
         </Box>

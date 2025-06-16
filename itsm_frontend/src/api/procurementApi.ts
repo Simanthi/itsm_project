@@ -2,6 +2,7 @@
 
 import type {
   AuthenticatedFetch,
+  PurchaseRequestStatus,
   // UserSummary, // Not directly used in this file's functions but kept for context if needed later
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
@@ -9,10 +10,15 @@ import type {
   PurchaseRequestDecisionData,
   PaginatedResponse,
   GetPurchaseRequestMemosParams,
+  // OrderItemData, // Not directly used in this file's functions
+  // OrderItem, // Not directly used in this file's functions
+  PurchaseOrderStatus,
   // VendorSummary, // Not directly used in this file's functions
   PurchaseOrder,
   PurchaseOrderData,
   GetPurchaseOrdersParams,
+  CheckRequestStatus,
+  PaymentMethod,
   CheckRequest,
   CheckRequestData,
   CheckRequestUpdateData,
