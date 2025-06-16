@@ -131,10 +131,10 @@ const PurchaseOrderDetailView: React.FC = () => {
             <Button
                 variant="outlined"
                 startIcon={<ArrowBackIcon />}
-                onClick={() => navigate('/procurement/purchase-orders')} // Or navigate(-1)
+                onClick={() => navigate(-1)}
                 sx={{ mr: 2 }}
             >
-                Back to List
+                Back
             </Button>
             <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()}>
                 Print PO

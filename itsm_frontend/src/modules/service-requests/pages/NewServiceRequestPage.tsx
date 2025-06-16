@@ -117,8 +117,8 @@ function NewServiceRequestPage() {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">Failed to load service request: {error}</Alert>
-        <Button variant="contained" onClick={handleBack} sx={{ mt: 2 }}>
-          Back to Service Requests
+        <Button variant="contained" onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
         </Button>
       </Box>
     );
@@ -130,7 +130,7 @@ function NewServiceRequestPage() {
         <Button
           variant="outlined"
           startIcon={<ArrowBackIcon />}
-          onClick={handleBack}
+          onClick={() => navigate(-1)}
         >
           Back
         </Button>

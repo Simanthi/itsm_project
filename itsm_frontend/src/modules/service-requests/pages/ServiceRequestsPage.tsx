@@ -12,6 +12,7 @@ import {
   Add as AddIcon,
   Edit as EditIcon,
   Print as PrintIcon,
+  Delete as DeleteIcon, // Import DeleteIcon
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -54,11 +55,13 @@ const ServiceRequestsPage: React.FC = () => {
     serviceRequests,
     loading,
     error,
+    deleteServiceRequest, // Import deleteServiceRequest
+    fetchServiceRequests, // Import fetchServiceRequests
     totalCount,
     paginationModel,
     setPaginationModel,
   } = useServiceRequests();
-  const { showSnackbar } = useUI(); // Use showSnackbar from UI context
+  const { showSnackbar, showConfirmDialog } = useUI(); // Use showSnackbar and showConfirmDialog from UI context
   const [selectedRowModel, setSelectedRowModel] =
     useState<GridRowSelectionModel>({
       type: 'include',
@@ -142,6 +145,62 @@ const ServiceRequestsPage: React.FC = () => {
     } else {
       showSnackbar('Please select at least one request to print.', 'warning'); // Use Snackbar
     }
+  };
+
+  const handleDelete = () => {
+    const selectedIds = Array.from(selectedRowModel.ids);
+    if (selectedIds.length === 0) {
+      showSnackbar('Please select requests to delete.', 'warning');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete ${selectedIds.length} service request(s)? This action cannot be undone.`;
+    showConfirmDialog(
+      'Confirm Deletion',
+      confirmMessage,
+      async () => {
+        // onConfirm callback
+        // The deleteServiceRequest from context now handles multiple deletions and notifications
+        const requestsToDelete = serviceRequests
+          .filter((req) => selectedIds.includes(String(req.id)))
+          .map((req) => req.request_id); // Get the string request_id
+
+        if (requestsToDelete.length === 0) {
+          showSnackbar('No valid requests found for deletion. Please refresh.', 'warning');
+          return;
+        }
+
+        try {
+          // Assuming deleteServiceRequest can handle an array of IDs or is called in a loop
+          // For simplicity, let's assume it handles one ID and we loop.
+          // The context's deleteServiceRequest likely handles single ID and refreshes.
+          // If it handles multiple, adjust accordingly.
+          // For now, we'll show a single success/failure message after all attempts.
+          let allSucceeded = true;
+          for (const requestId of requestsToDelete) {
+            if (requestId) { // Ensure requestId is not undefined
+              await deleteServiceRequest(requestId); // This will call fetchServiceRequests internally
+            }
+          }
+           // The context's deleteServiceRequest should ideally handle success/error messages
+          // and call fetchServiceRequests. If not, uncomment and adjust:
+          // await fetchServiceRequests(); // Refresh data
+          setSelectedRowModel({ type: 'include', ids: new Set() }); // Clear selection
+          showSnackbar('Selected service requests processed for deletion.', 'success');
+
+        } catch (err) {
+          console.error('Error deleting service requests:', err);
+          showSnackbar(
+            `Failed to delete some requests: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          );
+        }
+      },
+      () => {
+        // onCancel callback
+        showSnackbar('Deletion cancelled.', 'info');
+      },
+    );
   };
 
   const columns: GridColDef<ServiceRequest>[] = [
@@ -283,6 +342,15 @@ const ServiceRequestsPage: React.FC = () => {
             disabled={Array.from(selectedRowModel.ids).length === 0}
           >
             Print Request
+          </Button>
+          <Button
+            variant="outlined"
+            color="error"
+            startIcon={<DeleteIcon />}
+            onClick={handleDelete}
+            disabled={Array.from(selectedRowModel.ids).length === 0}
+          >
+            Delete Request(s)
           </Button>
         </Box>
       </Box>
