@@ -2,3 +2,4 @@
 export { default as PurchaseRequestMemoDetailView } from './PurchaseRequestMemoDetailView';
 export { default as PurchaseRequestMemoForm } from './PurchaseRequestMemoForm';
 export { default as PurchaseRequestMemoList } from './PurchaseRequestMemoList';
+export { default as PurchaseRequestMemoPrintView } from './PurchaseRequestMemoPrintView';

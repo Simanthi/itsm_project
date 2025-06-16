@@ -125,7 +125,7 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
             >
                 Back
             </Button>
-            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => window.print()}>
+            <Button variant="contained" startIcon={<PrintIcon />} onClick={() => navigate('/procurement/iom/print-preview', { state: { memoId: memo.id, autoPrint: false } })}>
                 Print IOM
             </Button>
         </Box>

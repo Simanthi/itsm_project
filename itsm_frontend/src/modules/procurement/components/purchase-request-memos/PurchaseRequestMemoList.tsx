@@ -23,10 +23,12 @@ import {
   DialogContentText,
   DialogTitle,
   TextField,
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit'; // Re-enable EditIcon
 import VisibilityIcon from '@mui/icons-material/Visibility';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 import CancelIcon from '@mui/icons-material/CancelOutlined';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
@@ -62,6 +64,7 @@ const PurchaseRequestMemoList: React.FC = () => {
 
   const [sortConfigKey, setSortConfigKey] = useState<string>('-request_date'); // Default sort by request_date desc
   const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc');
+  const [selectedMemoIds, setSelectedMemoIds] = useState<number[]>([]);
 
   const [openDecisionDialog, setOpenDecisionDialog] = useState<boolean>(false);
   const [selectedMemoForDecision, setSelectedMemoForDecision] = useState<PurchaseRequestMemo | null>(null);
@@ -193,7 +196,35 @@ const PurchaseRequestMemoList: React.FC = () => {
     }
   };
 
-  const headCells: { id: keyof PurchaseRequestMemo | string; label: string; sortable: boolean }[] = [
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = memos.map((memo) => memo.id);
+      setSelectedMemoIds(newSelectedIds);
+      return;
+    }
+    setSelectedMemoIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, memoId: number) => {
+    if (event.target.checked) {
+      setSelectedMemoIds((prevSelected) => [...prevSelected, memoId]);
+    } else {
+      setSelectedMemoIds((prevSelected) => prevSelected.filter((id) => id !== memoId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedMemoIds.length === 0) {
+      showSnackbar('Please select IOMs to print.', 'warning');
+      return;
+    }
+    navigate('/procurement/iom/print-preview', {
+      state: { selectedMemoIds: selectedMemoIds, autoPrint: autoPrint }
+    });
+  };
+
+  const headCells: { id: keyof PurchaseRequestMemo | string; label: string; sortable: boolean; padding?: 'none' | 'normal' }[] = [
+    { id: 'select', label: '', sortable: false, padding: 'none'},
     { id: 'item_description', label: 'Item Description', sortable: true },
     { id: 'quantity', label: 'Qty', sortable: false },
     { id: 'requested_by_username', label: 'Requested By', sortable: true },
@@ -222,6 +253,24 @@ const PurchaseRequestMemoList: React.FC = () => {
       >
         Create New Request
       </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(false)}
+        disabled={selectedMemoIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Preview Selected ({selectedMemoIds.length})
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(true)}
+        disabled={selectedMemoIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Selected ({selectedMemoIds.length})
+      </Button>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -229,13 +278,24 @@ const PurchaseRequestMemoList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              {headCells.map((headCell) => (
-                <TableCell key={String(headCell.id)} sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}>
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedMemoIds.length > 0 && selectedMemoIds.length < memos.length}
+                  checked={memos.length > 0 && selectedMemoIds.length === memos.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all purchase request memos' }}
+                />
+              </TableCell>
+              {headCells.slice(1).map((headCell) => ( // Slice to skip 'select' cell
+                <TableCell key={String(headCell.id)}
+                           sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}
+                           padding={headCell.padding === 'none' ? 'none' : 'normal'}
+                >
                   {headCell.sortable ? (
                     <TableSortLabel
                       active={sortConfigKey === headCell.id}
                       direction={sortConfigKey === headCell.id ? sortConfigDirection : 'asc'}
-                      onClick={() => handleSortRequest(String(headCell.id))}
+                      onClick={() => handleSortRequest(String(headCell.id))} // Ensure String cast here
                     >
                       {headCell.label}
                     </TableSortLabel>
@@ -248,14 +308,30 @@ const PurchaseRequestMemoList: React.FC = () => {
           </TableHead>
           <TableBody>
             {isLoading && memos.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={headCells.length + 1} align="center"><CircularProgress /></TableCell></TableRow>
             )}
             {!isLoading && memos.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length} align="center">No purchase requests found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={headCells.length + 1} align="center">No purchase requests found.</TableCell></TableRow>
             )}
-            {memos.map((memo) => (
-              <TableRow key={memo.id} hover>
-                <TableCell sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+            {memos.map((memo) => {
+              const isSelected = selectedMemoIds.includes(memo.id);
+              return (
+              <TableRow
+                key={memo.id}
+                hover
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, memo.id)}
+                    inputProps={{ 'aria-labelledby': `memo-checkbox-${memo.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`memo-checkbox-${memo.id}`} sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                   <Tooltip title={memo.item_description}><span>{memo.item_description}</span></Tooltip>
                 </TableCell>
                 <TableCell>{memo.quantity}</TableCell>

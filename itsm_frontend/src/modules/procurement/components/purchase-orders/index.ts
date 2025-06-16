@@ -2,3 +2,4 @@
 export { default as PurchaseOrderDetailView } from './PurchaseOrderDetailView';
 export { default as PurchaseOrderForm } from './PurchaseOrderForm';
 export { default as PurchaseOrderList } from './PurchaseOrderList';
+export { default as PurchaseOrderPrintView } from './PurchaseOrderPrintView';

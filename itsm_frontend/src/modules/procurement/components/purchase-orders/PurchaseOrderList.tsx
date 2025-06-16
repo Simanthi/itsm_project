@@ -17,11 +17,13 @@ import {
   TablePagination,
   CircularProgress,
   Alert,
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
 import CancelIcon from '@mui/icons-material/CancelOutlined'; // Import CancelIcon
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI'; // Import useUI
@@ -47,6 +49,7 @@ const PurchaseOrderList: React.FC = () => {
   // Initial sort by order_date descending
   const [sortConfigKey, setSortConfigKey] = useState<string>('order_date');
   const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc');
+  const [selectedPoIds, setSelectedPoIds] = useState<number[]>([]);
 
   const fetchPurchaseOrders = useCallback(async () => {
     if (!authenticatedFetch) return;
@@ -139,7 +142,35 @@ const PurchaseOrderList: React.FC = () => {
     }
   };
 
-  const headCells: { id: keyof PurchaseOrder | string; label: string; sortable: boolean; numeric?: boolean }[] = [
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = purchaseOrders.map((po) => po.id);
+      setSelectedPoIds(newSelectedIds);
+      return;
+    }
+    setSelectedPoIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, poId: number) => {
+    if (event.target.checked) {
+      setSelectedPoIds((prevSelected) => [...prevSelected, poId]);
+    } else {
+      setSelectedPoIds((prevSelected) => prevSelected.filter((id) => id !== poId));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedPoIds.length === 0) {
+      showSnackbar('Please select purchase orders to print.', 'warning');
+      return;
+    }
+    navigate('/procurement/purchase-orders/print-preview', {
+      state: { selectedPoIds: selectedPoIds, autoPrint: autoPrint }
+    });
+  };
+
+  const headCells: { id: keyof PurchaseOrder | string; label: string; sortable: boolean; numeric?: boolean; padding?: 'none' | 'normal' }[] = [
+    { id: 'select', label: '', sortable: false, padding: 'none' },
     { id: 'po_number', label: 'PO Number', sortable: true },
     { id: 'vendor_details', label: 'Vendor', sortable: true }, // Sorting by vendor.name would be backend: 'vendor__name'
     { id: 'order_date', label: 'Order Date', sortable: true },
@@ -163,6 +194,24 @@ const PurchaseOrderList: React.FC = () => {
       >
         Create New PO
       </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(false)}
+        disabled={selectedPoIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Preview Selected ({selectedPoIds.length})
+      </Button>
+      <Button
+        variant="outlined"
+        startIcon={<PrintIcon />}
+        onClick={() => handlePrintSelected(true)}
+        disabled={selectedPoIds.length === 0}
+        sx={{ mb: 2, ml: 1 }}
+      >
+        Print Selected ({selectedPoIds.length})
+      </Button>
 
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
 
@@ -170,10 +219,19 @@ const PurchaseOrderList: React.FC = () => {
         <Table>
           <TableHead>
             <TableRow>
-              {headCells.map((headCell) => (
+              <TableCell padding="checkbox">
+                <Checkbox
+                  indeterminate={selectedPoIds.length > 0 && selectedPoIds.length < purchaseOrders.length}
+                  checked={purchaseOrders.length > 0 && selectedPoIds.length === purchaseOrders.length}
+                  onChange={handleSelectAllClick}
+                  inputProps={{ 'aria-label': 'select all purchase orders' }}
+                />
+              </TableCell>
+              {headCells.slice(1).map((headCell) => ( // Slice to skip 'select' cell for mapping actual headers
                 <TableCell
                   key={headCell.id}
                   align={headCell.numeric ? 'right' : 'left'}
+                  padding={headCell.padding === 'none' ? 'none' : 'normal'}
                   sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}
                 >
                   {headCell.sortable ? (
@@ -193,14 +251,37 @@ const PurchaseOrderList: React.FC = () => {
           </TableHead>
           <TableBody>
             {isLoading && purchaseOrders.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow><TableCell colSpan={headCells.length +1} align="center"><CircularProgress /></TableCell></TableRow>
             )}
             {!isLoading && purchaseOrders.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length} align="center">No purchase orders found.</TableCell></TableRow>
+              <TableRow><TableCell colSpan={headCells.length +1} align="center">No purchase orders found.</TableCell></TableRow>
             )}
-            {purchaseOrders.map((po) => (
-              <TableRow key={po.id} hover>
-                <TableCell>{po.po_number}</TableCell>
+            {purchaseOrders.map((po) => {
+              const isSelected = selectedPoIds.includes(po.id);
+              return (
+              <TableRow
+                key={po.id}
+                hover
+                onClick={(event) => { // Allow clicking anywhere on the row to toggle checkbox if desired, or remove
+                  // For now, let's assume checkbox click is enough. If row click is needed:
+                  // if (event.target instanceof HTMLTableCellElement && event.target.querySelector('input[type="checkbox"]')) {
+                  //   return; // Let checkbox handle its own click
+                  // }
+                  // handleRowCheckboxChange({ target: { checked: !isSelected } } as React.ChangeEvent<HTMLInputElement>, po.id);
+                }}
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, po.id)}
+                    inputProps={{ 'aria-labelledby': `po-checkbox-${po.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`po-checkbox-${po.id}`}>{po.po_number}</TableCell>
                 <TableCell>{po.vendor_details?.name || '-'}</TableCell>
                 <TableCell>{new Date(po.order_date).toLocaleDateString()}</TableCell>
                 <TableCell>
