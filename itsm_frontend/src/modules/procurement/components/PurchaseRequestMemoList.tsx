@@ -211,7 +211,7 @@ const PurchaseRequestMemoList: React.FC = () => {
   return (
     <Box sx={{ p: 3, width: '100%' }}>
       <Typography variant="h5" component="h2" gutterBottom>
-        Purchase Requests
+        Internal Office Memo
       </Typography>
 
       <Button
