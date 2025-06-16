@@ -20,6 +20,9 @@ import PurchaseOrderList from './modules/procurement/components/PurchaseOrderLis
 import PurchaseOrderForm from './modules/procurement/components/PurchaseOrderForm';
 import PurchaseOrderDetailView from './modules/procurement/components/PurchaseOrderDetailView';
 import PurchaseRequestMemoDetailView from './modules/procurement/components/PurchaseRequestMemoDetailView'; // Import IOM Detail View
+import CheckRequestList from './modules/procurement/components/CheckRequestList';
+import CheckRequestForm from './modules/procurement/components/CheckRequestForm';
+import CheckRequestDetailView from './modules/procurement/components/CheckRequestDetailView';
 import SecurityAccessPage from './modules/security-access/SecurityAccessPage';
 import IncidentManagementPage from './modules/incidents/IncidentManagementPage';
 import ChangeManagementPage from './modules/changes/ChangeManagementPage';
@@ -63,6 +66,11 @@ function AppContent() {
           <Route path="procurement/purchase-orders/new" element={<PurchaseOrderForm />} />
           <Route path="procurement/purchase-orders/edit/:poId" element={<PurchaseOrderForm />} />
           <Route path="procurement/purchase-orders/view/:poId" element={<PurchaseOrderDetailView />} />
+          {/* Check Request Routes */}
+          <Route path="procurement/check-requests" element={<CheckRequestList />} />
+          <Route path="procurement/check-requests/new" element={<CheckRequestForm />} />
+          <Route path="procurement/check-requests/edit/:checkRequestId" element={<CheckRequestForm />} />
+          <Route path="procurement/check-requests/view/:checkRequestId" element={<CheckRequestDetailView />} />
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />
