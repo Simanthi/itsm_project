@@ -316,7 +316,7 @@ const PurchaseOrderList: React.FC = () => {
                   {/* Add other relevant actions like 'Receive Items' based on status and permissions */}
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
         <TablePagination

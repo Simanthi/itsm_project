@@ -431,12 +431,7 @@ const AssetList: React.FC = () => {
               <TableRow
                 key={asset.id}
                 hover
-                onClick={(_event) => { // Changed event to _event
-                  // If you want row click to toggle checkbox:
-                  // if (event.target instanceof HTMLTableCellElement && !event.target.querySelector('input[type="checkbox"]')) {
-                  //  handleRowCheckboxChange({ target: { checked: !isSelected } } as React.ChangeEvent<HTMLInputElement>, asset.id);
-                  // }
-                }}
+                // onClick prop removed as it was unused
                 role="checkbox"
                 aria-checked={isSelected}
                 tabIndex={-1}
