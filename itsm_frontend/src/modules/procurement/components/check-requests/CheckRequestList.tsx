@@ -190,19 +190,11 @@ const CheckRequestList: React.FC = () => {
       showSnackbar('Please select check requests to print.', 'warning');
       return;
     }
-<<<<<<< HEAD
-    // The CheckRequestPrintView expects `checkRequestId` for single, 
-    // or `selectedCheckRequestIds` (if adapted for multiple)
-    // For this list view, we'll always pass an array of IDs.
-    navigate('/procurement/check-requests/print-preview', { 
-      state: { selectedCheckRequestIds: selectedRequestIds, autoPrint: autoPrint } 
-=======
     // The CheckRequestPrintView expects `checkRequestId` for single,
     // or `selectedCheckRequestIds` (if adapted for multiple)
     // For this list view, we'll always pass an array of IDs.
     navigate('/procurement/check-requests/print-preview', {
       state: { selectedCheckRequestIds: selectedRequestIds, autoPrint: autoPrint }
->>>>>>> bdb54c8344d36bd499821cab8bff7aa6522701eb
     });
   };
 
@@ -258,13 +250,8 @@ const CheckRequestList: React.FC = () => {
               />
             </TableCell>
             {headCells.slice(1).map(hc => ( // Slice to skip 'select' cell for mapping actual headers
-<<<<<<< HEAD
-              <TableCell key={hc.id} 
-                         align={hc.numeric ? 'right' : 'left'} 
-=======
               <TableCell key={hc.id}
                          align={hc.numeric ? 'right' : 'left'}
->>>>>>> bdb54c8344d36bd499821cab8bff7aa6522701eb
                          padding={hc.padding === 'none' ? 'none' : 'normal'}
                          sortDirection={sortConfigKey === hc.id ? sortConfigDirection : false}
               >
@@ -278,13 +265,8 @@ const CheckRequestList: React.FC = () => {
             {checkRequests.map(req => {
               const isSelected = selectedRequestIds.includes(req.id);
               return (
-<<<<<<< HEAD
-              <TableRow 
-                key={req.id} 
-=======
               <TableRow
                 key={req.id}
->>>>>>> bdb54c8344d36bd499821cab8bff7aa6522701eb
                 hover
                 role="checkbox"
                 aria-checked={isSelected}

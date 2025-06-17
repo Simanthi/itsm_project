@@ -262,13 +262,7 @@ const PurchaseOrderList: React.FC = () => {
               <TableRow
                 key={po.id}
                 hover
-                onClick={(event) => { // Allow clicking anywhere on the row to toggle checkbox if desired, or remove
-                  // For now, let's assume checkbox click is enough. If row click is needed:
-                  // if (event.target instanceof HTMLTableCellElement && event.target.querySelector('input[type="checkbox"]')) {
-                  //   return; // Let checkbox handle its own click
-                  // }
-                  // handleRowCheckboxChange({ target: { checked: !isSelected } } as React.ChangeEvent<HTMLInputElement>, po.id);
-                }}
+                onClick={_event => {}}
                 role="checkbox"
                 aria-checked={isSelected}
                 tabIndex={-1}
