@@ -42,11 +42,11 @@ import ClearIcon from '@mui/icons-material/Clear'; // For clearing filters
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
-import { getAssets, deleteAsset, getAssetCategories } from '../../../api/assetApi';
+import { getAssets, deleteAsset, getAssetCategories, getLocations } from '../../../api/assetApi'; // Import getLocations
 import type {
   Asset,
   AssetCategory,
-  // Location, // Not directly used in AssetList columns from root, but via Asset.location
+  Location as AssetLocation, // Import Location
   // Vendor, // Not directly used in AssetList columns from root, but via Asset.vendor
   // User, // Not directly used in AssetList columns from root, but via Asset.assigned_to
   // PaginatedResponse // Removed as per instruction if not directly annotated
@@ -105,6 +105,8 @@ const AssetList: React.FC = () => {
   const [statusFilter, setStatusFilter] = useState<string>('');
   const [categoryFilter, setCategoryFilter] = useState<string>('');
   const [assetCategories, setAssetCategories] = useState<AssetCategory[]>([]);
+  const [categoryMap, setCategoryMap] = useState<Map<number, string>>(new Map());
+  const [locationMap, setLocationMap] = useState<Map<number, string>>(new Map());
 
   const [sortConfigKey, setSortConfigKey] = useState<keyof Asset | string | null>('asset_tag'); // Default sort
   const [sortConfigDirection, setSortConfigDirection] = useState<Order>('asc');
@@ -115,14 +117,25 @@ const AssetList: React.FC = () => {
   const fetchAssetCategoriesForFilter = useCallback(async () => {
     if (!authenticatedFetch) return;
     try {
-      const response = await getAssetCategories(authenticatedFetch, { page: 1, pageSize: 100 }); // Fetch all for filter
+      const response = await getAssetCategories(authenticatedFetch, { page: 1, pageSize: 200 }); // Fetch more
       setAssetCategories(response.results);
-    } catch (err: unknown) { // Changed to unknown
+      const catMap = new Map<number, string>();
+      response.results.forEach(cat => catMap.set(cat.id, cat.name));
+      setCategoryMap(catMap);
+    } catch (err: unknown) {
       console.error("Failed to fetch asset categories for filter:", err);
-      // Non-critical error, so might not set main error state
-      // Optionally set a specific error state for this if needed:
-      // const message = err instanceof Error ? err.message : String(err);
-      // setFilterError(`Failed to load categories: ${message}`);
+    }
+  }, [authenticatedFetch]);
+
+  const fetchLocationsForMap = useCallback(async () => {
+    if (!authenticatedFetch) return;
+    try {
+      const response = await getLocations(authenticatedFetch, { page: 1, pageSize: 200 }); // Fetch many
+      const locMap = new Map<number, string>();
+      response.results.forEach(loc => locMap.set(loc.id, loc.name));
+      setLocationMap(locMap);
+    } catch (err) {
+      console.error("Failed to fetch locations for map:", err);
     }
   }, [authenticatedFetch]);
 
@@ -166,7 +179,8 @@ const AssetList: React.FC = () => {
 
   useEffect(() => {
     fetchAssetCategoriesForFilter();
-  }, [fetchAssetCategoriesForFilter]);
+    fetchLocationsForMap(); // Call new function
+  }, [fetchAssetCategoriesForFilter, fetchLocationsForMap]);
 
   useEffect(() => {
     fetchAssets();
@@ -447,7 +461,7 @@ const AssetList: React.FC = () => {
                 </TableCell>
                 <TableCell id={`asset-checkbox-${asset.id}`}>{asset.asset_tag}</TableCell>
                 <TableCell>{asset.name}</TableCell>
-                <TableCell>{asset.category?.name || '-'}</TableCell>
+                <TableCell>{categoryMap.get(asset.category?.id ?? -1) || '-'}</TableCell>
                 <TableCell>
                   <Chip
                     label={asset.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
@@ -456,7 +470,7 @@ const AssetList: React.FC = () => {
                   />
                 </TableCell>
                 <TableCell>{asset.assigned_to?.username || 'Unassigned'}</TableCell>
-                <TableCell>{asset.location?.name || '-'}</TableCell>
+                <TableCell>{locationMap.get(asset.location?.id ?? -1) || '-'}</TableCell>
                 <TableCell>{asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : '-'}</TableCell>
                 <TableCell align="right">
                   <Tooltip title="View Asset">
