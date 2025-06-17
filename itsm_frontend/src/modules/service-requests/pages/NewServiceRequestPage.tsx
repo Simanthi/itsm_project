@@ -74,25 +74,20 @@ function NewServiceRequestPage() {
       }
     };
 
-    if (authenticatedFetch) {
-      // Only attempt to fetch if authenticatedFetch is available
-      fetchInitialData();
-    } else {
-      // If id is present but authenticatedFetch is not, it's an error condition for edit mode.
-      if (id) {
-          setError('Authentication context not available. Please log in to load this request.');
-      }
-      setLoading(false); // Ensure loading stops
-    }
+    // Directly call fetchInitialData.
+    // The authenticatedFetch dependency in useEffect ensures this runs if auth state changes.
+    // The fetchInitialData or getServiceRequestById should handle cases where auth is not truly valid.
+    fetchInitialData();
+
   }, [id, authenticatedFetch, parseError]);
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`
     : 'Create New Service Request';
 
-  const handleBack = () => {
-    navigate('/service-requests');
-  };
+  // const handleBack = () => { // No longer used
+  //   navigate('/service-requests');
+  // };
 
   if (loading) {
     return (

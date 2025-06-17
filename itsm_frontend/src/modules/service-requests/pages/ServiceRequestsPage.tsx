@@ -56,7 +56,7 @@ const ServiceRequestsPage: React.FC = () => {
     loading,
     error,
     deleteServiceRequest, // Import deleteServiceRequest
-    fetchServiceRequests, // Import fetchServiceRequests
+    // fetchServiceRequests, // Removed as it's unused directly in this component
     totalCount,
     paginationModel,
     setPaginationModel,
@@ -176,7 +176,7 @@ const ServiceRequestsPage: React.FC = () => {
           // The context's deleteServiceRequest likely handles single ID and refreshes.
           // If it handles multiple, adjust accordingly.
           // For now, we'll show a single success/failure message after all attempts.
-          let allSucceeded = true;
+          // let allSucceeded = true; // Removed as it's unused
           for (const requestId of requestsToDelete) {
             if (requestId) { // Ensure requestId is not undefined
               await deleteServiceRequest(requestId); // This will call fetchServiceRequests internally

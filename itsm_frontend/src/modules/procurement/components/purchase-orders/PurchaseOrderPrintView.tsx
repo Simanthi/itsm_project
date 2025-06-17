@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -63,12 +63,15 @@ const PurchaseOrderPrintView: React.FC = () => {
   const autoPrint = state?.autoPrint || false;
 
   // Determine PO IDs to fetch
-  let poIdsToFetch: number[] = [];
-  if (state?.selectedPoIds && state.selectedPoIds.length > 0) {
-    poIdsToFetch = state.selectedPoIds;
-  } else if (state?.poId) {
-    poIdsToFetch = [state.poId];
-  }
+  const poIdsToFetch = useMemo(() => {
+    let ids: number[] = [];
+    if (state?.selectedPoIds && state.selectedPoIds.length > 0) {
+      ids = state.selectedPoIds;
+    } else if (state?.poId) {
+      ids = [state.poId];
+    }
+    return ids;
+  }, [state]);
 
   const [purchaseOrdersToPrint, setPurchaseOrdersToPrint] = useState<PurchaseOrder[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -125,7 +128,7 @@ const PurchaseOrderPrintView: React.FC = () => {
         setError('No Purchase Order IDs specified.');
         setLoading(false);
     }
-  }, [fetchPurchaseOrdersForPrint]); // Only depends on the callback
+  }, [fetchPurchaseOrdersForPrint, poIdsToFetch]); // Added poIdsToFetch
 
   useEffect(() => {
     if (!loading && !error && purchaseOrdersToPrint.length > 0 && autoPrint && printRootElement) {

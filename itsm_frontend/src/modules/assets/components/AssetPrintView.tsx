@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -55,12 +55,15 @@ const AssetPrintView: React.FC = () => {
   const state = location.state as LocationState | null;
   const autoPrint = state?.autoPrint || false;
 
-  let assetIdsToFetch: number[] = [];
-  if (state?.selectedAssetIds && state.selectedAssetIds.length > 0) {
-    assetIdsToFetch = state.selectedAssetIds;
-  } else if (state?.assetId) {
-    assetIdsToFetch = [state.assetId];
-  }
+  const assetIdsToFetch = useMemo(() => {
+    let ids: number[] = [];
+    if (state?.selectedAssetIds && state.selectedAssetIds.length > 0) {
+      ids = state.selectedAssetIds;
+    } else if (state?.assetId) {
+      ids = [state.assetId];
+    }
+    return ids;
+  }, [state]);
 
   const [assetsToPrint, setAssetsToPrint] = useState<Asset[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -117,7 +120,7 @@ const AssetPrintView: React.FC = () => {
         setError('No Asset IDs specified.');
         setLoading(false);
     }
-  }, [fetchAssetsForPrint]);
+  }, [fetchAssetsForPrint, assetIdsToFetch]); // Added assetIdsToFetch
 
   useEffect(() => {
     if (!loading && !error && assetsToPrint.length > 0 && autoPrint && printRootElement) {
