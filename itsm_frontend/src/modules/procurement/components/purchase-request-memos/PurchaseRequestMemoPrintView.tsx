@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
@@ -58,12 +58,15 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
   const state = location.state as LocationState | null;
   const autoPrint = state?.autoPrint || false;
 
-  let memoIdsToFetch: number[] = [];
-  if (state?.selectedMemoIds && state.selectedMemoIds.length > 0) {
-    memoIdsToFetch = state.selectedMemoIds;
-  } else if (state?.memoId) {
-    memoIdsToFetch = [state.memoId];
-  }
+  const memoIdsToFetch = useMemo(() => {
+    let ids: number[] = [];
+    if (state?.selectedMemoIds && state.selectedMemoIds.length > 0) {
+      ids = state.selectedMemoIds;
+    } else if (state?.memoId) {
+      ids = [state.memoId];
+    }
+    return ids;
+  }, [state]);
 
   const [memosToPrint, setMemosToPrint] = useState<PurchaseRequestMemo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -120,7 +123,7 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
         setError('No IOM IDs specified.');
         setLoading(false);
     }
-  }, [fetchMemosForPrint]);
+  }, [fetchMemosForPrint, memoIdsToFetch]); // Added memoIdsToFetch
 
   useEffect(() => {
     if (!loading && !error && memosToPrint.length > 0 && autoPrint && printRootElement) {
