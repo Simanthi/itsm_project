@@ -21,17 +21,20 @@ const ProcurementDashboardPage: React.FC = () => {
               flexDirection: 'column',
               alignItems: 'center',
               height: '100%',
-              justifyContent: 'space-between'
+              justifyContent: 'space-between',
             }}
             elevation={3}
           >
             <Box sx={{ textAlign: 'center' }}>
-              <ReceiptLongIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} />
+              <ReceiptLongIcon
+                sx={{ fontSize: 40, mb: 1, color: 'primary.main' }}
+              />
               <Typography variant="h6" component="h2" gutterBottom>
                 Internal Office Memos
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
-                Manage internal requests for purchases and services. Track approvals and status.
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Manage internal requests for purchases and services. Track
+                approvals and status.
               </Typography>
             </Box>
             <Button
@@ -59,11 +62,14 @@ const ProcurementDashboardPage: React.FC = () => {
             elevation={3}
           >
             <Box sx={{ textAlign: 'center' }}>
-              <DescriptionIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} /> {/* Changed color */}
+              <DescriptionIcon
+                sx={{ fontSize: 40, mb: 1, color: 'primary.main' }}
+              />{' '}
+              {/* Changed color */}
               <Typography variant="h6" component="h2" gutterBottom>
                 Purchase Orders
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Create and manage official purchase orders sent to vendors.
               </Typography>
             </Box>
@@ -94,11 +100,14 @@ const ProcurementDashboardPage: React.FC = () => {
             elevation={3}
           >
             <Box sx={{ textAlign: 'center' }}>
-              <PaymentsIcon sx={{ fontSize: 40, mb: 1, color: 'primary.main' }} /> {/* Changed color */}
+              <PaymentsIcon
+                sx={{ fontSize: 40, mb: 1, color: 'primary.main' }}
+              />{' '}
+              {/* Changed color */}
               <Typography variant="h6" component="h2" gutterBottom>
                 Check Requests
               </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
                 Process and track requests for payments and checks.
               </Typography>
             </Box>

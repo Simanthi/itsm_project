@@ -17,7 +17,11 @@ import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getCheckRequestById } from '../../../../api/procurementApi';
 import { useAuth } from '../../../../context/auth/useAuth';
-import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
+import type {
+  CheckRequest,
+  CheckRequestStatus,
+  PaymentMethod,
+} from '../../types';
 import { type ButtonProps } from '@mui/material/Button';
 
 const formatDateString = (isoString: string | null | undefined): string => {
@@ -34,30 +38,39 @@ const formatCurrency = (amount: string | number | null | undefined): string => {
 };
 
 const getStatusChipColor = (status?: CheckRequestStatus) => {
-    if (!status) return 'default';
-    const mapping: Record<CheckRequestStatus, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
-        pending_submission: 'default',
-        pending_approval: 'warning',
-        approved: 'success',
-        rejected: 'error',
-        payment_processing: 'info',
-        paid: 'primary',
-        cancelled: 'default',
-    };
-    return mapping[status] || 'default';
+  if (!status) return 'default';
+  const mapping: Record<
+    CheckRequestStatus,
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'info'
+    | 'success'
+    | 'warning'
+  > = {
+    pending_submission: 'default',
+    pending_approval: 'warning',
+    approved: 'success',
+    rejected: 'error',
+    payment_processing: 'info',
+    paid: 'primary',
+    cancelled: 'default',
+  };
+  return mapping[status] || 'default';
 };
 
 const formatPaymentMethod = (method?: PaymentMethod | null): string => {
-    if (!method) return 'N/A';
-    const mapping: Record<PaymentMethod, string> = {
-        check: 'Check',
-        ach: 'ACH Transfer',
-        wire: 'Wire Transfer',
-        cash: 'Cash',
-        credit_card: 'Credit Card',
-        other: 'Other',
-    };
-    return mapping[method] || 'N/A';
+  if (!method) return 'N/A';
+  const mapping: Record<PaymentMethod, string> = {
+    check: 'Check',
+    ach: 'ACH Transfer',
+    wire: 'Wire Transfer',
+    cash: 'Cash',
+    credit_card: 'Credit Card',
+    other: 'Other',
+  };
+  return mapping[method] || 'N/A';
 };
 
 interface LocationState {
@@ -80,7 +93,10 @@ const CheckRequestPrintView: React.FC = () => {
   // Accept either a single ID or an array of IDs
   const idsToFetch = useMemo(() => {
     let ids: number[] = [];
-    if (state?.selectedCheckRequestIds && state.selectedCheckRequestIds.length > 0) {
+    if (
+      state?.selectedCheckRequestIds &&
+      state.selectedCheckRequestIds.length > 0
+    ) {
       ids = state.selectedCheckRequestIds;
     } else if (state?.checkRequestId) {
       ids = [state.checkRequestId];
@@ -91,13 +107,17 @@ const CheckRequestPrintView: React.FC = () => {
   const [requests, setRequests] = useState<CheckRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null);
+  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     const element = document.getElementById('print-root');
     if (element) setPrintRootElement(element);
     else {
-      setError('Print functionality not initialized. Missing #print-root element.');
+      setError(
+        'Print functionality not initialized. Missing #print-root element.',
+      );
       setLoading(false);
     }
   }, []);
@@ -145,7 +165,13 @@ const CheckRequestPrintView: React.FC = () => {
   }, [fetchRequests, idsToFetch]);
 
   useEffect(() => {
-    if (!loading && !error && requests.length > 0 && autoPrint && printRootElement) {
+    if (
+      !loading &&
+      !error &&
+      requests.length > 0 &&
+      autoPrint &&
+      printRootElement
+    ) {
       printRootElement.style.display = 'block';
       const timer = setTimeout(() => {
         window.print();
@@ -160,7 +186,16 @@ const CheckRequestPrintView: React.FC = () => {
         if (printRootElement) printRootElement.style.display = 'none';
       };
     }
-  }, [loading, error, requests, autoPrint, navigate, printRootElement, location.pathname, state]);
+  }, [
+    loading,
+    error,
+    requests,
+    autoPrint,
+    navigate,
+    printRootElement,
+    location.pathname,
+    state,
+  ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
     <Button
@@ -176,7 +211,15 @@ const CheckRequestPrintView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ mt: 2 }}>Preparing print preview...</Typography>
       </Box>
@@ -195,7 +238,9 @@ const CheckRequestPrintView: React.FC = () => {
   if (requests.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="info">Check Request data not available for printing.</Alert>
+        <Alert severity="info">
+          Check Request data not available for printing.
+        </Alert>
         {!autoPrint && <BackButton sx={{ mt: 2 }} />}
       </Box>
     );
@@ -206,16 +251,27 @@ const CheckRequestPrintView: React.FC = () => {
       {!autoPrint && (
         <Box
           sx={{
-            position: 'fixed', top: 80, left: SIDEBAR_WIDTH,
-            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, display: 'flex',
-            justifyContent: 'space-between', zIndex: theme.zIndex.drawer + 1,
-            padding: '0 20px', boxSizing: 'border-box',
+            position: 'fixed',
+            top: 80,
+            left: SIDEBAR_WIDTH,
+            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            zIndex: theme.zIndex.drawer + 1,
+            padding: '0 20px',
+            boxSizing: 'border-box',
           }}
         >
           <BackButton />
           <Button
-            variant="contained" color="primary"
-            onClick={() => navigate(location.pathname, { replace: true, state: { ...state, autoPrint: true }})}
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              navigate(location.pathname, {
+                replace: true,
+                state: { ...state, autoPrint: true },
+              })
+            }
             startIcon={<PrintIcon />}
           >
             Print
@@ -225,64 +281,194 @@ const CheckRequestPrintView: React.FC = () => {
       <Box
         className="print-container"
         sx={{
-          maxWidth: '80%', marginTop: autoPrint ? '0' : '64px', marginBottom: '30px',
-          marginLeft: 'auto', marginRight: 'auto', padding: '30px',
+          maxWidth: '80%',
+          marginTop: autoPrint ? '0' : '64px',
+          marginBottom: '30px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          padding: '30px',
           backgroundColor: theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[1],
-          minHeight: 'calc(1122px - 60px)', boxSizing: 'border-box',
-          display: 'flex', flexDirection: 'column', gap: '40px',
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[1],
+          minHeight: 'calc(1122px - 60px)',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '40px',
           borderRadius: theme.shape.borderRadius || 4,
         }}
       >
-        {requests.map(currentCheckRequest => (
-          <Paper sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }} elevation={0} id={`check-request-detail-print-${currentCheckRequest.id}`} key={currentCheckRequest.id}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        {requests.map((currentCheckRequest) => (
+          <Paper
+            sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }}
+            elevation={0}
+            id={`check-request-detail-print-${currentCheckRequest.id}`}
+            key={currentCheckRequest.id}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+              }}
+            >
               <Typography variant="h5" component="h1">
                 Check Request: CR-{currentCheckRequest.id}
               </Typography>
-              <Chip label={currentCheckRequest.status.replace(/_/g, ' ')} color={getStatusChipColor(currentCheckRequest.status)} size="small" />
+              <Chip
+                label={currentCheckRequest.status.replace(/_/g, ' ')}
+                color={getStatusChipColor(currentCheckRequest.status)}
+                size="small"
+              />
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Request Information</Typography>
-                <Typography><strong>Requested By:</strong> {currentCheckRequest.requested_by_username}</Typography>
-                <Typography><strong>Request Date:</strong> {formatDateString(currentCheckRequest.request_date)}</Typography>
-                <Typography mt={1}><strong>Reason for Payment:</strong></Typography>
-                <Typography sx={{ whiteSpace: 'pre-wrap', pl:0 }}>{currentCheckRequest.reason_for_payment}</Typography>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Request Information
+                </Typography>
+                <Typography>
+                  <strong>Requested By:</strong>{' '}
+                  {currentCheckRequest.requested_by_username}
+                </Typography>
+                <Typography>
+                  <strong>Request Date:</strong>{' '}
+                  {formatDateString(currentCheckRequest.request_date)}
+                </Typography>
+                <Typography mt={1}>
+                  <strong>Reason for Payment:</strong>
+                </Typography>
+                <Typography sx={{ whiteSpace: 'pre-wrap', pl: 0 }}>
+                  {currentCheckRequest.reason_for_payment}
+                </Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Payment Details</Typography>
-                <Typography><strong>Payee Name:</strong> {currentCheckRequest.payee_name}</Typography>
-                <Typography><strong>Amount:</strong> {formatCurrency(currentCheckRequest.amount)}</Typography>
-                {currentCheckRequest.purchase_order_number && <Typography><strong>PO Number:</strong> {currentCheckRequest.purchase_order_number}</Typography>}
-                {currentCheckRequest.invoice_number && <Typography><strong>Invoice Number:</strong> {currentCheckRequest.invoice_number}</Typography>}
-                {currentCheckRequest.invoice_date && <Typography><strong>Invoice Date:</strong> {formatDateString(currentCheckRequest.invoice_date)}</Typography>}
-                {currentCheckRequest.payee_address && <><Typography mt={1}><strong>Payee Address:</strong></Typography><Typography sx={{ whiteSpace: 'pre-wrap', pl:0 }}>{currentCheckRequest.payee_address}</Typography></>}
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Payment Details
+                </Typography>
+                <Typography>
+                  <strong>Payee Name:</strong> {currentCheckRequest.payee_name}
+                </Typography>
+                <Typography>
+                  <strong>Amount:</strong>{' '}
+                  {formatCurrency(currentCheckRequest.amount)}
+                </Typography>
+                {currentCheckRequest.purchase_order_number && (
+                  <Typography>
+                    <strong>PO Number:</strong>{' '}
+                    {currentCheckRequest.purchase_order_number}
+                  </Typography>
+                )}
+                {currentCheckRequest.invoice_number && (
+                  <Typography>
+                    <strong>Invoice Number:</strong>{' '}
+                    {currentCheckRequest.invoice_number}
+                  </Typography>
+                )}
+                {currentCheckRequest.invoice_date && (
+                  <Typography>
+                    <strong>Invoice Date:</strong>{' '}
+                    {formatDateString(currentCheckRequest.invoice_date)}
+                  </Typography>
+                )}
+                {currentCheckRequest.payee_address && (
+                  <>
+                    <Typography mt={1}>
+                      <strong>Payee Address:</strong>
+                    </Typography>
+                    <Typography sx={{ whiteSpace: 'pre-wrap', pl: 0 }}>
+                      {currentCheckRequest.payee_address}
+                    </Typography>
+                  </>
+                )}
               </Grid>
-              {(currentCheckRequest.status !== 'pending_submission' && currentCheckRequest.status !== 'cancelled') && (
-                <>
-                  <Grid item xs={12}><Divider sx={{ my: 2 }} /></Grid>
-                  <Grid item xs={12}>
-                    <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Approval & Processing</Typography>
-                    <Grid container spacing={1}>
-                      <Grid item xs={12} md={6}>
-                        <Typography><strong>Approved By (Accounts):</strong> {currentCheckRequest.approved_by_accounts_username || 'N/A'}</Typography>
-                        <Typography><strong>Accounts Approval Date:</strong> {formatDateString(currentCheckRequest.accounts_approval_date)}</Typography>
-                        {currentCheckRequest.accounts_comments && <><Typography mt={1}><strong>Accounts Comments:</strong></Typography><Typography sx={{ whiteSpace: 'pre-wrap', pl:0 }}>{currentCheckRequest.accounts_comments}</Typography></>}
-                      </Grid>
-                      {(currentCheckRequest.status === 'paid' || currentCheckRequest.status === 'payment_processing') && (
-                      <Grid item xs={12} md={6}>
-                        <Typography><strong>Payment Method:</strong> {formatPaymentMethod(currentCheckRequest.payment_method)}</Typography>
-                        <Typography><strong>Payment Date:</strong> {formatDateString(currentCheckRequest.payment_date)}</Typography>
-                        <Typography><strong>Transaction ID/Check #:</strong> {currentCheckRequest.transaction_id || 'N/A'}</Typography>
-                        {currentCheckRequest.payment_notes && <><Typography mt={1}><strong>Payment Notes:</strong></Typography><Typography sx={{ whiteSpace: 'pre-wrap', pl:0 }}>{currentCheckRequest.payment_notes}</Typography></>}
-                      </Grid>
-                      )}
+              {currentCheckRequest.status !== 'pending_submission' &&
+                currentCheckRequest.status !== 'cancelled' && (
+                  <>
+                    <Grid item xs={12}>
+                      <Divider sx={{ my: 2 }} />
                     </Grid>
-                  </Grid>
-                </>
-              )}
+                    <Grid item xs={12}>
+                      <Typography
+                        variant="subtitle1"
+                        gutterBottom
+                        sx={{ fontWeight: 'bold' }}
+                      >
+                        Approval & Processing
+                      </Typography>
+                      <Grid container spacing={1}>
+                        <Grid item xs={12} md={6}>
+                          <Typography>
+                            <strong>Approved By (Accounts):</strong>{' '}
+                            {currentCheckRequest.approved_by_accounts_username ||
+                              'N/A'}
+                          </Typography>
+                          <Typography>
+                            <strong>Accounts Approval Date:</strong>{' '}
+                            {formatDateString(
+                              currentCheckRequest.accounts_approval_date,
+                            )}
+                          </Typography>
+                          {currentCheckRequest.accounts_comments && (
+                            <>
+                              <Typography mt={1}>
+                                <strong>Accounts Comments:</strong>
+                              </Typography>
+                              <Typography
+                                sx={{ whiteSpace: 'pre-wrap', pl: 0 }}
+                              >
+                                {currentCheckRequest.accounts_comments}
+                              </Typography>
+                            </>
+                          )}
+                        </Grid>
+                        {(currentCheckRequest.status === 'paid' ||
+                          currentCheckRequest.status ===
+                            'payment_processing') && (
+                          <Grid item xs={12} md={6}>
+                            <Typography>
+                              <strong>Payment Method:</strong>{' '}
+                              {formatPaymentMethod(
+                                currentCheckRequest.payment_method,
+                              )}
+                            </Typography>
+                            <Typography>
+                              <strong>Payment Date:</strong>{' '}
+                              {formatDateString(
+                                currentCheckRequest.payment_date,
+                              )}
+                            </Typography>
+                            <Typography>
+                              <strong>Transaction ID/Check #:</strong>{' '}
+                              {currentCheckRequest.transaction_id || 'N/A'}
+                            </Typography>
+                            {currentCheckRequest.payment_notes && (
+                              <>
+                                <Typography mt={1}>
+                                  <strong>Payment Notes:</strong>
+                                </Typography>
+                                <Typography
+                                  sx={{ whiteSpace: 'pre-wrap', pl: 0 }}
+                                >
+                                  {currentCheckRequest.payment_notes}
+                                </Typography>
+                              </>
+                            )}
+                          </Grid>
+                        )}
+                      </Grid>
+                    </Grid>
+                  </>
+                )}
             </Grid>
           </Paper>
         ))}

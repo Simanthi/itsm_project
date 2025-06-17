@@ -120,7 +120,8 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
-    if (!authenticatedFetch) { // Check for authenticatedFetch
+    if (!authenticatedFetch) {
+      // Check for authenticatedFetch
       setUsers([]);
       setError('Authentication context not available. Cannot fetch users.');
       setLoadingUsers(false);
@@ -229,11 +230,15 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 
     // The token check is removed here as authenticatedFetch handles auth concerns.
     // If authenticatedFetch is undefined, it implies user is not properly authenticated or context is missing.
-    if (!authenticatedFetch && id) { // Only critical if trying to update directly using updateServiceRequest
-        setError('Authentication context not available. Please log in.');
-        showSnackbar('Authentication context not available. Please log in.', 'error');
-        setSubmitting(false);
-        return;
+    if (!authenticatedFetch && id) {
+      // Only critical if trying to update directly using updateServiceRequest
+      setError('Authentication context not available. Please log in.');
+      showSnackbar(
+        'Authentication context not available. Please log in.',
+        'error',
+      );
+      setSubmitting(false);
+      return;
     }
     // For creating new requests, addServiceRequest from context will handle its own auth checks internally.
 

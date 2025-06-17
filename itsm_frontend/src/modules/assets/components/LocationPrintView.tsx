@@ -2,8 +2,14 @@ import React, { useEffect, useState } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Typography, Box, CircularProgress, Alert, Button,
-  Grid, Paper, Divider,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  Grid,
+  Paper,
+  Divider,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
@@ -30,7 +36,9 @@ const LocationPrintView: React.FC = () => {
   const [locationsToPrint, setLocationsToPrint] = useState<AssetLocation[]>([]);
   const [loading, setLoading] = useState<boolean>(false); // Initially false as no fetching
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null);
+  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     const element = document.getElementById('print-root');
@@ -58,9 +66,14 @@ const LocationPrintView: React.FC = () => {
     setLoading(false); // Data is processed, stop loading
   }, [state]);
 
-
   useEffect(() => {
-    if (!loading && !error && locationsToPrint.length > 0 && autoPrint && printRootElement) {
+    if (
+      !loading &&
+      !error &&
+      locationsToPrint.length > 0 &&
+      autoPrint &&
+      printRootElement
+    ) {
       printRootElement.style.display = 'block';
       const timer = setTimeout(() => {
         window.print();
@@ -75,7 +88,16 @@ const LocationPrintView: React.FC = () => {
         if (printRootElement) printRootElement.style.display = 'none';
       };
     }
-  }, [loading, error, locationsToPrint, autoPrint, navigate, printRootElement, location.pathname, state]);
+  }, [
+    loading,
+    error,
+    locationsToPrint,
+    autoPrint,
+    navigate,
+    printRootElement,
+    location.pathname,
+    state,
+  ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
     <Button
@@ -91,7 +113,15 @@ const LocationPrintView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ mt: 2 }}>Preparing print preview...</Typography>
       </Box>
@@ -121,16 +151,27 @@ const LocationPrintView: React.FC = () => {
       {!autoPrint && (
         <Box
           sx={{
-            position: 'fixed', top: 80, left: SIDEBAR_WIDTH,
-            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, display: 'flex',
-            justifyContent: 'space-between', zIndex: theme.zIndex.drawer + 1,
-            padding: '0 20px', boxSizing: 'border-box',
+            position: 'fixed',
+            top: 80,
+            left: SIDEBAR_WIDTH,
+            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            zIndex: theme.zIndex.drawer + 1,
+            padding: '0 20px',
+            boxSizing: 'border-box',
           }}
         >
           <BackButton />
           <Button
-            variant="contained" color="primary"
-            onClick={() => navigate(location.pathname, { replace: true, state: { ...state, autoPrint: true }})}
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              navigate(location.pathname, {
+                replace: true,
+                state: { ...state, autoPrint: true },
+              })
+            }
             startIcon={<PrintIcon />}
           >
             Print
@@ -140,38 +181,76 @@ const LocationPrintView: React.FC = () => {
       <Box
         className="print-container"
         sx={{
-          maxWidth: '80%', marginTop: autoPrint ? '0' : '64px', marginBottom: '30px',
-          marginLeft: 'auto', marginRight: 'auto', padding: '30px',
+          maxWidth: '80%',
+          marginTop: autoPrint ? '0' : '64px',
+          marginBottom: '30px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          padding: '30px',
           backgroundColor: theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[1],
-          minHeight: 'calc(1122px - 60px)', boxSizing: 'border-box',
-          display: 'flex', flexDirection: 'column', gap: '20px',
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[1],
+          minHeight: 'calc(1122px - 60px)',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
           borderRadius: theme.shape.borderRadius || 4,
         }}
       >
-        {locationsToPrint.map((loc) => ( // Changed variable name to loc
-          <Paper key={loc.id} sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }} elevation={0} id={`location-print-${loc.id}`}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="h5" component="h1">
-                Asset Location: {loc.name}
-              </Typography>
-            </Box>
-            <Divider sx={{ mb: 2 }} />
-            <Grid container spacing={2}>
-              <Grid item xs={12}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Details</Typography>
-                <Typography><strong>ID:</strong> {loc.id}</Typography>
-                <Typography><strong>Name:</strong> {loc.name}</Typography>
-                {loc.description && (
+        {locationsToPrint.map(
+          (
+            loc, // Changed variable name to loc
+          ) => (
+            <Paper
+              key={loc.id}
+              sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }}
+              elevation={0}
+              id={`location-print-${loc.id}`}
+            >
+              <Box
+                sx={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  mb: 2,
+                }}
+              >
+                <Typography variant="h5" component="h1">
+                  Asset Location: {loc.name}
+                </Typography>
+              </Box>
+              <Divider sx={{ mb: 2 }} />
+              <Grid container spacing={2}>
+                <Grid item xs={12}>
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Details
+                  </Typography>
+                  <Typography>
+                    <strong>ID:</strong> {loc.id}
+                  </Typography>
+                  <Typography>
+                    <strong>Name:</strong> {loc.name}
+                  </Typography>
+                  {loc.description && (
                     <>
-                        <Typography mt={1}><strong>Description:</strong></Typography>
-                        <Typography sx={{ whiteSpace: 'pre-line' }}>{loc.description}</Typography>
+                      <Typography mt={1}>
+                        <strong>Description:</strong>
+                      </Typography>
+                      <Typography sx={{ whiteSpace: 'pre-line' }}>
+                        {loc.description}
+                      </Typography>
                     </>
-                )}
+                  )}
+                </Grid>
               </Grid>
-            </Grid>
-          </Paper>
-        ))}
+            </Paper>
+          ),
+        )}
       </Box>
     </>
   );

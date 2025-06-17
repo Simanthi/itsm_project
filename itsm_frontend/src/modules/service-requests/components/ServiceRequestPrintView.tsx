@@ -57,7 +57,8 @@ const ServiceRequestPrintView: React.FC = () => {
   }, []);
 
   const fetchRequestsForPrint = useCallback(async () => {
-    if (!authenticatedFetch) { // Check for authenticatedFetch
+    if (!authenticatedFetch) {
+      // Check for authenticatedFetch
       setError('Authentication context not available. Please log in.');
       setLoading(false);
       return;
@@ -74,7 +75,10 @@ const ServiceRequestPrintView: React.FC = () => {
       const fetchedRequests: ServiceRequest[] = [];
       for (const reqId of selectedRequestIds) {
         try {
-          const request = await getServiceRequestById(authenticatedFetch, reqId); // Pass authenticatedFetch
+          const request = await getServiceRequestById(
+            authenticatedFetch,
+            reqId,
+          ); // Pass authenticatedFetch
           fetchedRequests.push(request);
         } catch (singleFetchError) {
           console.error(`Failed to fetch request ${reqId}:`, singleFetchError);

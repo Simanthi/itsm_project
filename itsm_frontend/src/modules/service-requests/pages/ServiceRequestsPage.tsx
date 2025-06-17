@@ -166,7 +166,10 @@ const ServiceRequestsPage: React.FC = () => {
           .map((req) => req.request_id); // Get the string request_id
 
         if (requestsToDelete.length === 0) {
-          showSnackbar('No valid requests found for deletion. Please refresh.', 'warning');
+          showSnackbar(
+            'No valid requests found for deletion. Please refresh.',
+            'warning',
+          );
           return;
         }
 
@@ -178,16 +181,19 @@ const ServiceRequestsPage: React.FC = () => {
           // For now, we'll show a single success/failure message after all attempts.
           // let allSucceeded = true; // Removed as it's unused
           for (const requestId of requestsToDelete) {
-            if (requestId) { // Ensure requestId is not undefined
+            if (requestId) {
+              // Ensure requestId is not undefined
               await deleteServiceRequest(requestId); // This will call fetchServiceRequests internally
             }
           }
-           // The context's deleteServiceRequest should ideally handle success/error messages
+          // The context's deleteServiceRequest should ideally handle success/error messages
           // and call fetchServiceRequests. If not, uncomment and adjust:
           // await fetchServiceRequests(); // Refresh data
           setSelectedRowModel({ type: 'include', ids: new Set() }); // Clear selection
-          showSnackbar('Selected service requests processed for deletion.', 'success');
-
+          showSnackbar(
+            'Selected service requests processed for deletion.',
+            'success',
+          );
         } catch (err) {
           console.error('Error deleting service requests:', err);
           showSnackbar(

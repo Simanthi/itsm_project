@@ -2,16 +2,32 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Typography, Box, CircularProgress, Alert, Button,
-  Grid, Paper, Divider, Chip, Table, TableBody, TableCell,
-  TableContainer, TableHead, TableRow,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  Grid,
+  Paper,
+  Divider,
+  Chip,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getPurchaseOrderById } from '../../../../api/procurementApi';
 import { useAuth } from '../../../../context/auth/useAuth';
-import type { PurchaseOrder, PurchaseOrderStatus, OrderItem } from '../../types';
+import type {
+  PurchaseOrder,
+  PurchaseOrderStatus,
+  OrderItem,
+} from '../../types';
 import { type ButtonProps } from '@mui/material/Button';
 
 // Helper to format date strings
@@ -31,18 +47,27 @@ const formatCurrency = (amount: string | number | null | undefined): string => {
 
 // Status chip color logic for Purchase Order
 const getPOStatusChipColor = (status?: PurchaseOrderStatus) => {
-    if (!status) return 'default';
-    const mapping: Record<PurchaseOrderStatus, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
-        draft: 'default',
-        pending_approval: 'warning',
-        approved: 'success',
-        partially_received: 'info',
-        fully_received: 'primary',
-        invoiced: 'secondary',
-        paid: 'success', // Consider a different success or primary variant
-        cancelled: 'error',
-    };
-    return mapping[status] || 'default';
+  if (!status) return 'default';
+  const mapping: Record<
+    PurchaseOrderStatus,
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'info'
+    | 'success'
+    | 'warning'
+  > = {
+    draft: 'default',
+    pending_approval: 'warning',
+    approved: 'success',
+    partially_received: 'info',
+    fully_received: 'primary',
+    invoiced: 'secondary',
+    paid: 'success', // Consider a different success or primary variant
+    cancelled: 'error',
+  };
+  return mapping[status] || 'default';
 };
 
 interface LocationState {
@@ -73,10 +98,14 @@ const PurchaseOrderPrintView: React.FC = () => {
     return ids;
   }, [state]);
 
-  const [purchaseOrdersToPrint, setPurchaseOrdersToPrint] = useState<PurchaseOrder[]>([]);
+  const [purchaseOrdersToPrint, setPurchaseOrdersToPrint] = useState<
+    PurchaseOrder[]
+  >([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null);
+  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     const element = document.getElementById('print-root');
@@ -123,15 +152,21 @@ const PurchaseOrderPrintView: React.FC = () => {
 
   useEffect(() => {
     if (poIdsToFetch.length > 0) {
-        fetchPurchaseOrdersForPrint();
+      fetchPurchaseOrdersForPrint();
     } else {
-        setError('No Purchase Order IDs specified.');
-        setLoading(false);
+      setError('No Purchase Order IDs specified.');
+      setLoading(false);
     }
   }, [fetchPurchaseOrdersForPrint, poIdsToFetch]); // Added poIdsToFetch
 
   useEffect(() => {
-    if (!loading && !error && purchaseOrdersToPrint.length > 0 && autoPrint && printRootElement) {
+    if (
+      !loading &&
+      !error &&
+      purchaseOrdersToPrint.length > 0 &&
+      autoPrint &&
+      printRootElement
+    ) {
       printRootElement.style.display = 'block';
       const timer = setTimeout(() => {
         window.print();
@@ -146,7 +181,16 @@ const PurchaseOrderPrintView: React.FC = () => {
         if (printRootElement) printRootElement.style.display = 'none';
       };
     }
-  }, [loading, error, purchaseOrdersToPrint, autoPrint, navigate, printRootElement, location.pathname, state]);
+  }, [
+    loading,
+    error,
+    purchaseOrdersToPrint,
+    autoPrint,
+    navigate,
+    printRootElement,
+    location.pathname,
+    state,
+  ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
     <Button
@@ -162,7 +206,15 @@ const PurchaseOrderPrintView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ mt: 2 }}>Preparing print preview...</Typography>
       </Box>
@@ -181,7 +233,9 @@ const PurchaseOrderPrintView: React.FC = () => {
   if (purchaseOrdersToPrint.length === 0) {
     return (
       <Box sx={{ p: 3 }}>
-        <Alert severity="info">Purchase Order data not available for printing.</Alert>
+        <Alert severity="info">
+          Purchase Order data not available for printing.
+        </Alert>
         {!autoPrint && <BackButton sx={{ mt: 2 }} />}
       </Box>
     );
@@ -192,16 +246,27 @@ const PurchaseOrderPrintView: React.FC = () => {
       {!autoPrint && (
         <Box
           sx={{
-            position: 'fixed', top: 80, left: SIDEBAR_WIDTH,
-            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, display: 'flex',
-            justifyContent: 'space-between', zIndex: theme.zIndex.drawer + 1,
-            padding: '0 20px', boxSizing: 'border-box',
+            position: 'fixed',
+            top: 80,
+            left: SIDEBAR_WIDTH,
+            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            zIndex: theme.zIndex.drawer + 1,
+            padding: '0 20px',
+            boxSizing: 'border-box',
           }}
         >
           <BackButton />
           <Button
-            variant="contained" color="primary"
-            onClick={() => navigate(location.pathname, { replace: true, state: { ...state, autoPrint: true }})}
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              navigate(location.pathname, {
+                replace: true,
+                state: { ...state, autoPrint: true },
+              })
+            }
             startIcon={<PrintIcon />}
           >
             Print
@@ -211,57 +276,130 @@ const PurchaseOrderPrintView: React.FC = () => {
       <Box
         className="print-container"
         sx={{
-          maxWidth: '80%', marginTop: autoPrint ? '0' : '64px', marginBottom: '30px',
-          marginLeft: 'auto', marginRight: 'auto', padding: '30px',
+          maxWidth: '80%',
+          marginTop: autoPrint ? '0' : '64px',
+          marginBottom: '30px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          padding: '30px',
           backgroundColor: theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[1],
-          minHeight: 'calc(1122px - 60px)', boxSizing: 'border-box', // A4 page height approx
-          display: 'flex', flexDirection: 'column', gap: '20px', // Gap between POs if multiple
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[1],
+          minHeight: 'calc(1122px - 60px)',
+          boxSizing: 'border-box', // A4 page height approx
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px', // Gap between POs if multiple
           borderRadius: theme.shape.borderRadius || 4,
         }}
       >
         {purchaseOrdersToPrint.map((po) => (
-          <Paper key={po.id} sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }} elevation={0} id={`po-print-${po.id}`}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Paper
+            key={po.id}
+            sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }}
+            elevation={0}
+            id={`po-print-${po.id}`}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+              }}
+            >
               <Typography variant="h5" component="h1">
                 Purchase Order: {po.po_number}
               </Typography>
-              <Chip label={po.status.replace(/_/g, ' ')} color={getPOStatusChipColor(po.status)} size="small" />
+              <Chip
+                label={po.status.replace(/_/g, ' ')}
+                color={getPOStatusChipColor(po.status)}
+                size="small"
+              />
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid item xs={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>PO Information</Typography>
-                <Typography><strong>Order Date:</strong> {formatDateString(po.order_date)}</Typography>
-                <Typography><strong>Expected Delivery:</strong> {formatDateString(po.expected_delivery_date)}</Typography>
-                {po.internal_office_memo && <Typography><strong>Linked IOM ID:</strong> {po.internal_office_memo}</Typography>}
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  PO Information
+                </Typography>
+                <Typography>
+                  <strong>Order Date:</strong> {formatDateString(po.order_date)}
+                </Typography>
+                <Typography>
+                  <strong>Expected Delivery:</strong>{' '}
+                  {formatDateString(po.expected_delivery_date)}
+                </Typography>
+                {po.internal_office_memo && (
+                  <Typography>
+                    <strong>Linked IOM ID:</strong> {po.internal_office_memo}
+                  </Typography>
+                )}
               </Grid>
               <Grid item xs={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Vendor & Creator</Typography>
-                <Typography><strong>Vendor:</strong> {po.vendor_details?.name || 'N/A'}</Typography>
-                <Typography><strong>Created By:</strong> {po.created_by_username || 'N/A'}</Typography>
-                <Typography><strong>Created At:</strong> {formatDateString(po.created_at)}</Typography>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Vendor & Creator
+                </Typography>
+                <Typography>
+                  <strong>Vendor:</strong> {po.vendor_details?.name || 'N/A'}
+                </Typography>
+                <Typography>
+                  <strong>Created By:</strong> {po.created_by_username || 'N/A'}
+                </Typography>
+                <Typography>
+                  <strong>Created At:</strong> {formatDateString(po.created_at)}
+                </Typography>
               </Grid>
 
               {po.shipping_address && (
-                <Grid item xs={12} sx={{mt:1}}>
-                  <Divider sx={{ mb:1 }}/>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Shipping Address</Typography>
-                  <Typography sx={{ whiteSpace: 'pre-line' }}>{po.shipping_address}</Typography>
+                <Grid item xs={12} sx={{ mt: 1 }}>
+                  <Divider sx={{ mb: 1 }} />
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Shipping Address
+                  </Typography>
+                  <Typography sx={{ whiteSpace: 'pre-line' }}>
+                    {po.shipping_address}
+                  </Typography>
                 </Grid>
               )}
 
-              <Grid item xs={12} sx={{mt:1}}>
-                <Divider sx={{ mb:1 }}/>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Order Items</Typography>
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Divider sx={{ mb: 1 }} />
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Order Items
+                </Typography>
                 <TableContainer component={Paper} variant="outlined">
                   <Table size="small">
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{fontWeight: 'bold'}}>Item Description</TableCell>
-                        <TableCell align="right" sx={{fontWeight: 'bold'}}>Quantity</TableCell>
-                        <TableCell align="right" sx={{fontWeight: 'bold'}}>Unit Price</TableCell>
-                        <TableCell align="right" sx={{fontWeight: 'bold'}}>Total Price</TableCell>
+                        <TableCell sx={{ fontWeight: 'bold' }}>
+                          Item Description
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          Quantity
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          Unit Price
+                        </TableCell>
+                        <TableCell align="right" sx={{ fontWeight: 'bold' }}>
+                          Total Price
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -269,8 +407,12 @@ const PurchaseOrderPrintView: React.FC = () => {
                         <TableRow key={item.id}>
                           <TableCell>{item.item_description}</TableCell>
                           <TableCell align="right">{item.quantity}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.unit_price)}</TableCell>
-                          <TableCell align="right">{formatCurrency(item.total_price)}</TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.unit_price)}
+                          </TableCell>
+                          <TableCell align="right">
+                            {formatCurrency(item.total_price)}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -278,16 +420,27 @@ const PurchaseOrderPrintView: React.FC = () => {
                 </TableContainer>
               </Grid>
 
-              <Grid item xs={12} sx={{ textAlign: 'right', mt:1 }}>
-                 <Divider sx={{ mb:1 }}/>
-                <Typography variant="h6"><strong>Overall Total:</strong> {formatCurrency(po.total_amount)}</Typography>
+              <Grid item xs={12} sx={{ textAlign: 'right', mt: 1 }}>
+                <Divider sx={{ mb: 1 }} />
+                <Typography variant="h6">
+                  <strong>Overall Total:</strong>{' '}
+                  {formatCurrency(po.total_amount)}
+                </Typography>
               </Grid>
 
               {po.notes && (
-                <Grid item xs={12} sx={{mt:1}}>
-                  <Divider sx={{ mb:1 }}/>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Notes / Terms</Typography>
-                  <Typography sx={{ whiteSpace: 'pre-line' }}>{po.notes}</Typography>
+                <Grid item xs={12} sx={{ mt: 1 }}>
+                  <Divider sx={{ mb: 1 }} />
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Notes / Terms
+                  </Typography>
+                  <Typography sx={{ whiteSpace: 'pre-line' }}>
+                    {po.notes}
+                  </Typography>
                 </Grid>
               )}
             </Grid>

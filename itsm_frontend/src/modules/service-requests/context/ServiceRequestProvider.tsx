@@ -38,10 +38,13 @@ export const ServiceRequestProvider = ({
       'ServiceRequestProvider: fetchServiceRequests called with pagination:',
       paginationModel,
     );
-    if (!isAuthenticated || !authenticatedFetch) { // Check for authenticatedFetch
+    if (!isAuthenticated || !authenticatedFetch) {
+      // Check for authenticatedFetch
       setLoading(false);
       setError('Authentication required to fetch service requests.');
-      console.log('ServiceRequestProvider: Skipping fetch due to no auth or missing authenticatedFetch.');
+      console.log(
+        'ServiceRequestProvider: Skipping fetch due to no auth or missing authenticatedFetch.',
+      );
       return;
     }
 
@@ -94,7 +97,8 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: addServiceRequest called with data:',
         newRequestData,
       );
-      if (!authenticatedFetch) { // Check for authenticatedFetch
+      if (!authenticatedFetch) {
+        // Check for authenticatedFetch
         const errorMessage =
           'Authentication context not available. Cannot add request.';
         setError(errorMessage);
@@ -132,7 +136,8 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: updateServiceRequest called with data:',
         updatedRequest,
       );
-      if (!authenticatedFetch) { // Check for authenticatedFetch
+      if (!authenticatedFetch) {
+        // Check for authenticatedFetch
         const errorMessage =
           'Authentication context not available. Cannot update request.';
         setError(errorMessage);
@@ -194,7 +199,8 @@ export const ServiceRequestProvider = ({
         'ServiceRequestProvider: deleteServiceRequest called for ID:',
         requestId,
       );
-      if (!authenticatedFetch) { // Check for authenticatedFetch
+      if (!authenticatedFetch) {
+        // Check for authenticatedFetch
         const errorMessage =
           'Authentication context not available. Cannot delete request.';
         setError(errorMessage);

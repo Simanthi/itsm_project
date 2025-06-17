@@ -28,7 +28,8 @@ import {
   updateCheckRequest,
   getPurchaseOrders,
 } from '../../../../api/procurementApi';
-import type { // TS1484
+import type {
+  // TS1484
   CheckRequest,
   CheckRequestData,
   CheckRequestStatus,
@@ -57,7 +58,13 @@ const CHECK_REQUEST_STATUS_DISPLAY: Record<CheckRequestStatus, string> = {
 };
 
 // Align with CheckRequestData and remove fields not part of general create/update
-const initialFormData: Partial<Omit<CheckRequestData, 'amount'> & { amount: string } & { id?: number; purchase_order_obj?: PurchaseOrder | null }> = { // TS2345 amount type fixed
+const initialFormData: Partial<
+  Omit<CheckRequestData, 'amount'> & { amount: string } & {
+    id?: number;
+    purchase_order_obj?: PurchaseOrder | null;
+  }
+> = {
+  // TS2345 amount type fixed
   purchase_order: undefined, // Changed from purchase_order_id
   invoice_number: '',
   invoice_date: '',
@@ -73,7 +80,14 @@ const initialFormData: Partial<Omit<CheckRequestData, 'amount'> & { amount: stri
 // Helper function for chip color
 const getStatusChipColorForCheckRequest = (
   status: CheckRequestStatus | undefined,
-): 'default' | 'primary' | 'secondary' | 'error' | 'info' | 'success' | 'warning' => {
+):
+  | 'default'
+  | 'primary'
+  | 'secondary'
+  | 'error'
+  | 'info'
+  | 'success'
+  | 'warning' => {
   if (!status) return 'default';
   switch (status) {
     case 'pending_submission':
@@ -92,53 +106,77 @@ const getStatusChipColorForCheckRequest = (
   }
 };
 
-
 const CheckRequestForm: React.FC = () => {
   const { checkRequestId } = useParams<{ checkRequestId?: string }>();
   const navigate = useNavigate();
   const { authenticatedFetch, user: currentUser } = useAuth();
   const { showSnackbar } = useUI();
 
-  const [formData, setFormData] = useState<Partial<CheckRequestData & { id?: number; purchase_order_obj?: PurchaseOrder | null }>>(initialFormData as Partial<CheckRequestData & { id?: number; purchase_order_obj?: PurchaseOrder | null }>);
+  const [formData, setFormData] = useState<
+    Partial<
+      CheckRequestData & {
+        id?: number;
+        purchase_order_obj?: PurchaseOrder | null;
+      }
+    >
+  >(
+    initialFormData as Partial<
+      CheckRequestData & {
+        id?: number;
+        purchase_order_obj?: PurchaseOrder | null;
+      }
+    >,
+  );
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [viewOnly, setViewOnly] = useState<boolean>(false);
-  const [currentCheckRequest, setCurrentCheckRequest] = useState<CheckRequest | null>(null);
+  const [currentCheckRequest, setCurrentCheckRequest] =
+    useState<CheckRequest | null>(null);
 
-  const fetchCheckRequest = useCallback(async (id: number) => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      const data = await getCheckRequestById(authenticatedFetch, id);
-      const selectedPOForEdit = purchaseOrders.find(po => po.id === data.purchase_order);
+  const fetchCheckRequest = useCallback(
+    async (id: number) => {
+      setIsLoading(true);
+      setError(null);
+      try {
+        const data = await getCheckRequestById(authenticatedFetch, id);
+        const selectedPOForEdit = purchaseOrders.find(
+          (po) => po.id === data.purchase_order,
+        );
 
-      setFormData({
-        // Spread only fields that are part of CheckRequestData or the extended form state
-        id: data.id,
-        purchase_order: data.purchase_order || undefined,
-        invoice_number: data.invoice_number || '',
-        invoice_date: data.invoice_date ? formatDateString(data.invoice_date, 'YYYY-MM-DD') : '',
-        amount: data.amount || '0.00', // amount is string in CheckRequest
-        payee_name: data.payee_name || '',
-        payee_address: data.payee_address || '',
-        reason_for_payment: data.reason_for_payment || '',
-        purchase_order_obj: selectedPOForEdit || null,
-        // Do not set payment_date here from data.payment_date into general formData,
-        // as it's not part of CheckRequestData. Display payment details directly from currentCheckRequest.
-      });
-      setCurrentCheckRequest(data);
-      setIsEditMode(true);
-    } catch (err: unknown) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch check request details.';
-      setError(errorMessage);
-      showSnackbar(errorMessage, 'error');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [authenticatedFetch, showSnackbar, purchaseOrders]);
+        setFormData({
+          // Spread only fields that are part of CheckRequestData or the extended form state
+          id: data.id,
+          purchase_order: data.purchase_order || undefined,
+          invoice_number: data.invoice_number || '',
+          invoice_date: data.invoice_date
+            ? formatDateString(data.invoice_date, 'YYYY-MM-DD')
+            : '',
+          amount: data.amount || '0.00', // amount is string in CheckRequest
+          payee_name: data.payee_name || '',
+          payee_address: data.payee_address || '',
+          reason_for_payment: data.reason_for_payment || '',
+          purchase_order_obj: selectedPOForEdit || null,
+          // Do not set payment_date here from data.payment_date into general formData,
+          // as it's not part of CheckRequestData. Display payment details directly from currentCheckRequest.
+        });
+        setCurrentCheckRequest(data);
+        setIsEditMode(true);
+      } catch (err: unknown) {
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'Failed to fetch check request details.';
+        setError(errorMessage);
+        showSnackbar(errorMessage, 'error');
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [authenticatedFetch, showSnackbar, purchaseOrders],
+  );
 
   useEffect(() => {
     if (checkRequestId) {
@@ -156,9 +194,12 @@ const CheckRequestForm: React.FC = () => {
         });
         setPurchaseOrders(poData.results || []);
       } catch (err: unknown) {
-        const errorMessage = err instanceof Error ? err.message : 'Failed to fetch purchase orders.';
+        const errorMessage =
+          err instanceof Error
+            ? err.message
+            : 'Failed to fetch purchase orders.';
         showSnackbar(errorMessage, 'error');
-        console.error("Failed to fetch POs:", err);
+        console.error('Failed to fetch POs:', err);
       }
     };
     fetchPOs();
@@ -179,17 +220,21 @@ const CheckRequestForm: React.FC = () => {
     }
   }, [currentCheckRequest, currentUser, isEditMode]);
 
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = event.target; // Removed 'type' as it's unused (TS6133)
     // Amount field is type="number" but its value is received as string here or empty string.
     // CheckRequestData expects amount as string.
     // So, directly set the string value.
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const handleDateChange = (fieldName: keyof Pick<CheckRequestData, 'invoice_date'>, dateStr: string | null) => {
-    setFormData(prev => ({ ...prev, [fieldName]: dateStr }));
+  const handleDateChange = (
+    fieldName: keyof Pick<CheckRequestData, 'invoice_date'>,
+    dateStr: string | null,
+  ) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: dateStr }));
   };
 
   // State for payment details UI, separate from main formData for CheckRequestData - REMOVED as unused (TS6133)
@@ -205,21 +250,28 @@ const CheckRequestForm: React.FC = () => {
   //   payment_notes: '',
   // });
 
-  const handlePOSelect = (_event: React.SyntheticEvent, value: PurchaseOrder | null) => {
-    setFormData(prev => ({
+  const handlePOSelect = (
+    _event: React.SyntheticEvent,
+    value: PurchaseOrder | null,
+  ) => {
+    setFormData((prev) => ({
       ...prev,
       purchase_order: value?.id, // Changed from purchase_order_id
       purchase_order_obj: value,
       payee_name: value?.vendor_details?.name || prev.payee_name,
       // amount should be string
-      amount: ((): string | undefined => { // Ensure IIFE returns string | undefined
-        const prevAmountStr = String(prev.amount || "").trim();
-        const isPrevAmountZeroOrEmpty = prevAmountStr === "0.00" || prevAmountStr === "0" || prevAmountStr === "";
+      amount: ((): string | undefined => {
+        // Ensure IIFE returns string | undefined
+        const prevAmountStr = String(prev.amount || '').trim();
+        const isPrevAmountZeroOrEmpty =
+          prevAmountStr === '0.00' ||
+          prevAmountStr === '0' ||
+          prevAmountStr === '';
         if (isPrevAmountZeroOrEmpty && value?.total_amount !== undefined) {
           return String(value.total_amount); // This is string
         }
         // prev.amount is already string | undefined from formData's type
-        return prev.amount as (string | undefined);
+        return prev.amount as string | undefined;
       })(),
     }));
   };
@@ -240,53 +292,53 @@ const CheckRequestForm: React.FC = () => {
   //   setPaymentUIDetails(prev => ({ ...prev, payment_date: dateStr }));
   // };
 
-
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
     setIsSubmitting(true);
     setError(null);
 
-    if (!formData.purchase_order) { // Changed from purchase_order_id
-        showSnackbar('Purchase Order is required.', 'error');
-        setIsSubmitting(false);
-        return;
+    if (!formData.purchase_order) {
+      // Changed from purchase_order_id
+      showSnackbar('Purchase Order is required.', 'error');
+      setIsSubmitting(false);
+      return;
     }
     // Amount validation
     if (typeof formData.amount !== 'string' || !formData.amount.trim()) {
-        setError('Amount is required and must be a valid number.'); // Use setError
-        showSnackbar('Amount is required and must be a valid number.', 'error');
-        setIsSubmitting(false);
-        return;
+      setError('Amount is required and must be a valid number.'); // Use setError
+      showSnackbar('Amount is required and must be a valid number.', 'error');
+      setIsSubmitting(false);
+      return;
     }
 
     const parsedAmount = parseFloat(formData.amount.trim());
 
     if (isNaN(parsedAmount)) {
-        setError('Amount must be a valid number.'); // Use setError
-        showSnackbar('Amount must be a valid number.', 'error');
-        setIsSubmitting(false);
-        return;
+      setError('Amount must be a valid number.'); // Use setError
+      showSnackbar('Amount must be a valid number.', 'error');
+      setIsSubmitting(false);
+      return;
     }
 
     // At this point, parsedAmount is a valid number (not NaN)
     // Suppression comment no longer needed as TS2367 is resolved here.
     if (parsedAmount <= 0) {
-        setError('Amount must be greater than zero.'); // Use setError
-        showSnackbar('Amount must be greater than zero.', 'error');
-        setIsSubmitting(false);
-        return;
+      setError('Amount must be greater than zero.'); // Use setError
+      showSnackbar('Amount must be greater than zero.', 'error');
+      setIsSubmitting(false);
+      return;
     }
     // End amount validation
 
     if (!formData.invoice_date) {
-        showSnackbar('Invoice Date is required.', 'error');
-        setIsSubmitting(false);
-        return;
+      showSnackbar('Invoice Date is required.', 'error');
+      setIsSubmitting(false);
+      return;
     }
-     if (!formData.payee_name) {
-        showSnackbar('Payee Name is required.', 'error');
-        setIsSubmitting(false);
-        return;
+    if (!formData.payee_name) {
+      showSnackbar('Payee Name is required.', 'error');
+      setIsSubmitting(false);
+      return;
     }
 
     // Construct payload based on CheckRequestData for create
@@ -309,7 +361,11 @@ const CheckRequestForm: React.FC = () => {
         // Example: amount, payee_name, reason_for_payment etc.
         // Do not send 'status' or payment details as part of a general update.
         const updatePayload: Partial<CheckRequestData> = { ...commonPayload };
-        await updateCheckRequest(authenticatedFetch, formData.id, updatePayload);
+        await updateCheckRequest(
+          authenticatedFetch,
+          formData.id,
+          updatePayload,
+        );
         showSnackbar('Check Request updated successfully!', 'success');
       } else {
         const createPayload: CheckRequestData = { ...commonPayload };
@@ -339,23 +395,34 @@ const CheckRequestForm: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Box display="flex" justifyContent="center" alignItems="center" minHeight="400px">
+      <Box
+        display="flex"
+        justifyContent="center"
+        alignItems="center"
+        minHeight="400px"
+      >
         <CircularProgress />
       </Box>
     );
   }
 
-  if (error && !isEditMode) { // If error and it's not an edit mode (i.e. creation failed to load something or initial error)
+  if (error && !isEditMode) {
+    // If error and it's not an edit mode (i.e. creation failed to load something or initial error)
     return <Alert severity="error">{error}</Alert>;
   }
 
-  const selectedPO = purchaseOrders.find(po => po.id === formData.purchase_order) || formData.purchase_order_obj;
-
+  const selectedPO =
+    purchaseOrders.find((po) => po.id === formData.purchase_order) ||
+    formData.purchase_order_obj;
 
   return (
     <Paper elevation={3} sx={{ p: 3, mt: 2 }}>
       <Box display="flex" alignItems="center" mb={3}>
-        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mr: 2 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mr: 2 }}
+        >
           Back
         </Button>
         <Typography variant="h5" component="h1">
@@ -367,15 +434,23 @@ const CheckRequestForm: React.FC = () => {
         </Typography>
         {currentCheckRequest?.status && (
           <Chip
-            label={CHECK_REQUEST_STATUS_DISPLAY[currentCheckRequest.status] || currentCheckRequest.status}
-            color={getStatusChipColorForCheckRequest(currentCheckRequest.status)}
+            label={
+              CHECK_REQUEST_STATUS_DISPLAY[currentCheckRequest.status] ||
+              currentCheckRequest.status
+            }
+            color={getStatusChipColorForCheckRequest(
+              currentCheckRequest.status,
+            )}
             sx={{ ml: 'auto' }}
           />
         )}
       </Box>
 
-      {error && isEditMode && <Alert severity="warning" sx={{ mb:2 }}>{error} (Displaying last known data)</Alert>}
-
+      {error && isEditMode && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          {error} (Displaying last known data)
+        </Alert>
+      )}
 
       <form onSubmit={handleSubmit}>
         <Grid container spacing={3}>
@@ -383,12 +458,20 @@ const CheckRequestForm: React.FC = () => {
           <Grid item xs={12} md={6}>
             <Autocomplete
               options={purchaseOrders}
-              getOptionLabel={(option) => `PO #${option.id} - ${option.vendor_details?.name || 'N/A'} (${formatCurrency(option.total_amount)})`}
+              getOptionLabel={(option) =>
+                `PO #${option.id} - ${option.vendor_details?.name || 'N/A'} (${formatCurrency(option.total_amount)})`
+              }
               value={selectedPO || null}
               onChange={handlePOSelect}
               isOptionEqualToValue={(option, value) => option.id === value.id}
               renderInput={(params) => (
-                <TextField {...params} label="Select Purchase Order" variant="outlined" required disabled={viewOnly || isEditMode} />
+                <TextField
+                  {...params}
+                  label="Select Purchase Order"
+                  variant="outlined"
+                  required
+                  disabled={viewOnly || isEditMode}
+                />
               )}
               disabled={viewOnly || isEditMode} // PO cannot be changed after creation
             />
@@ -430,7 +513,9 @@ const CheckRequestForm: React.FC = () => {
               required
               InputProps={{
                 inputProps: { min: 0.01, step: 0.01 },
-                startAdornment: <InputAdornment position="start">$</InputAdornment>,
+                startAdornment: (
+                  <InputAdornment position="start">$</InputAdornment>
+                ),
               }}
               disabled={viewOnly}
             />
@@ -476,96 +561,152 @@ const CheckRequestForm: React.FC = () => {
 
           {isEditMode && currentCheckRequest && (
             <>
-              <Grid item xs={12}><Divider sx={{ my: 2 }} /></Grid>
-              <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" gutterBottom>Requested By</Typography>
-                <Typography>{currentCheckRequest.requested_by_username || 'N/A'}</Typography>
+              <Grid item xs={12}>
+                <Divider sx={{ my: 2 }} />
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle2" gutterBottom>Request Date</Typography>
-                <Typography>{formatDateString(currentCheckRequest.request_date)}</Typography>
+                <Typography variant="subtitle2" gutterBottom>
+                  Requested By
+                </Typography>
+                <Typography>
+                  {currentCheckRequest.requested_by_username || 'N/A'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} md={6}>
+                <Typography variant="subtitle2" gutterBottom>
+                  Request Date
+                </Typography>
+                <Typography>
+                  {formatDateString(currentCheckRequest.request_date)}
+                </Typography>
               </Grid>
 
               {currentCheckRequest.approved_by_accounts_username && (
                 <>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" gutterBottom>Approved By Accounts</Typography>
-                    <Typography>{currentCheckRequest.approved_by_accounts_username}</Typography>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Approved By Accounts
+                    </Typography>
+                    <Typography>
+                      {currentCheckRequest.approved_by_accounts_username}
+                    </Typography>
                   </Grid>
                   <Grid item xs={12} md={6}>
-                    <Typography variant="subtitle2" gutterBottom>Approval Date</Typography>
-                    <Typography>{formatDateString(currentCheckRequest.accounts_approval_date)}</Typography>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Approval Date
+                    </Typography>
+                    <Typography>
+                      {formatDateString(
+                        currentCheckRequest.accounts_approval_date,
+                      )}
+                    </Typography>
                   </Grid>
                 </>
               )}
-               {currentCheckRequest.accounts_comments && currentCheckRequest.status === 'rejected' && (
-                 <Grid item xs={12}>
-                    <Typography variant="subtitle2" gutterBottom>Rejection Reason</Typography>
-                    <Typography color="error">{currentCheckRequest.accounts_comments}</Typography>
+              {currentCheckRequest.accounts_comments &&
+                currentCheckRequest.status === 'rejected' && (
+                  <Grid item xs={12}>
+                    <Typography variant="subtitle2" gutterBottom>
+                      Rejection Reason
+                    </Typography>
+                    <Typography color="error">
+                      {currentCheckRequest.accounts_comments}
+                    </Typography>
                   </Grid>
-               )}
+                )}
             </>
           )}
 
           {/* Payment Information Section - Primarily for display from currentCheckRequest */}
           {/* Editing these fields should be part of a specific "Confirm Payment" action/dialog if needed */}
-          {isEditMode && currentCheckRequest &&
-            (currentCheckRequest.payment_method || currentCheckRequest.payment_date || currentCheckRequest.transaction_id) && (
-            <>
-              <Grid item xs={12}><Divider sx={{ my: 2 }}>Payment Information</Divider></Grid>
-              <Grid item xs={12} md={6}>
-                 <TextField
-                  label="Payment Method"
-                  value={currentCheckRequest.payment_method || 'N/A'}
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ readOnly: true, style: { backgroundColor: '#f0f0f0' } }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Payment Date"
-                  type="date"
-                  value={currentCheckRequest.payment_date ? formatDateString(currentCheckRequest.payment_date, 'YYYY-MM-DD') : 'N/A'}
-                  fullWidth
-                  variant="outlined"
-                  InputLabelProps={{ shrink: true }}
-                  InputProps={{ readOnly: true, style: { backgroundColor: '#f0f0f0' } }}
-                />
-              </Grid>
-              <Grid item xs={12} md={6}>
-                <TextField
-                  label="Transaction ID / Check No."
-                  value={currentCheckRequest.transaction_id || 'N/A'}
-                  fullWidth
-                  variant="outlined"
-                  InputProps={{ readOnly: true, style: { backgroundColor: '#f0f0f0' } }}
-                />
-              </Grid>
-              <Grid item xs={12}>
-                <TextField
-                  label="Payment Notes"
-                  value={currentCheckRequest.payment_notes || 'N/A'}
-                  fullWidth
-                  multiline
-                  rows={3}
-                  variant="outlined"
-                  InputProps={{ readOnly: true, style: { backgroundColor: '#f0f0f0' } }}
-                />
-              </Grid>
-              {/* paid_by_user is not in CheckRequest type from API, so cannot display */}
-            </>
-          )}
-
+          {isEditMode &&
+            currentCheckRequest &&
+            (currentCheckRequest.payment_method ||
+              currentCheckRequest.payment_date ||
+              currentCheckRequest.transaction_id) && (
+              <>
+                <Grid item xs={12}>
+                  <Divider sx={{ my: 2 }}>Payment Information</Divider>
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Payment Method"
+                    value={currentCheckRequest.payment_method || 'N/A'}
+                    fullWidth
+                    variant="outlined"
+                    InputProps={{
+                      readOnly: true,
+                      style: { backgroundColor: '#f0f0f0' },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Payment Date"
+                    type="date"
+                    value={
+                      currentCheckRequest.payment_date
+                        ? formatDateString(
+                            currentCheckRequest.payment_date,
+                            'YYYY-MM-DD',
+                          )
+                        : 'N/A'
+                    }
+                    fullWidth
+                    variant="outlined"
+                    InputLabelProps={{ shrink: true }}
+                    InputProps={{
+                      readOnly: true,
+                      style: { backgroundColor: '#f0f0f0' },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12} md={6}>
+                  <TextField
+                    label="Transaction ID / Check No."
+                    value={currentCheckRequest.transaction_id || 'N/A'}
+                    fullWidth
+                    variant="outlined"
+                    InputProps={{
+                      readOnly: true,
+                      style: { backgroundColor: '#f0f0f0' },
+                    }}
+                  />
+                </Grid>
+                <Grid item xs={12}>
+                  <TextField
+                    label="Payment Notes"
+                    value={currentCheckRequest.payment_notes || 'N/A'}
+                    fullWidth
+                    multiline
+                    rows={3}
+                    variant="outlined"
+                    InputProps={{
+                      readOnly: true,
+                      style: { backgroundColor: '#f0f0f0' },
+                    }}
+                  />
+                </Grid>
+                {/* paid_by_user is not in CheckRequest type from API, so cannot display */}
+              </>
+            )}
 
           {!viewOnly && (
-            <Grid item xs={12} sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}>
+            <Grid
+              item
+              xs={12}
+              sx={{ mt: 3, display: 'flex', justifyContent: 'flex-end' }}
+            >
               <Button
                 type="submit"
                 variant="contained"
                 color="primary"
                 disabled={isSubmitting || isLoading}
-                startIcon={isSubmitting ? <CircularProgress size={20} color="inherit" /> : null}
+                startIcon={
+                  isSubmitting ? (
+                    <CircularProgress size={20} color="inherit" />
+                  ) : null
+                }
               >
                 {isEditMode ? 'Save Changes' : 'Create Request'}
               </Button>

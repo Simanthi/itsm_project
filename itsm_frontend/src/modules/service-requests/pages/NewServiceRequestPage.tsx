@@ -55,11 +55,15 @@ function NewServiceRequestPage() {
   // Effect to fetch initial data for editing
   useEffect(() => {
     const fetchInitialData = async () => {
-      if (id) { // authenticatedFetch check is handled by the useEffect wrapper
+      if (id) {
+        // authenticatedFetch check is handled by the useEffect wrapper
         setLoading(true);
         setError(null);
         try {
-          const requestData = await getServiceRequestById(authenticatedFetch, id); // Pass authenticatedFetch
+          const requestData = await getServiceRequestById(
+            authenticatedFetch,
+            id,
+          ); // Pass authenticatedFetch
           setInitialFormData(requestData);
         } catch (err) {
           console.error('Error fetching service request data for edit:', err);
@@ -78,7 +82,6 @@ function NewServiceRequestPage() {
     // The authenticatedFetch dependency in useEffect ensures this runs if auth state changes.
     // The fetchInitialData or getServiceRequestById should handle cases where auth is not truly valid.
     fetchInitialData();
-
   }, [id, authenticatedFetch, parseError]);
 
   const pageTitle = id

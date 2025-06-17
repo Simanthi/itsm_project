@@ -133,7 +133,8 @@ function HomePage() {
   const navigate = useNavigate();
   // Destructure `user` property from `useAuth`
   const { logout, user, isAuthenticated, loading: authLoading } = useAuth(); // Renamed loading to authLoading
-  const { currentThemeName, setCurrentTheme, availableThemes } = useThemeContext();
+  const { currentThemeName, setCurrentTheme, availableThemes } =
+    useThemeContext();
   const theme = useTheme();
   const [open, setOpen] = useState(true);
 
@@ -243,7 +244,9 @@ function HomePage() {
           >
             <Select
               value={currentThemeName}
-              onChange={(event) => setCurrentTheme(event.target.value as string)}
+              onChange={(event) =>
+                setCurrentTheme(event.target.value as string)
+              }
               IconComponent={PaletteOutlinedIcon} // Show palette icon instead of default arrow
               sx={{
                 color: 'inherit',
@@ -263,13 +266,19 @@ function HomePage() {
                   paddingRight: '28px', // Ensure space for the icon
                   display: 'flex',
                   alignItems: 'center',
-                }
+                },
               }}
               renderValue={(selectedValue) => (
-                <Box component="span" sx={{ display: 'flex', alignItems: 'center', mr: 1 }}> {/* Added mr: 1 and component span */}
+                <Box
+                  component="span"
+                  sx={{ display: 'flex', alignItems: 'center', mr: 1 }}
+                >
+                  {' '}
+                  {/* Added mr: 1 and component span */}
                   {/* Optional: Show a small icon next to the text if desired */}
                   {/* <PaletteOutlinedIcon sx={{ fontSize: '1.2rem', mr: 0.5 }} /> */}
-                  {(selectedValue as string).charAt(0).toUpperCase() + (selectedValue as string).slice(1)}
+                  {(selectedValue as string).charAt(0).toUpperCase() +
+                    (selectedValue as string).slice(1)}
                 </Box>
               )}
             >
