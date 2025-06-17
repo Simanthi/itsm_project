@@ -11,7 +11,7 @@ import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getAssetById } from '../../../api/assetApi'; // Updated API call
 import { useAuth } from '../../../context/auth/useAuth';
 // Updated type imports for Asset and related entities
-import type { Asset, AssetCategory, Location as AssetLocation, Vendor, User as ApiUser } from '../types';
+import type { Asset } from '../types';
 import { type ButtonProps } from '@mui/material/Button';
 
 // Helper to format date strings (can be shared or defined locally)
@@ -21,13 +21,6 @@ const formatDateString = (isoString: string | null | undefined): string => {
     return new Date(isoString + 'T00:00:00').toLocaleDateString();
   }
   return new Date(isoString).toLocaleString();
-};
-
-// Helper to format currency (can be shared or defined locally)
-// Not directly used for Asset, but kept for consistency if needed later
-const formatCurrency = (amount: string | number | null | undefined): string => {
-  if (amount == null || amount === '') return '-';
-  return `$${Number(amount).toFixed(2)}`;
 };
 
 // Status chip color logic for Asset

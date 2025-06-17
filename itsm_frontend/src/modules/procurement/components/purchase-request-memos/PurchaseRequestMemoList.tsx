@@ -383,7 +383,7 @@ const PurchaseRequestMemoList: React.FC = () => {
                   )}
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
         <TablePagination
