@@ -49,7 +49,7 @@ const initialFormData: AssetData = {
   name: '',
   asset_tag: '',
   serial_number: null,
-  status: ASSET_STATUS_CHOICES[0].value, // Default to first status
+  status: ASSET_STATUS_CHOICES[0].value,
   category_id: null,
   location_id: null,
   vendor_id: null,
@@ -57,6 +57,13 @@ const initialFormData: AssetData = {
   purchase_date: null,
   warranty_end_date: null,
   description: null,
+};
+
+type RawAssetData = Omit<AssetData, 'category_id' | 'location_id' | 'vendor_id' | 'assigned_to_id'> & {
+  category?: { id: number; name: string } | null;
+  location?: { id: number; name: string } | null;
+  vendor?: { id: number; name: string } | null;
+  assigned_to?: { id: number; username: string; first_name?: string; last_name?: string } | null;
 };
 
 const AssetForm: React.FC = () => {
@@ -75,6 +82,9 @@ const AssetForm: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isEditMode, setIsEditMode] = useState<boolean>(false);
+
+  // Add this state to track when asset data is loaded
+  const [assetDataRaw, setAssetDataRaw] = useState<RawAssetData | null>(null);
 
   // Fetch data for dropdowns
   const fetchSupportingData = useCallback(async () => {
@@ -108,19 +118,7 @@ const AssetForm: React.FC = () => {
     setError(null);
     try {
       const asset = await getAssetById(authenticatedFetch, parseInt(assetId, 10));
-      setFormData({
-        name: asset.name,
-        asset_tag: asset.asset_tag,
-        serial_number: asset.serial_number || null,
-        status: asset.status,
-        category_id: asset.category?.id || null,
-        location_id: asset.location?.id || null,
-        vendor_id: asset.vendor?.id || null,
-        assigned_to_id: asset.assigned_to?.id || null,
-        purchase_date: asset.purchase_date ? asset.purchase_date.split('T')[0] : null, // Format for <input type="date">
-        warranty_end_date: asset.warranty_end_date ? asset.warranty_end_date.split('T')[0] : null,
-        description: asset.description || null,
-      });
+      setAssetDataRaw(asset); // <-- store raw asset data
       setIsEditMode(true);
     } catch (err: unknown) { // Changed to unknown
       console.error("Failed to fetch asset for editing:", err);
@@ -131,6 +129,37 @@ const AssetForm: React.FC = () => {
       setIsLoading(false);
     }
   }, [assetId, authenticatedFetch, navigate]);
+
+  // Add this effect to set formData only after both assetDataRaw and dropdowns are loaded
+  useEffect(() => {
+    if (
+      assetDataRaw &&
+      assetCategories.length &&
+      locations.length &&
+      vendors.length &&
+      users.length
+    ) {
+      console.log('Setting formData:', {
+        category_id: assetDataRaw.category?.id,
+        location_id: assetDataRaw.location?.id,
+        vendor_id: assetDataRaw.vendor?.id,
+        assigned_to_id: assetDataRaw.assigned_to?.id,
+      });
+      setFormData({
+        name: assetDataRaw.name,
+        asset_tag: assetDataRaw.asset_tag,
+        serial_number: assetDataRaw.serial_number || null,
+        status: assetDataRaw.status,
+        category_id: assetDataRaw.category?.id || null,
+        location_id: assetDataRaw.location?.id || null,
+        vendor_id: assetDataRaw.vendor?.id || null,
+        assigned_to_id: assetDataRaw.assigned_to?.id || null,
+        purchase_date: assetDataRaw.purchase_date ? assetDataRaw.purchase_date.split('T')[0] : null,
+        warranty_end_date: assetDataRaw.warranty_end_date ? assetDataRaw.warranty_end_date.split('T')[0] : null,
+        description: assetDataRaw.description || null,
+      });
+    }
+  }, [assetDataRaw, assetCategories, locations, vendors, users]);
 
   useEffect(() => {
     fetchSupportingData();
@@ -156,12 +185,18 @@ const AssetForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [name]: value || null })); // Handle empty string as null for optional fields
   };
 
-  const handleSelectChange = (event: SelectChangeEvent<string | number | null>) => {
+  const handleSelectChange = (event: SelectChangeEvent<string | number>) => {
     const { name, value } = event.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value === '' ? null : value, // Store null if "None" or empty is selected
-    }));
+    setFormData((prev) => {
+      if (name === 'status') {
+        return { ...prev, status: value as string };
+      }
+      // For ID fields, allow null or number
+      return {
+        ...prev,
+        [name]: value === '' ? null : Number(value),
+      };
+    });
   };
 
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -191,7 +226,7 @@ const AssetForm: React.FC = () => {
     const payload: AssetData = {
       ...formData,
       // Ensure numeric IDs are numbers, and nulls are passed for empty selections
-      category_id: formData.category_id ? Number(formData.category_id) : null,
+      category_id: formData.category_id,
       location_id: formData.location_id ? Number(formData.location_id) : null,
       vendor_id: formData.vendor_id ? Number(formData.vendor_id) : null,
       assigned_to_id: formData.assigned_to_id ? Number(formData.assigned_to_id) : null,
@@ -317,7 +352,7 @@ const AssetForm: React.FC = () => {
               <InputLabel>Category</InputLabel>
               <Select
                 name="category_id"
-                value={formData.category_id || ''}
+                value={formData.category_id ?? ''}
                 label="Category"
                 onChange={handleSelectChange}
               >

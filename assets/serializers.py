@@ -17,28 +17,29 @@ class VendorSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AssetSerializer(serializers.ModelSerializer):
-    # assigned_to is already handled well for writes.
-    # depth = 1 will handle its read representation.
-    # For category, location, vendor, PrimaryKeyRelatedField could be used for explicit write control,
-    # but DRF default behavior with depth=1 for reads and PKs for writes on related fields is often sufficient.
+    category_id = serializers.PrimaryKeyRelatedField(
+        queryset=AssetCategory.objects.all(), source='category', write_only=True, required=False, allow_null=True
+    )
+    location_id = serializers.PrimaryKeyRelatedField(
+        queryset=Location.objects.all(), source='location', write_only=True, required=False, allow_null=True
+    )
+    vendor_id = serializers.PrimaryKeyRelatedField(
+        queryset=Vendor.objects.all(), source='vendor', write_only=True, required=False, allow_null=True
+    )
+    assigned_to_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='assigned_to', write_only=True, required=False, allow_null=True
+    )
 
     class Meta:
         model = Asset
         fields = [
-            'id',
-            'name',
-            'asset_tag',
-            'serial_number',
-            'category', # Will be PK for write, nested for read due to depth=1
-            'status',
-            'assigned_to', # Will be PK for write, nested for read due to depth=1
-            'location', # Will be PK for write, nested for read due to depth=1
-            'vendor', # Will be PK for write, nested for read due to depth=1
-            'purchase_date',
-            'warranty_end_date',
-            'description',
-            'created_at',
-            'updated_at',
+            'id', 'name', 'asset_tag', 'serial_number',
+            'category', 'category_id',
+            'status', 'assigned_to', 'assigned_to_id',
+            'location', 'location_id',
+            'vendor', 'vendor_id',
+            'purchase_date', 'warranty_end_date', 'description',
+            'created_at', 'updated_at'
         ]
         read_only_fields = ('created_at', 'updated_at')
         depth = 1

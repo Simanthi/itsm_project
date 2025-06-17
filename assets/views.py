@@ -1,5 +1,6 @@
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
+from django_filters.rest_framework import DjangoFilterBackend
 from .models import Asset, AssetCategory, Location, Vendor
 from .serializers import AssetSerializer, AssetCategorySerializer, LocationSerializer, VendorSerializer
 from service_requests.views import StandardResultsSetPagination # Import existing pagination
@@ -13,7 +14,8 @@ class AssetViewSet(viewsets.ModelViewSet):
     serializer_class = AssetSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination # Use existing pagination
-    # lookup_field = 'asset_tag' # Optional: if you want to use asset_tag for detail view lookups instead of pk/id
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['status', 'category', 'location', 'vendor', 'assigned_to']
 
 class AssetCategoryViewSet(viewsets.ModelViewSet):
     """
