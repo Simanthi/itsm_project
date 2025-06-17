@@ -4,9 +4,11 @@ import {
   TableHead, TableRow, TableSortLabel, Paper, IconButton, Chip, Tooltip,
   TablePagination, CircularProgress, Alert, Dialog, DialogActions,
   DialogContent, DialogContentText, DialogTitle, TextField, MenuItem, Select,
-  FormControl, InputLabel // Added FormControl and InputLabel
+  FormControl, InputLabel, // Added FormControl and InputLabel
+  Checkbox, // Import Checkbox
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
+import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
 import SendIcon from '@mui/icons-material/Send'; // Submit for approval
@@ -64,6 +66,7 @@ const CheckRequestList: React.FC = () => {
 
   const [sortConfigKey, setSortConfigKey] = useState<string>('-request_date');
   const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc');
+  const [selectedRequestIds, setSelectedRequestIds] = useState<number[]>([]); // State for selection
 
   const [selectedRequest, setSelectedRequest] = useState<CheckRequest | null>(null);
   const [dialogAction, setDialogAction] = useState<string | null>(null); // 'reject', 'confirm_payment'
@@ -165,7 +168,38 @@ const CheckRequestList: React.FC = () => {
     return mapping[status] || 'default';
   };
 
-  const headCells = [
+  const handleSelectAllClick = (event: React.ChangeEvent<HTMLInputElement>) => {
+    if (event.target.checked) {
+      const newSelectedIds = checkRequests.map((req) => req.id);
+      setSelectedRequestIds(newSelectedIds);
+      return;
+    }
+    setSelectedRequestIds([]);
+  };
+
+  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, id: number) => {
+    if (event.target.checked) {
+      setSelectedRequestIds((prevSelected) => [...prevSelected, id]);
+    } else {
+      setSelectedRequestIds((prevSelected) => prevSelected.filter((reqId) => reqId !== id));
+    }
+  };
+
+  const handlePrintSelected = (autoPrint: boolean) => {
+    if (selectedRequestIds.length === 0) {
+      showSnackbar('Please select check requests to print.', 'warning');
+      return;
+    }
+    // The CheckRequestPrintView expects `checkRequestId` for single,
+    // or `selectedCheckRequestIds` (if adapted for multiple)
+    // For this list view, we'll always pass an array of IDs.
+    navigate('/procurement/check-requests/print-preview', {
+      state: { selectedCheckRequestIds: selectedRequestIds, autoPrint: autoPrint }
+    });
+  };
+
+  const headCells: { id: keyof CheckRequest | string; label: string; sortable: boolean; numeric?: boolean; padding?: 'none' | 'normal' }[] = [
+    { id: 'select', label: '', sortable: false, padding: 'none' },
     { id: 'id', label: 'Req. ID', sortable: true },
     { id: 'purchase_order_number', label: 'PO #', sortable: true },
     { id: 'payee_name', label: 'Payee', sortable: true },
@@ -182,25 +216,71 @@ const CheckRequestList: React.FC = () => {
   return (
     <Box sx={{ p: 3, width: '100%' }}>
       <Typography variant="h6" component="h2" gutterBottom>Check Requests</Typography>
-      <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/procurement/check-requests/new')} sx={{ mb: 2 }}>
-        Create New Check Request
-      </Button>
+      <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
+        <Button variant="contained" startIcon={<AddIcon />} onClick={() => navigate('/procurement/check-requests/new')}>
+          Create New Check Request
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(false)}
+          disabled={selectedRequestIds.length === 0}
+        >
+          Print Preview Selected ({selectedRequestIds.length})
+        </Button>
+        <Button
+          variant="outlined"
+          startIcon={<PrintIcon />}
+          onClick={() => handlePrintSelected(true)}
+          disabled={selectedRequestIds.length === 0}
+        >
+          Print Selected ({selectedRequestIds.length})
+        </Button>
+      </Box>
       {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
       <TableContainer component={Paper} elevation={2}>
         <Table>
           <TableHead><TableRow>
-            {headCells.map(hc => (
-              <TableCell key={hc.id} align={hc.numeric ? 'right' : 'left'} sortDirection={sortConfigKey === hc.id ? sortConfigDirection : false}>
+            <TableCell padding="checkbox">
+              <Checkbox
+                indeterminate={selectedRequestIds.length > 0 && selectedRequestIds.length < checkRequests.length}
+                checked={checkRequests.length > 0 && selectedRequestIds.length === checkRequests.length}
+                onChange={handleSelectAllClick}
+                inputProps={{ 'aria-label': 'select all check requests' }}
+              />
+            </TableCell>
+            {headCells.slice(1).map(hc => ( // Slice to skip 'select' cell for mapping actual headers
+              <TableCell key={hc.id}
+                         align={hc.numeric ? 'right' : 'left'}
+                         padding={hc.padding === 'none' ? 'none' : 'normal'}
+                         sortDirection={sortConfigKey === hc.id ? sortConfigDirection : false}
+              >
                 {hc.sortable ? <TableSortLabel active={sortConfigKey === hc.id} direction={sortConfigKey === hc.id ? sortConfigDirection : 'asc'} onClick={() => handleSortRequest(hc.id)}>{hc.label}</TableSortLabel> : hc.label}
               </TableCell>
             ))}
           </TableRow></TableHead>
           <TableBody>
-            {isLoading && checkRequests.length === 0 && <TableRow><TableCell colSpan={headCells.length} align="center"><CircularProgress /></TableCell></TableRow>}
-            {!isLoading && checkRequests.length === 0 && <TableRow><TableCell colSpan={headCells.length} align="center">No check requests found.</TableCell></TableRow>}
-            {checkRequests.map(req => (
-              <TableRow key={req.id} hover>
-                <TableCell>{`CR-${req.id}`}</TableCell>
+            {isLoading && checkRequests.length === 0 && <TableRow><TableCell colSpan={headCells.length + 1} align="center"><CircularProgress /></TableCell></TableRow>}
+            {!isLoading && checkRequests.length === 0 && <TableRow><TableCell colSpan={headCells.length +1} align="center">No check requests found.</TableCell></TableRow>}
+            {checkRequests.map(req => {
+              const isSelected = selectedRequestIds.includes(req.id);
+              return (
+              <TableRow
+                key={req.id}
+                hover
+                role="checkbox"
+                aria-checked={isSelected}
+                tabIndex={-1}
+                selected={isSelected}
+              >
+                <TableCell padding="checkbox">
+                  <Checkbox
+                    checked={isSelected}
+                    onChange={(event) => handleRowCheckboxChange(event, req.id)}
+                    inputProps={{ 'aria-labelledby': `cr-checkbox-${req.id}` }}
+                  />
+                </TableCell>
+                <TableCell id={`cr-checkbox-${req.id}`}>{`CR-${req.id}`}</TableCell>
                 <TableCell>{req.purchase_order_number || '-'}</TableCell>
                 <TableCell>{req.payee_name}</TableCell>
                 <TableCell align="right">${Number(req.amount).toFixed(2)}</TableCell>
