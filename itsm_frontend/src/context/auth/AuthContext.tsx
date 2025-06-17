@@ -178,7 +178,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   }, [token]); // 'token' is a dependency because backendLogoutApi uses it.
 
   const authenticatedFetch = useCallback(
-    async <T = unknown>(endpoint: string, options?: RequestInit): Promise<T> => { // Made generic with T = unknown
+    async <T = unknown,>(
+      endpoint: string,
+      options?: RequestInit,
+    ): Promise<T> => {
+      // Made generic with T = unknown
       if (!token) {
         console.error('authenticatedFetch: No token available.');
         // Optionally, call logout() here if missing token should always force logout

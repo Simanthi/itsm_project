@@ -23,7 +23,9 @@ function TabPanel(props: TabPanelProps) {
       {...other}
     >
       {value === index && (
-        <Box sx={{ pt: 3 }}> {/* Add padding to the content of the tab panel */}
+        <Box sx={{ pt: 3 }}>
+          {' '}
+          {/* Add padding to the content of the tab panel */}
           {children}
         </Box>
       )}
@@ -41,16 +43,19 @@ function a11yProps(index: number) {
 const AssetsPage: React.FC = () => {
   const [activeTab, setActiveTab] = useState<number>(0);
 
-  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => { // event changed to _event
+  const handleTabChange = (_event: React.SyntheticEvent, newValue: number) => {
+    // event changed to _event
     setActiveTab(newValue);
   };
 
   return (
-    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 3 } }}> {/* Responsive padding */}
+    <Box sx={{ width: '100%', p: { xs: 1, sm: 2, md: 3 } }}>
+      {' '}
+      {/* Responsive padding */}
       <Typography variant="h5" gutterBottom sx={{ mb: 2 }}>
         Asset Management
       </Typography>
-      <Paper elevation={2} sx={{ width: '100%'}}>
+      <Paper elevation={2} sx={{ width: '100%' }}>
         <Box sx={{ borderBottom: 1, borderColor: 'divider' }}>
           <Tabs
             value={activeTab}

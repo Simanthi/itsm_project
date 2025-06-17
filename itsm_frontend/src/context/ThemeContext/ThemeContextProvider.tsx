@@ -1,5 +1,11 @@
 // src/context/ThemeContext/ThemeContextProvider.tsx
-import { useState, useMemo, useEffect, useCallback, type ReactNode } from 'react';
+import {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  type ReactNode,
+} from 'react';
 import { ThemeProvider as MuiThemeProvider } from '@mui/material/styles';
 import { themes } from '../../theme/theme'; // Import all themes
 import { ThemeContext } from './'; // <<<--- THIS IS LINE 5. IT MUST BE EXACTLY THIS.
@@ -14,9 +20,11 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
   const [currentThemeName, setCurrentThemeName] = useState<string>(() => {
     try {
       const storedThemeName = localStorage.getItem('themeName');
-      return storedThemeName && themes[storedThemeName] ? storedThemeName : defaultThemeName;
+      return storedThemeName && themes[storedThemeName]
+        ? storedThemeName
+        : defaultThemeName;
     } catch (error) {
-      console.error("Error reading themeName from localStorage", error);
+      console.error('Error reading themeName from localStorage', error);
       return defaultThemeName;
     }
   });
@@ -25,7 +33,7 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
     try {
       localStorage.setItem('themeName', currentThemeName);
     } catch (error) {
-      console.error("Error saving themeName to localStorage", error);
+      console.error('Error saving themeName to localStorage', error);
     }
   }, [currentThemeName]);
 
@@ -33,7 +41,9 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
     if (themes[themeName]) {
       setCurrentThemeName(themeName);
     } else {
-      console.warn(`Theme "${themeName}" not found. Defaulting to "${defaultThemeName}".`);
+      console.warn(
+        `Theme "${themeName}" not found. Defaulting to "${defaultThemeName}".`,
+      );
       setCurrentThemeName(defaultThemeName);
       localStorage.setItem('themeName', defaultThemeName); // also update LS for the default
     }
@@ -45,11 +55,14 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
 
   const availableThemes = useMemo(() => Object.keys(themes), []);
 
-  const contextValue = useMemo(() => ({
-    currentThemeName,
-    setCurrentTheme,
-    availableThemes,
-  }), [currentThemeName, setCurrentTheme, availableThemes]);
+  const contextValue = useMemo(
+    () => ({
+      currentThemeName,
+      setCurrentTheme,
+      availableThemes,
+    }),
+    [currentThemeName, setCurrentTheme, availableThemes],
+  );
 
   return (
     <ThemeContext.Provider value={contextValue}>

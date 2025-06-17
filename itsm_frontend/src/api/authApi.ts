@@ -42,7 +42,12 @@ export const loginApi = async (
 
     // Now that we have a token, we can use our new apiClient for the authenticated call.
     // Update the type of loggedInUser to include is_staff
-    const loggedInUser: { id: number; name: string; role: string; is_staff: boolean } = {
+    const loggedInUser: {
+      id: number;
+      name: string;
+      role: string;
+      is_staff: boolean;
+    } = {
       id: 0,
       name: username,
       role: 'user', // Default role, will be updated based on is_staff
@@ -86,13 +91,18 @@ export const loginApi = async (
 };
 
 export const getUserList = async (
-  authenticatedFetch: (endpoint: string, options?: RequestInit) => Promise<unknown>, // Changed Promise<any> to Promise<unknown>
+  authenticatedFetch: (
+    endpoint: string,
+    options?: RequestInit,
+  ) => Promise<unknown>, // Changed Promise<any> to Promise<unknown>
 ): Promise<User[]> => {
   // Token check is now handled by authenticatedFetch
   try {
     const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/`;
     // Use authenticatedFetch instead of apiClient directly
-    const paginatedUsersData = await authenticatedFetch(endpoint) as PaginatedResponse<User>;
+    const paginatedUsersData = (await authenticatedFetch(
+      endpoint,
+    )) as PaginatedResponse<User>;
 
     return paginatedUsersData?.results || [];
   } catch (error) {

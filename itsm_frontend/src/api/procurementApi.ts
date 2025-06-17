@@ -2,7 +2,6 @@
 
 import type {
   AuthenticatedFetch,
-  PurchaseRequestStatus,
   // UserSummary, // Not directly used in this file's functions but kept for context if needed later
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
@@ -12,13 +11,10 @@ import type {
   GetPurchaseRequestMemosParams,
   // OrderItemData, // Not directly used in this file's functions
   // OrderItem, // Not directly used in this file's functions
-  PurchaseOrderStatus,
   // VendorSummary, // Not directly used in this file's functions
   PurchaseOrder,
   PurchaseOrderData,
   GetPurchaseOrdersParams,
-  CheckRequestStatus,
-  PaymentMethod,
   CheckRequest,
   CheckRequestData,
   CheckRequestUpdateData,
@@ -39,17 +35,20 @@ export const getPurchaseRequestMemos = async (
   const queryParams = new URLSearchParams();
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            if (key === 'pageSize') { // DRF uses 'page_size'
-                queryParams.append('page_size', String(value));
-            } else {
-                queryParams.append(key, String(value));
-            }
+      if (value !== undefined && value !== null) {
+        if (key === 'pageSize') {
+          // DRF uses 'page_size'
+          queryParams.append('page_size', String(value));
+        } else {
+          queryParams.append(key, String(value));
         }
+      }
     });
   }
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<PurchaseRequestMemo>;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PaginatedResponse<PurchaseRequestMemo>;
 };
 
 export const createPurchaseRequestMemo = async (
@@ -57,11 +56,11 @@ export const createPurchaseRequestMemo = async (
   data: PurchaseRequestMemoData,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as PurchaseRequestMemo;
+  })) as PurchaseRequestMemo;
 };
 
 export const getPurchaseRequestMemoById = async (
@@ -69,7 +68,9 @@ export const getPurchaseRequestMemoById = async (
   id: number,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as PurchaseRequestMemo;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PurchaseRequestMemo;
 };
 
 export const updatePurchaseRequestMemo = async (
@@ -78,11 +79,11 @@ export const updatePurchaseRequestMemo = async (
   data: Partial<PurchaseRequestMemoUpdateData>,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as PurchaseRequestMemo;
+  })) as PurchaseRequestMemo;
 };
 
 export const decidePurchaseRequestMemo = async (
@@ -91,11 +92,11 @@ export const decidePurchaseRequestMemo = async (
   decisionData: PurchaseRequestDecisionData,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/decide/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(decisionData),
-  }) as PurchaseRequestMemo;
+  })) as PurchaseRequestMemo;
 };
 
 export const cancelPurchaseRequestMemo = async (
@@ -103,12 +104,11 @@ export const cancelPurchaseRequestMemo = async (
   id: number,
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/cancel/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-  }) as PurchaseRequestMemo;
+  })) as PurchaseRequestMemo;
 };
-
 
 // --- Purchase Order Functions ---
 // ... (existing PO functions remain unchanged) ...
@@ -117,22 +117,24 @@ export const getPurchaseOrders = async (
   params?: GetPurchaseOrdersParams,
 ): Promise<PaginatedResponse<PurchaseOrder>> => {
   const queryParams = new URLSearchParams();
-   if (params) {
+  if (params) {
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-             if (key === 'pageSize') {
-                queryParams.append('page_size', String(value));
-            } else if (key === 'vendor_id') { // Example of specific param name mapping
-                queryParams.append('vendor', String(value));
-            }
-            else {
-                queryParams.append(key, String(value));
-            }
+      if (value !== undefined && value !== null) {
+        if (key === 'pageSize') {
+          queryParams.append('page_size', String(value));
+        } else if (key === 'vendor_id') {
+          // Example of specific param name mapping
+          queryParams.append('vendor', String(value));
+        } else {
+          queryParams.append(key, String(value));
         }
+      }
     });
   }
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<PurchaseOrder>;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PaginatedResponse<PurchaseOrder>;
 };
 
 export const createPurchaseOrder = async (
@@ -140,11 +142,11 @@ export const createPurchaseOrder = async (
   data: PurchaseOrderData,
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as PurchaseOrder;
+  })) as PurchaseOrder;
 };
 
 export const getPurchaseOrderById = async (
@@ -152,7 +154,9 @@ export const getPurchaseOrderById = async (
   id: number,
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as PurchaseOrder;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PurchaseOrder;
 };
 
 export const updatePurchaseOrder = async (
@@ -161,11 +165,11 @@ export const updatePurchaseOrder = async (
   data: Partial<PurchaseOrderData>,
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${id}/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as PurchaseOrder;
+  })) as PurchaseOrder;
 };
 
 export const deletePurchaseOrder = async (
@@ -176,7 +180,6 @@ export const deletePurchaseOrder = async (
   await authenticatedFetch(endpoint, { method: 'DELETE' });
 };
 
-
 // --- Check Request Functions ---
 
 export const getCheckRequests = async (
@@ -186,16 +189,23 @@ export const getCheckRequests = async (
   const queryParams = new URLSearchParams();
   if (params) {
     Object.entries(params).forEach(([key, value]) => {
-        if (value !== undefined && value !== null) {
-            if (key === 'pageSize') { queryParams.append('page_size', String(value)); }
-            else if (key === 'purchase_order_id') { queryParams.append('purchase_order', String(value)); }
-            else if (key === 'requested_by_id') { queryParams.append('requested_by', String(value)); }
-            else { queryParams.append(key, String(value)); }
+      if (value !== undefined && value !== null) {
+        if (key === 'pageSize') {
+          queryParams.append('page_size', String(value));
+        } else if (key === 'purchase_order_id') {
+          queryParams.append('purchase_order', String(value));
+        } else if (key === 'requested_by_id') {
+          queryParams.append('requested_by', String(value));
+        } else {
+          queryParams.append(key, String(value));
         }
+      }
     });
   }
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedResponse<CheckRequest>;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PaginatedResponse<CheckRequest>;
 };
 
 export const createCheckRequest = async (
@@ -203,11 +213,11 @@ export const createCheckRequest = async (
   data: CheckRequestData,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as CheckRequest;
+  })) as CheckRequest;
 };
 
 export const getCheckRequestById = async (
@@ -215,7 +225,9 @@ export const getCheckRequestById = async (
   id: number,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/`;
-  return await authenticatedFetch(endpoint, { method: 'GET' }) as CheckRequest;
+  return (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as CheckRequest;
 };
 
 export const updateCheckRequest = async (
@@ -224,11 +236,11 @@ export const updateCheckRequest = async (
   data: Partial<CheckRequestUpdateData>,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
-  }) as CheckRequest;
+  })) as CheckRequest;
 };
 
 export const submitCheckRequestForApproval = async (
@@ -236,7 +248,10 @@ export const submitCheckRequestForApproval = async (
   id: number,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/submit_for_approval/`;
-  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })) as CheckRequest;
 };
 
 export const approveCheckRequestByAccounts = async (
@@ -245,11 +260,11 @@ export const approveCheckRequestByAccounts = async (
   payload: AccountsDecisionPayload,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/accounts_approve/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  }) as CheckRequest;
+  })) as CheckRequest;
 };
 
 export const rejectCheckRequestByAccounts = async (
@@ -258,11 +273,11 @@ export const rejectCheckRequestByAccounts = async (
   payload: AccountsDecisionPayload, // Requires comments
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/accounts_reject/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  }) as CheckRequest;
+  })) as CheckRequest;
 };
 
 export const markCheckRequestPaymentProcessing = async (
@@ -270,7 +285,10 @@ export const markCheckRequestPaymentProcessing = async (
   id: number,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/mark_payment_processing/`;
-  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })) as CheckRequest;
 };
 
 export const confirmCheckRequestPayment = async (
@@ -279,11 +297,11 @@ export const confirmCheckRequestPayment = async (
   payload: ConfirmPaymentPayload,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/confirm_payment/`;
-  return await authenticatedFetch(endpoint, {
+  return (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload),
-  }) as CheckRequest;
+  })) as CheckRequest;
 };
 
 export const cancelCheckRequest = async (
@@ -291,7 +309,10 @@ export const cancelCheckRequest = async (
   id: number,
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/cancel/`;
-  return await authenticatedFetch(endpoint, { method: 'POST', headers: { 'Content-Type': 'application/json' } }) as CheckRequest;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+  })) as CheckRequest;
 };
 
 // --- (Optional) OrderItem Functions ---

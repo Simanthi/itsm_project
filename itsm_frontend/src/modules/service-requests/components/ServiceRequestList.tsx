@@ -56,8 +56,12 @@ const ServiceRequestList: React.FC = () => {
       showSnackbar('Please select requests to delete.', 'warning'); // Use Snackbar
       return;
     }
-    if (!authenticatedFetch) { // Check for authenticatedFetch
-      showSnackbar('Authentication context not available. Please log in.', 'error'); // Use Snackbar
+    if (!authenticatedFetch) {
+      // Check for authenticatedFetch
+      showSnackbar(
+        'Authentication context not available. Please log in.',
+        'error',
+      ); // Use Snackbar
       return;
     }
 

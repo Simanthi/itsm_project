@@ -38,12 +38,12 @@ import { useUI } from '../../../../context/UIContext/useUI';
 import {
   getPurchaseRequestMemos,
   cancelPurchaseRequestMemo,
-  decidePurchaseRequestMemo
+  decidePurchaseRequestMemo,
 } from '../../../../api/procurementApi';
 import type {
   PurchaseRequestMemo,
   PurchaseRequestDecisionData,
-  GetPurchaseRequestMemosParams
+  GetPurchaseRequestMemosParams,
 } from '../../types';
 import { useNavigate } from 'react-router-dom';
 
@@ -67,8 +67,11 @@ const PurchaseRequestMemoList: React.FC = () => {
   const [selectedMemoIds, setSelectedMemoIds] = useState<number[]>([]);
 
   const [openDecisionDialog, setOpenDecisionDialog] = useState<boolean>(false);
-  const [selectedMemoForDecision, setSelectedMemoForDecision] = useState<PurchaseRequestMemo | null>(null);
-  const [decisionType, setDecisionType] = useState<'approved' | 'rejected' | null>(null);
+  const [selectedMemoForDecision, setSelectedMemoForDecision] =
+    useState<PurchaseRequestMemo | null>(null);
+  const [decisionType, setDecisionType] = useState<
+    'approved' | 'rejected' | null
+  >(null);
   const [decisionComments, setDecisionComments] = useState<string>('');
 
   const fetchMemos = useCallback(async () => {
@@ -83,17 +86,26 @@ const PurchaseRequestMemoList: React.FC = () => {
     };
 
     try {
-      const response = await getPurchaseRequestMemos(authenticatedFetch, params);
+      const response = await getPurchaseRequestMemos(
+        authenticatedFetch,
+        params,
+      );
       setMemos(response.results);
       setTotalMemos(response.count);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message || 'Failed to fetch purchase requests.');
-      console.error("Failed to fetch purchase requests:", err);
+      console.error('Failed to fetch purchase requests:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, page, rowsPerPage, sortConfigKey, sortConfigDirection]);
+  }, [
+    authenticatedFetch,
+    page,
+    rowsPerPage,
+    sortConfigKey,
+    sortConfigDirection,
+  ]);
 
   useEffect(() => {
     fetchMemos();
@@ -103,7 +115,9 @@ const PurchaseRequestMemoList: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRowsPerPageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -129,7 +143,7 @@ const PurchaseRequestMemoList: React.FC = () => {
   const handleOpenCancelDialog = (memo: PurchaseRequestMemo) => {
     showConfirmDialog(
       'Confirm Cancellation',
-      `Are you sure you want to cancel this purchase request for "${memo.item_description.substring(0,50)}..."?`,
+      `Are you sure you want to cancel this purchase request for "${memo.item_description.substring(0, 50)}..."?`,
       async () => {
         if (!authenticatedFetch) return;
         setIsLoading(true); // Consider a more specific loading state
@@ -144,11 +158,14 @@ const PurchaseRequestMemoList: React.FC = () => {
         } finally {
           setIsLoading(false);
         }
-      }
+      },
     );
   };
 
-  const handleOpenDecisionDialog = (memo: PurchaseRequestMemo, decision: 'approved' | 'rejected') => {
+  const handleOpenDecisionDialog = (
+    memo: PurchaseRequestMemo,
+    decision: 'approved' | 'rejected',
+  ) => {
     setSelectedMemoForDecision(memo);
     setDecisionType(decision);
     setDecisionComments(''); // Reset comments
@@ -163,7 +180,8 @@ const PurchaseRequestMemoList: React.FC = () => {
   };
 
   const handleConfirmDecision = async () => {
-    if (!authenticatedFetch || !selectedMemoForDecision || !decisionType) return;
+    if (!authenticatedFetch || !selectedMemoForDecision || !decisionType)
+      return;
 
     setIsLoading(true); // Consider specific loading for this action
     const decisionData: PurchaseRequestDecisionData = {
@@ -172,7 +190,11 @@ const PurchaseRequestMemoList: React.FC = () => {
     };
 
     try {
-      await decidePurchaseRequestMemo(authenticatedFetch, selectedMemoForDecision.id, decisionData);
+      await decidePurchaseRequestMemo(
+        authenticatedFetch,
+        selectedMemoForDecision.id,
+        decisionData,
+      );
       showSnackbar(`Purchase request ${decisionType} successfully!`, 'success');
       fetchMemos();
       handleCloseDecisionDialog();
@@ -187,12 +209,18 @@ const PurchaseRequestMemoList: React.FC = () => {
 
   const getStatusChipColor = (status: PurchaseRequestMemo['status']) => {
     switch (status) {
-      case 'pending': return 'warning';
-      case 'approved': return 'success';
-      case 'rejected': return 'error';
-      case 'po_created': return 'info';
-      case 'cancelled': return 'default';
-      default: return 'default';
+      case 'pending':
+        return 'warning';
+      case 'approved':
+        return 'success';
+      case 'rejected':
+        return 'error';
+      case 'po_created':
+        return 'info';
+      case 'cancelled':
+        return 'default';
+      default:
+        return 'default';
     }
   };
 
@@ -205,11 +233,16 @@ const PurchaseRequestMemoList: React.FC = () => {
     setSelectedMemoIds([]);
   };
 
-  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, memoId: number) => {
+  const handleRowCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    memoId: number,
+  ) => {
     if (event.target.checked) {
       setSelectedMemoIds((prevSelected) => [...prevSelected, memoId]);
     } else {
-      setSelectedMemoIds((prevSelected) => prevSelected.filter((id) => id !== memoId));
+      setSelectedMemoIds((prevSelected) =>
+        prevSelected.filter((id) => id !== memoId),
+      );
     }
   };
 
@@ -219,12 +252,17 @@ const PurchaseRequestMemoList: React.FC = () => {
       return;
     }
     navigate('/procurement/iom/print-preview', {
-      state: { selectedMemoIds: selectedMemoIds, autoPrint: autoPrint }
+      state: { selectedMemoIds: selectedMemoIds, autoPrint: autoPrint },
     });
   };
 
-  const headCells: { id: keyof PurchaseRequestMemo | string; label: string; sortable: boolean; padding?: 'none' | 'normal' }[] = [
-    { id: 'select', label: '', sortable: false, padding: 'none'},
+  const headCells: {
+    id: keyof PurchaseRequestMemo | string;
+    label: string;
+    sortable: boolean;
+    padding?: 'none' | 'normal';
+  }[] = [
+    { id: 'select', label: '', sortable: false, padding: 'none' },
     { id: 'item_description', label: 'Item Description', sortable: true },
     { id: 'quantity', label: 'Qty', sortable: false },
     { id: 'requested_by_username', label: 'Requested By', sortable: true },
@@ -272,7 +310,11 @@ const PurchaseRequestMemoList: React.FC = () => {
         Print Selected ({selectedMemoIds.length})
       </Button>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       <TableContainer component={Paper} elevation={2}>
         <Table>
@@ -280,110 +322,185 @@ const PurchaseRequestMemoList: React.FC = () => {
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={selectedMemoIds.length > 0 && selectedMemoIds.length < memos.length}
-                  checked={memos.length > 0 && selectedMemoIds.length === memos.length}
+                  indeterminate={
+                    selectedMemoIds.length > 0 &&
+                    selectedMemoIds.length < memos.length
+                  }
+                  checked={
+                    memos.length > 0 && selectedMemoIds.length === memos.length
+                  }
                   onChange={handleSelectAllClick}
-                  inputProps={{ 'aria-label': 'select all purchase request memos' }}
+                  inputProps={{
+                    'aria-label': 'select all purchase request memos',
+                  }}
                 />
               </TableCell>
-              {headCells.slice(1).map((headCell) => ( // Slice to skip 'select' cell
-                <TableCell key={String(headCell.id)}
-                           sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}
-                           padding={headCell.padding === 'none' ? 'none' : 'normal'}
-                >
-                  {headCell.sortable ? (
-                    <TableSortLabel
-                      active={sortConfigKey === headCell.id}
-                      direction={sortConfigKey === headCell.id ? sortConfigDirection : 'asc'}
-                      onClick={() => handleSortRequest(String(headCell.id))} // Ensure String cast here
-                    >
-                      {headCell.label}
-                    </TableSortLabel>
-                  ) : (
-                    headCell.label
-                  )}
-                </TableCell>
-              ))}
+              {headCells.slice(1).map(
+                (
+                  headCell, // Slice to skip 'select' cell
+                ) => (
+                  <TableCell
+                    key={String(headCell.id)}
+                    sortDirection={
+                      sortConfigKey === headCell.id
+                        ? sortConfigDirection
+                        : false
+                    }
+                    padding={headCell.padding === 'none' ? 'none' : 'normal'}
+                  >
+                    {headCell.sortable ? (
+                      <TableSortLabel
+                        active={sortConfigKey === headCell.id}
+                        direction={
+                          sortConfigKey === headCell.id
+                            ? sortConfigDirection
+                            : 'asc'
+                        }
+                        onClick={() => handleSortRequest(String(headCell.id))} // Ensure String cast here
+                      >
+                        {headCell.label}
+                      </TableSortLabel>
+                    ) : (
+                      headCell.label
+                    )}
+                  </TableCell>
+                ),
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && memos.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length + 1} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={headCells.length + 1} align="center">
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && memos.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length + 1} align="center">No purchase requests found.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={headCells.length + 1} align="center">
+                  No purchase requests found.
+                </TableCell>
+              </TableRow>
             )}
             {memos.map((memo) => {
               const isSelected = selectedMemoIds.includes(memo.id);
               return (
-              <TableRow
-                key={memo.id}
-                hover
-                role="checkbox"
-                aria-checked={isSelected}
-                tabIndex={-1}
-                selected={isSelected}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={(event) => handleRowCheckboxChange(event, memo.id)}
-                    inputProps={{ 'aria-labelledby': `memo-checkbox-${memo.id}` }}
-                  />
-                </TableCell>
-                <TableCell id={`memo-checkbox-${memo.id}`} sx={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  <Tooltip title={memo.item_description}><span>{memo.item_description}</span></Tooltip>
-                </TableCell>
-                <TableCell>{memo.quantity}</TableCell>
-                <TableCell>{memo.requested_by_username}</TableCell>
-                <TableCell>{new Date(memo.request_date).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={memo.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    color={getStatusChipColor(memo.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell>{memo.estimated_cost != null ? `$${Number(memo.estimated_cost).toFixed(2)}` : '-'}</TableCell>
-                <TableCell>{memo.approver_username || '-'}</TableCell>
-                <TableCell align="right">
-                  <Tooltip title="View Details">
-                    <IconButton onClick={() => handleViewMemoDetails(memo.id)} size="small">
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Tooltip>
-                  {memo.status === 'pending' && (user?.id === memo.requested_by || !!user?.is_staff) && (
-                    <Tooltip title="Edit Memo">
-                      <IconButton onClick={() => handleEditMemo(memo.id)} size="small">
-                        <EditIcon />
+                <TableRow
+                  key={memo.id}
+                  hover
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={-1}
+                  selected={isSelected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={(event) =>
+                        handleRowCheckboxChange(event, memo.id)
+                      }
+                      inputProps={{
+                        'aria-labelledby': `memo-checkbox-${memo.id}`,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell
+                    id={`memo-checkbox-${memo.id}`}
+                    sx={{
+                      maxWidth: 300,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    <Tooltip title={memo.item_description}>
+                      <span>{memo.item_description}</span>
+                    </Tooltip>
+                  </TableCell>
+                  <TableCell>{memo.quantity}</TableCell>
+                  <TableCell>{memo.requested_by_username}</TableCell>
+                  <TableCell>
+                    {new Date(memo.request_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={memo.status
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      color={getStatusChipColor(memo.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell>
+                    {memo.estimated_cost != null
+                      ? `$${Number(memo.estimated_cost).toFixed(2)}`
+                      : '-'}
+                  </TableCell>
+                  <TableCell>{memo.approver_username || '-'}</TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="View Details">
+                      <IconButton
+                        onClick={() => handleViewMemoDetails(memo.id)}
+                        size="small"
+                      >
+                        <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
-                  )}
-                  {memo.status === 'pending' && (user?.id === memo.requested_by || !!user?.is_staff) && (
-                    <Tooltip title="Cancel Request">
-                      <IconButton onClick={() => handleOpenCancelDialog(memo)} size="small" color="warning">
-                        <CancelIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {/* Show approve/reject only for staff and if pending */}
-                  {memo.status === 'pending' && !!user?.is_staff && (
-                    <>
-                      <Tooltip title="Approve Request">
-                        <IconButton onClick={() => handleOpenDecisionDialog(memo, 'approved')} size="small" color="success">
-                          <CheckCircleOutlineIcon />
-                        </IconButton>
-                      </Tooltip>
-                      <Tooltip title="Reject Request">
-                        <IconButton onClick={() => handleOpenDecisionDialog(memo, 'rejected')} size="small" color="error">
-                          <HighlightOffIcon />
-                        </IconButton>
-                      </Tooltip>
-                    </>
-                  )}
-                </TableCell>
-              </TableRow>
-            )})}
+                    {memo.status === 'pending' &&
+                      (user?.id === memo.requested_by || !!user?.is_staff) && (
+                        <Tooltip title="Edit Memo">
+                          <IconButton
+                            onClick={() => handleEditMemo(memo.id)}
+                            size="small"
+                          >
+                            <EditIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    {memo.status === 'pending' &&
+                      (user?.id === memo.requested_by || !!user?.is_staff) && (
+                        <Tooltip title="Cancel Request">
+                          <IconButton
+                            onClick={() => handleOpenCancelDialog(memo)}
+                            size="small"
+                            color="warning"
+                          >
+                            <CancelIcon />
+                          </IconButton>
+                        </Tooltip>
+                      )}
+                    {/* Show approve/reject only for staff and if pending */}
+                    {memo.status === 'pending' && !!user?.is_staff && (
+                      <>
+                        <Tooltip title="Approve Request">
+                          <IconButton
+                            onClick={() =>
+                              handleOpenDecisionDialog(memo, 'approved')
+                            }
+                            size="small"
+                            color="success"
+                          >
+                            <CheckCircleOutlineIcon />
+                          </IconButton>
+                        </Tooltip>
+                        <Tooltip title="Reject Request">
+                          <IconButton
+                            onClick={() =>
+                              handleOpenDecisionDialog(memo, 'rejected')
+                            }
+                            size="small"
+                            color="error"
+                          >
+                            <HighlightOffIcon />
+                          </IconButton>
+                        </Tooltip>
+                      </>
+                    )}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         <TablePagination
@@ -398,13 +515,20 @@ const PurchaseRequestMemoList: React.FC = () => {
       </TableContainer>
 
       {/* Decision Dialog (Approve/Reject) */}
-      <Dialog open={openDecisionDialog} onClose={handleCloseDecisionDialog} maxWidth="sm" fullWidth>
+      <Dialog
+        open={openDecisionDialog}
+        onClose={handleCloseDecisionDialog}
+        maxWidth="sm"
+        fullWidth
+      >
         <DialogTitle>
-            {decisionType === 'approved' ? 'Approve' : 'Reject'} Purchase Request: {selectedMemoForDecision?.item_description.substring(0,30)}...
+          {decisionType === 'approved' ? 'Approve' : 'Reject'} Purchase Request:{' '}
+          {selectedMemoForDecision?.item_description.substring(0, 30)}...
         </DialogTitle>
         <DialogContent>
-          <DialogContentText sx={{mb:2}}>
-            Please provide comments for your decision (optional for approval, recommended for rejection).
+          <DialogContentText sx={{ mb: 2 }}>
+            Please provide comments for your decision (optional for approval,
+            recommended for rejection).
           </DialogContentText>
           <TextField
             autoFocus
@@ -422,7 +546,11 @@ const PurchaseRequestMemoList: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={handleCloseDecisionDialog}>Cancel</Button>
-          <Button onClick={handleConfirmDecision} variant="contained" color={decisionType === 'approved' ? 'success' : 'error'}>
+          <Button
+            onClick={handleConfirmDecision}
+            variant="contained"
+            color={decisionType === 'approved' ? 'success' : 'error'}
+          >
             Confirm {decisionType === 'approved' ? 'Approval' : 'Rejection'}
           </Button>
         </DialogActions>

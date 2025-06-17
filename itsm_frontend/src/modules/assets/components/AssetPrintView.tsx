@@ -2,8 +2,15 @@ import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import ReactDOM from 'react-dom';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Typography, Box, CircularProgress, Alert, Button,
-  Grid, Paper, Divider, Chip,
+  Typography,
+  Box,
+  CircularProgress,
+  Alert,
+  Button,
+  Grid,
+  Paper,
+  Divider,
+  Chip,
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
@@ -26,16 +33,25 @@ const formatDateString = (isoString: string | null | undefined): string => {
 // Status chip color logic for Asset
 // TODO: Define actual asset statuses and corresponding colors
 const getAssetStatusChipColor = (status?: string) => {
-    if (!status) return 'default';
-    // Example status mapping - replace with actual statuses and desired colors
-    const mapping: Record<string, "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning"> = {
-        in_use: 'success',
-        in_stock: 'info',
-        maintenance: 'warning',
-        retired: 'default',
-        disposed: 'error',
-    };
-    return mapping[status.toLowerCase().replace(/ /g, '_')] || 'default';
+  if (!status) return 'default';
+  // Example status mapping - replace with actual statuses and desired colors
+  const mapping: Record<
+    string,
+    | 'default'
+    | 'primary'
+    | 'secondary'
+    | 'error'
+    | 'info'
+    | 'success'
+    | 'warning'
+  > = {
+    in_use: 'success',
+    in_stock: 'info',
+    maintenance: 'warning',
+    retired: 'default',
+    disposed: 'error',
+  };
+  return mapping[status.toLowerCase().replace(/ /g, '_')] || 'default';
 };
 
 interface LocationState {
@@ -68,7 +84,9 @@ const AssetPrintView: React.FC = () => {
   const [assetsToPrint, setAssetsToPrint] = useState<Asset[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null);
+  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
+    null,
+  );
 
   useEffect(() => {
     const element = document.getElementById('print-root');
@@ -115,15 +133,21 @@ const AssetPrintView: React.FC = () => {
 
   useEffect(() => {
     if (assetIdsToFetch.length > 0) {
-        fetchAssetsForPrint();
+      fetchAssetsForPrint();
     } else {
-        setError('No Asset IDs specified.');
-        setLoading(false);
+      setError('No Asset IDs specified.');
+      setLoading(false);
     }
   }, [fetchAssetsForPrint, assetIdsToFetch]); // Added assetIdsToFetch
 
   useEffect(() => {
-    if (!loading && !error && assetsToPrint.length > 0 && autoPrint && printRootElement) {
+    if (
+      !loading &&
+      !error &&
+      assetsToPrint.length > 0 &&
+      autoPrint &&
+      printRootElement
+    ) {
       printRootElement.style.display = 'block';
       const timer = setTimeout(() => {
         window.print();
@@ -138,7 +162,16 @@ const AssetPrintView: React.FC = () => {
         if (printRootElement) printRootElement.style.display = 'none';
       };
     }
-  }, [loading, error, assetsToPrint, autoPrint, navigate, printRootElement, location.pathname, state]);
+  }, [
+    loading,
+    error,
+    assetsToPrint,
+    autoPrint,
+    navigate,
+    printRootElement,
+    location.pathname,
+    state,
+  ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
     <Button
@@ -154,7 +187,15 @@ const AssetPrintView: React.FC = () => {
 
   if (loading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh', flexDirection: 'column' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+          flexDirection: 'column',
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ mt: 2 }}>Preparing print preview...</Typography>
       </Box>
@@ -184,16 +225,27 @@ const AssetPrintView: React.FC = () => {
       {!autoPrint && (
         <Box
           sx={{
-            position: 'fixed', top: 80, left: SIDEBAR_WIDTH,
-            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, display: 'flex',
-            justifyContent: 'space-between', zIndex: theme.zIndex.drawer + 1,
-            padding: '0 20px', boxSizing: 'border-box',
+            position: 'fixed',
+            top: 80,
+            left: SIDEBAR_WIDTH,
+            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`,
+            display: 'flex',
+            justifyContent: 'space-between',
+            zIndex: theme.zIndex.drawer + 1,
+            padding: '0 20px',
+            boxSizing: 'border-box',
           }}
         >
           <BackButton />
           <Button
-            variant="contained" color="primary"
-            onClick={() => navigate(location.pathname, { replace: true, state: { ...state, autoPrint: true }})}
+            variant="contained"
+            color="primary"
+            onClick={() =>
+              navigate(location.pathname, {
+                replace: true,
+                state: { ...state, autoPrint: true },
+              })
+            }
             startIcon={<PrintIcon />}
           >
             Print
@@ -203,51 +255,122 @@ const AssetPrintView: React.FC = () => {
       <Box
         className="print-container"
         sx={{
-          maxWidth: '80%', marginTop: autoPrint ? '0' : '64px', marginBottom: '30px',
-          marginLeft: 'auto', marginRight: 'auto', padding: '30px',
+          maxWidth: '80%',
+          marginTop: autoPrint ? '0' : '64px',
+          marginBottom: '30px',
+          marginLeft: 'auto',
+          marginRight: 'auto',
+          padding: '30px',
           backgroundColor: theme.palette.background.paper,
-          border: `1px solid ${theme.palette.divider}`, boxShadow: theme.shadows[1],
-          minHeight: 'calc(1122px - 60px)', boxSizing: 'border-box',
-          display: 'flex', flexDirection: 'column', gap: '20px',
+          border: `1px solid ${theme.palette.divider}`,
+          boxShadow: theme.shadows[1],
+          minHeight: 'calc(1122px - 60px)',
+          boxSizing: 'border-box',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: '20px',
           borderRadius: theme.shape.borderRadius || 4,
         }}
       >
         {assetsToPrint.map((asset) => (
-          <Paper key={asset.id} sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }} elevation={0} id={`asset-print-${asset.id}`}>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Paper
+            key={asset.id}
+            sx={{ p: { xs: 2, md: 3 }, pageBreakAfter: 'always' }}
+            elevation={0}
+            id={`asset-print-${asset.id}`}
+          >
+            <Box
+              sx={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                mb: 2,
+              }}
+            >
               <Typography variant="h5" component="h1">
                 Asset Details: {asset.asset_tag}
               </Typography>
-              <Chip label={asset.status.replace(/_/g, ' ')} color={getAssetStatusChipColor(asset.status)} size="small" />
+              <Chip
+                label={asset.status.replace(/_/g, ' ')}
+                color={getAssetStatusChipColor(asset.status)}
+                size="small"
+              />
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Asset Information</Typography>
-                <Typography><strong>Name:</strong> {asset.name}</Typography>
-                <Typography><strong>Serial Number:</strong> {asset.serial_number || 'N/A'}</Typography>
-                <Typography><strong>Category:</strong> {asset.category?.name || 'N/A'}</Typography>
-                <Typography><strong>Location:</strong> {asset.location?.name || 'N/A'}</Typography>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Asset Information
+                </Typography>
+                <Typography>
+                  <strong>Name:</strong> {asset.name}
+                </Typography>
+                <Typography>
+                  <strong>Serial Number:</strong> {asset.serial_number || 'N/A'}
+                </Typography>
+                <Typography>
+                  <strong>Category:</strong> {asset.category?.name || 'N/A'}
+                </Typography>
+                <Typography>
+                  <strong>Location:</strong> {asset.location?.name || 'N/A'}
+                </Typography>
               </Grid>
               <Grid item xs={12} md={6}>
-                <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Details</Typography>
-                <Typography><strong>Vendor:</strong> {asset.vendor?.name || 'N/A'}</Typography>
-                <Typography><strong>Assigned To:</strong> {asset.assigned_to?.username || 'Unassigned'}</Typography>
-                <Typography><strong>Purchase Date:</strong> {formatDateString(asset.purchase_date)}</Typography>
-                <Typography><strong>Warranty End Date:</strong> {formatDateString(asset.warranty_end_date)}</Typography>
+                <Typography
+                  variant="subtitle1"
+                  gutterBottom
+                  sx={{ fontWeight: 'bold' }}
+                >
+                  Details
+                </Typography>
+                <Typography>
+                  <strong>Vendor:</strong> {asset.vendor?.name || 'N/A'}
+                </Typography>
+                <Typography>
+                  <strong>Assigned To:</strong>{' '}
+                  {asset.assigned_to?.username || 'Unassigned'}
+                </Typography>
+                <Typography>
+                  <strong>Purchase Date:</strong>{' '}
+                  {formatDateString(asset.purchase_date)}
+                </Typography>
+                <Typography>
+                  <strong>Warranty End Date:</strong>{' '}
+                  {formatDateString(asset.warranty_end_date)}
+                </Typography>
               </Grid>
 
               {asset.description && (
-                <Grid item xs={12} sx={{mt:1}}>
-                  <Divider sx={{ mb:1 }}/>
-                  <Typography variant="subtitle1" gutterBottom sx={{ fontWeight: 'bold' }}>Description</Typography>
-                  <Typography sx={{ whiteSpace: 'pre-line' }}>{asset.description}</Typography>
+                <Grid item xs={12} sx={{ mt: 1 }}>
+                  <Divider sx={{ mb: 1 }} />
+                  <Typography
+                    variant="subtitle1"
+                    gutterBottom
+                    sx={{ fontWeight: 'bold' }}
+                  >
+                    Description
+                  </Typography>
+                  <Typography sx={{ whiteSpace: 'pre-line' }}>
+                    {asset.description}
+                  </Typography>
                 </Grid>
               )}
-               <Grid item xs={12} sx={{mt:1}}>
-                  <Divider sx={{ mb:1 }}/>
-                  <Typography variant="caption" color="textSecondary">Created At: {formatDateString(asset.created_at)}</Typography>
-                  <Typography variant="caption" color="textSecondary" sx={{ml: 2}}>Last Updated: {formatDateString(asset.updated_at)}</Typography>
+              <Grid item xs={12} sx={{ mt: 1 }}>
+                <Divider sx={{ mb: 1 }} />
+                <Typography variant="caption" color="textSecondary">
+                  Created At: {formatDateString(asset.created_at)}
+                </Typography>
+                <Typography
+                  variant="caption"
+                  color="textSecondary"
+                  sx={{ ml: 2 }}
+                >
+                  Last Updated: {formatDateString(asset.updated_at)}
+                </Typography>
               </Grid>
             </Grid>
           </Paper>

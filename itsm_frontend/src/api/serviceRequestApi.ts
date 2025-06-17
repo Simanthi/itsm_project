@@ -4,10 +4,7 @@ import type {
   ServiceRequest,
   NewServiceRequestData,
   ServiceRequestStatus,
-  ServiceRequestCategory,
-  ServiceRequestPriority,
   // Added Raw types here
-  RawUserResponse,
   RawServiceRequestResponse,
   PaginatedServiceRequestsResponse,
 } from '../modules/service-requests/types/ServiceRequestTypes';
@@ -52,7 +49,9 @@ export const getServiceRequests = async (
   pageSize: number = 10,
 ): Promise<{ results: ServiceRequest[]; count: number }> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/?page=${page}&page_size=${pageSize}`;
-  const rawData = await authenticatedFetch(endpoint, { method: 'GET' }) as PaginatedServiceRequestsResponse;
+  const rawData = (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as PaginatedServiceRequestsResponse;
   return {
     results: rawData.results.map(transformServiceRequestResponse),
     count: rawData.count,
@@ -64,11 +63,11 @@ export const createServiceRequest = async (
   newRequestData: NewServiceRequestData,
 ): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/`;
-  const rawResponse = await authenticatedFetch(endpoint, {
+  const rawResponse = (await authenticatedFetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(newRequestData),
-  }) as RawServiceRequestResponse;
+  })) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawResponse);
 };
 
@@ -77,7 +76,9 @@ export const getServiceRequestById = async (
   id: number | string,
 ): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  const rawData = await authenticatedFetch(endpoint, { method: 'GET' }) as RawServiceRequestResponse;
+  const rawData = (await authenticatedFetch(endpoint, {
+    method: 'GET',
+  })) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawData);
 };
 
@@ -89,11 +90,11 @@ export const updateServiceRequest = async (
   },
 ): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
-  const rawResponse = await authenticatedFetch(endpoint, {
+  const rawResponse = (await authenticatedFetch(endpoint, {
     method: 'PATCH', // Assuming PATCH is preferred for partial updates
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updatedData),
-  }) as RawServiceRequestResponse;
+  })) as RawServiceRequestResponse;
   return transformServiceRequestResponse(rawResponse);
 };
 

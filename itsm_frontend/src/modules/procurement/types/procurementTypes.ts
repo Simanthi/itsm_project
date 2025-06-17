@@ -19,7 +19,8 @@ export type PurchaseRequestStatus =
   | 'po_created'
   | 'cancelled';
 
-export interface UserSummary { // Renamed from existing User to avoid conflict if Asset types also have User
+export interface UserSummary {
+  // Renamed from existing User to avoid conflict if Asset types also have User
   id: number;
   username: string;
   first_name?: string;
@@ -80,7 +81,8 @@ export interface GetPurchaseRequestMemosParams {
 
 // --- Purchase Order & OrderItem Types ---
 
-export interface OrderItemData { // For creating/updating items within a PO
+export interface OrderItemData {
+  // For creating/updating items within a PO
   id?: number; // For identifying existing items during update
   item_description: string;
   quantity: number;
@@ -104,9 +106,9 @@ export type PurchaseOrderStatus =
 
 // Simplified Vendor type for nesting in PO, assuming VendorSerializer from assets app might be too heavy
 export interface VendorSummary {
-    id: number;
-    name: string;
-    // Add other essential fields like contact_person or email if needed for display in PO context
+  id: number;
+  name: string;
+  // Add other essential fields like contact_person or email if needed for display in PO context
 }
 
 export interface PurchaseOrder {
@@ -129,7 +131,8 @@ export interface PurchaseOrder {
   order_items: OrderItem[];
 }
 
-export interface PurchaseOrderData { // For POST (create) and PATCH (update)
+export interface PurchaseOrderData {
+  // For POST (create) and PATCH (update)
   po_number?: string; // Optional on create if backend generates it, required for update if not using ID in URL for PATCH
   internal_office_memo?: number | null;
   vendor: number; // Required FK
@@ -150,7 +153,13 @@ export interface GetPurchaseOrdersParams {
   status__in?: PurchaseOrderStatus[]; // Added this line
   vendor_id?: number;
   // Add other relevant filter fields
-  [key: string]: string | number | boolean | undefined | PurchaseOrderStatus | PurchaseOrderStatus[];
+  [key: string]:
+    | string
+    | number
+    | boolean
+    | undefined
+    | PurchaseOrderStatus
+    | PurchaseOrderStatus[];
 }
 
 // --- Check Request Types ---
@@ -195,7 +204,8 @@ export interface CheckRequest {
   payment_notes?: string | null;
 }
 
-export interface CheckRequestData { // For POST (creation)
+export interface CheckRequestData {
+  // For POST (creation)
   purchase_order?: number | null;
   invoice_number?: string | null;
   invoice_date?: string | null;
@@ -206,7 +216,8 @@ export interface CheckRequestData { // For POST (creation)
   // requested_by and initial status set by backend
 }
 
-export interface CheckRequestUpdateData { // For PATCH/PUT (updates)
+export interface CheckRequestUpdateData {
+  // For PATCH/PUT (updates)
   purchase_order?: number | null;
   invoice_number?: string | null;
   invoice_date?: string | null;
@@ -217,7 +228,8 @@ export interface CheckRequestUpdateData { // For PATCH/PUT (updates)
   // Status and approval fields are typically managed by actions
 }
 
-export interface AccountsDecisionPayload { // For approve/reject by accounts
+export interface AccountsDecisionPayload {
+  // For approve/reject by accounts
   comments?: string;
 }
 

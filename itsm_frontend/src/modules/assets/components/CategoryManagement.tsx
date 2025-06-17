@@ -35,7 +35,11 @@ import {
   updateAssetCategory,
   deleteAssetCategory,
 } from '../../../api/assetApi';
-import type { AssetCategory, AssetCategoryData, PaginatedResponse } from '../types';
+import type {
+  AssetCategory,
+  AssetCategoryData,
+  PaginatedResponse,
+} from '../types';
 
 const CategoryManagement: React.FC = () => {
   const { authenticatedFetch } = useAuth();
@@ -51,7 +55,8 @@ const CategoryManagement: React.FC = () => {
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
 
-  const [selectedCategory, setSelectedCategory] = useState<AssetCategory | null>(null);
+  const [selectedCategory, setSelectedCategory] =
+    useState<AssetCategory | null>(null);
   const [categoryFormData, setCategoryFormData] = useState<AssetCategoryData>({
     name: '',
     description: '',
@@ -64,7 +69,11 @@ const CategoryManagement: React.FC = () => {
     try {
       // Using a large page size to get all categories for now.
       // Implement proper pagination if the number of categories grows significantly.
-      const response: PaginatedResponse<AssetCategory> = await getAssetCategories(authenticatedFetch, { page: 1, pageSize: 100 });
+      const response: PaginatedResponse<AssetCategory> =
+        await getAssetCategories(authenticatedFetch, {
+          page: 1,
+          pageSize: 100,
+        });
       setCategories(response.results);
     } catch (err: unknown) {
       let message = 'Failed to fetch categories.';
@@ -74,7 +83,7 @@ const CategoryManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to fetch categories:", err);
+      console.error('Failed to fetch categories:', err);
     } finally {
       setIsLoading(false);
     }
@@ -87,7 +96,9 @@ const CategoryManagement: React.FC = () => {
   const handleOpenFormDialog = (category?: AssetCategory) => {
     setSelectedCategory(category || null);
     setCategoryFormData(
-      category ? { name: category.name, description: category.description || '' } : { name: '', description: '' }
+      category
+        ? { name: category.name, description: category.description || '' }
+        : { name: '', description: '' },
     );
     setOpenFormDialog(true);
     setError(null); // Clear previous errors
@@ -115,9 +126,10 @@ const CategoryManagement: React.FC = () => {
   };
 
   const handleSaveCategory = async () => {
-    if (!authenticatedFetch || !categoryFormData.name) { // Basic validation
-        setError("Category name is required.");
-        return;
+    if (!authenticatedFetch || !categoryFormData.name) {
+      // Basic validation
+      setError('Category name is required.');
+      return;
     }
     setIsLoading(true);
     setError(null);
@@ -126,7 +138,11 @@ const CategoryManagement: React.FC = () => {
     try {
       if (selectedCategory && selectedCategory.id) {
         // Update existing category
-        await updateAssetCategory(authenticatedFetch, selectedCategory.id, categoryFormData);
+        await updateAssetCategory(
+          authenticatedFetch,
+          selectedCategory.id,
+          categoryFormData,
+        );
         setSuccessMessage('Category updated successfully!');
       } else {
         // Create new category
@@ -143,14 +159,15 @@ const CategoryManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to save category:", err);
+      console.error('Failed to save category:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!authenticatedFetch || !selectedCategory || !selectedCategory.id) return;
+    if (!authenticatedFetch || !selectedCategory || !selectedCategory.id)
+      return;
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -168,7 +185,7 @@ const CategoryManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to delete category:", err);
+      console.error('Failed to delete category:', err);
     } finally {
       setIsLoading(false);
     }
@@ -183,11 +200,16 @@ const CategoryManagement: React.FC = () => {
     setSelectedCategoryIds([]);
   };
 
-  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, categoryId: number) => {
+  const handleRowCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    categoryId: number,
+  ) => {
     if (event.target.checked) {
       setSelectedCategoryIds((prevSelected) => [...prevSelected, categoryId]);
     } else {
-      setSelectedCategoryIds((prevSelected) => prevSelected.filter((id) => id !== categoryId));
+      setSelectedCategoryIds((prevSelected) =>
+        prevSelected.filter((id) => id !== categoryId),
+      );
     }
   };
 
@@ -196,13 +218,18 @@ const CategoryManagement: React.FC = () => {
       showSnackbar('Please select categories to print.', 'warning');
       return;
     }
-    const selectedCategoriesData = categories.filter(cat => selectedCategoryIds.includes(cat.id));
+    const selectedCategoriesData = categories.filter((cat) =>
+      selectedCategoryIds.includes(cat.id),
+    );
     if (selectedCategoriesData.length === 0) {
-        showSnackbar('Selected categories not found. Please refresh.', 'warning');
-        return;
+      showSnackbar('Selected categories not found. Please refresh.', 'warning');
+      return;
     }
     navigate('/assets/categories/print-preview', {
-      state: { selectedCategories: selectedCategoriesData, autoPrint: autoPrint }
+      state: {
+        selectedCategories: selectedCategoriesData,
+        autoPrint: autoPrint,
+      },
     });
   };
 
@@ -212,8 +239,19 @@ const CategoryManagement: React.FC = () => {
         Manage Asset Categories
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMessage && (
+        <Snackbar
+          open
+          autoHideDuration={6000}
+          onClose={() => setSuccessMessage(null)}
+          message={successMessage}
+        />
+      )}
 
       <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
         <Button
@@ -242,7 +280,9 @@ const CategoryManagement: React.FC = () => {
         </Button>
       </Box>
 
-      {isLoading && !categories.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
+      {isLoading && !categories.length && (
+        <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />
+      )}
 
       <TableContainer component={Paper} elevation={3}>
         <Table>
@@ -250,8 +290,14 @@ const CategoryManagement: React.FC = () => {
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={selectedCategoryIds.length > 0 && selectedCategoryIds.length < categories.length}
-                  checked={categories.length > 0 && selectedCategoryIds.length === categories.length}
+                  indeterminate={
+                    selectedCategoryIds.length > 0 &&
+                    selectedCategoryIds.length < categories.length
+                  }
+                  checked={
+                    categories.length > 0 &&
+                    selectedCategoryIds.length === categories.length
+                  }
                   onChange={handleSelectAllClick}
                   inputProps={{ 'aria-label': 'select all categories' }}
                 />
@@ -265,48 +311,75 @@ const CategoryManagement: React.FC = () => {
             {categories.map((category) => {
               const isSelected = selectedCategoryIds.includes(category.id);
               return (
-              <TableRow
-                key={category.id}
-                hover
-                role="checkbox"
-                aria-checked={isSelected}
-                tabIndex={-1}
-                selected={isSelected}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={(event) => handleRowCheckboxChange(event, category.id)}
-                    inputProps={{ 'aria-labelledby': `category-checkbox-${category.id}` }}
-                  />
-                </TableCell>
-                <TableCell id={`category-checkbox-${category.id}`}>{category.name}</TableCell>
-                <TableCell>{category.description || '-'}</TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => handleOpenFormDialog(category)} disabled={isLoading} size="small">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(category)} disabled={isLoading} size="small">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            );
+                <TableRow
+                  key={category.id}
+                  hover
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={-1}
+                  selected={isSelected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={(event) =>
+                        handleRowCheckboxChange(event, category.id)
+                      }
+                      inputProps={{
+                        'aria-labelledby': `category-checkbox-${category.id}`,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell id={`category-checkbox-${category.id}`}>
+                    {category.name}
+                  </TableCell>
+                  <TableCell>{category.description || '-'}</TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      onClick={() => handleOpenFormDialog(category)}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleOpenDeleteDialog(category)}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
             })}
             {!isLoading && !categories.length && (
-                <TableRow>
-                    <TableCell colSpan={4} align="center">No categories found.</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  No categories found.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* Form Dialog (Create/Edit) */}
-      <Dialog open={openFormDialog} onClose={handleCloseFormDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedCategory ? 'Edit Category' : 'Add New Category'}</DialogTitle>
+      <Dialog
+        open={openFormDialog}
+        onClose={handleCloseFormDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedCategory ? 'Edit Category' : 'Add New Category'}
+        </DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <TextField
             autoFocus
             margin="dense"
@@ -334,11 +407,25 @@ const CategoryManagement: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFormDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseFormDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSaveCategory} variant="contained" disabled={isLoading}>
-            {isLoading && selectedCategory ? 'Saving...' : isLoading ? 'Creating...' : selectedCategory ? 'Save Changes' : 'Create Category'}
+          <Button
+            onClick={handleSaveCategory}
+            variant="contained"
+            disabled={isLoading}
+          >
+            {isLoading && selectedCategory
+              ? 'Saving...'
+              : isLoading
+                ? 'Creating...'
+                : selectedCategory
+                  ? 'Save Changes'
+                  : 'Create Category'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -348,18 +435,32 @@ const CategoryManagement: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the category: <strong>{selectedCategory?.name}</strong>?
+            Are you sure you want to delete the category:{' '}
+            <strong>{selectedCategory?.name}</strong>?
           </Typography>
           <Typography variant="body2" color="textSecondary">
             This action cannot be undone.
           </Typography>
-          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirmed} color="error" variant="contained" disabled={isLoading}>
+          <Button
+            onClick={handleDeleteConfirmed}
+            color="error"
+            variant="contained"
+            disabled={isLoading}
+          >
             {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>

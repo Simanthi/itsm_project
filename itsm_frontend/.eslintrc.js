@@ -19,10 +19,7 @@ module.exports = {
     ecmaVersion: 12,
     sourceType: 'module',
   },
-  plugins: [
-    'react',
-    '@typescript-eslint',
-  ],
+  plugins: ['react', '@typescript-eslint'],
   settings: {
     react: {
       version: 'detect', // Automatically detects the React version
@@ -36,9 +33,9 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'warn', // Warn instead of error for 'any'
     '@typescript-eslint/no-unused-vars': ['warn', { argsIgnorePattern: '^_' }], // Warn on unused vars, allow '_' prefix
     // Add or override other rules as needed
-    "no-restricted-globals": ["error", "name", "length"], // Example: disallow 'name' and 'length' as global variables
-    "prefer-const": "warn", // Suggest using const
-    "no-console": "warn", // Warn about console.log statements
+    'no-restricted-globals': ['error', 'name', 'length'], // Example: disallow 'name' and 'length' as global variables
+    'prefer-const': 'warn', // Suggest using const
+    'no-console': 'warn', // Warn about console.log statements
   },
   ignorePatterns: ['node_modules/', 'build/', 'dist/', 'public/'], // Directories to ignore
 };

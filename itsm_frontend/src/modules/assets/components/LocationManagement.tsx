@@ -51,7 +51,9 @@ const LocationManagement: React.FC = () => {
   const [openFormDialog, setOpenFormDialog] = useState<boolean>(false);
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
 
-  const [selectedLocation, setSelectedLocation] = useState<Location | null>(null);
+  const [selectedLocation, setSelectedLocation] = useState<Location | null>(
+    null,
+  );
   const [locationFormData, setLocationFormData] = useState<LocationData>({
     name: '',
     description: '',
@@ -62,7 +64,10 @@ const LocationManagement: React.FC = () => {
     setIsLoading(true);
     setError(null);
     try {
-      const response: PaginatedResponse<Location> = await getLocations(authenticatedFetch, { page: 1, pageSize: 100 });
+      const response: PaginatedResponse<Location> = await getLocations(
+        authenticatedFetch,
+        { page: 1, pageSize: 100 },
+      );
       setLocations(response.results);
     } catch (err: unknown) {
       let message = 'Failed to fetch locations.';
@@ -72,7 +77,7 @@ const LocationManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to fetch locations:", err);
+      console.error('Failed to fetch locations:', err);
     } finally {
       setIsLoading(false);
     }
@@ -85,7 +90,9 @@ const LocationManagement: React.FC = () => {
   const handleOpenFormDialog = (location?: Location) => {
     setSelectedLocation(location || null);
     setLocationFormData(
-      location ? { name: location.name, description: location.description || '' } : { name: '', description: '' }
+      location
+        ? { name: location.name, description: location.description || '' }
+        : { name: '', description: '' },
     );
     setOpenFormDialog(true);
     setError(null);
@@ -114,8 +121,8 @@ const LocationManagement: React.FC = () => {
 
   const handleSaveLocation = async () => {
     if (!authenticatedFetch || !locationFormData.name) {
-        setError("Location name is required.");
-        return;
+      setError('Location name is required.');
+      return;
     }
     setIsLoading(true);
     setError(null);
@@ -123,7 +130,11 @@ const LocationManagement: React.FC = () => {
 
     try {
       if (selectedLocation && selectedLocation.id) {
-        await updateLocation(authenticatedFetch, selectedLocation.id, locationFormData);
+        await updateLocation(
+          authenticatedFetch,
+          selectedLocation.id,
+          locationFormData,
+        );
         setSuccessMessage('Location updated successfully!');
       } else {
         await createLocation(authenticatedFetch, locationFormData);
@@ -139,14 +150,15 @@ const LocationManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to save location:", err);
+      console.error('Failed to save location:', err);
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleDeleteConfirmed = async () => {
-    if (!authenticatedFetch || !selectedLocation || !selectedLocation.id) return;
+    if (!authenticatedFetch || !selectedLocation || !selectedLocation.id)
+      return;
     setIsLoading(true);
     setError(null);
     setSuccessMessage(null);
@@ -164,7 +176,7 @@ const LocationManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to delete location:", err);
+      console.error('Failed to delete location:', err);
     } finally {
       setIsLoading(false);
     }
@@ -179,11 +191,16 @@ const LocationManagement: React.FC = () => {
     setSelectedLocationIds([]);
   };
 
-  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, locationId: number) => {
+  const handleRowCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    locationId: number,
+  ) => {
     if (event.target.checked) {
       setSelectedLocationIds((prevSelected) => [...prevSelected, locationId]);
     } else {
-      setSelectedLocationIds((prevSelected) => prevSelected.filter((id) => id !== locationId));
+      setSelectedLocationIds((prevSelected) =>
+        prevSelected.filter((id) => id !== locationId),
+      );
     }
   };
 
@@ -192,13 +209,15 @@ const LocationManagement: React.FC = () => {
       showSnackbar('Please select locations to print.', 'warning');
       return;
     }
-    const selectedLocationsData = locations.filter(loc => selectedLocationIds.includes(loc.id));
+    const selectedLocationsData = locations.filter((loc) =>
+      selectedLocationIds.includes(loc.id),
+    );
     if (selectedLocationsData.length === 0) {
-        showSnackbar('Selected locations not found. Please refresh.', 'warning');
-        return;
+      showSnackbar('Selected locations not found. Please refresh.', 'warning');
+      return;
     }
     navigate('/assets/locations/print-preview', {
-      state: { selectedLocations: selectedLocationsData, autoPrint: autoPrint }
+      state: { selectedLocations: selectedLocationsData, autoPrint: autoPrint },
     });
   };
 
@@ -208,8 +227,19 @@ const LocationManagement: React.FC = () => {
         Manage Locations
       </Typography>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMessage && (
+        <Snackbar
+          open
+          autoHideDuration={6000}
+          onClose={() => setSuccessMessage(null)}
+          message={successMessage}
+        />
+      )}
 
       <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
         <Button
@@ -238,7 +268,9 @@ const LocationManagement: React.FC = () => {
         </Button>
       </Box>
 
-      {isLoading && !locations.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
+      {isLoading && !locations.length && (
+        <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />
+      )}
 
       <TableContainer component={Paper} elevation={3}>
         <Table>
@@ -246,8 +278,14 @@ const LocationManagement: React.FC = () => {
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={selectedLocationIds.length > 0 && selectedLocationIds.length < locations.length}
-                  checked={locations.length > 0 && selectedLocationIds.length === locations.length}
+                  indeterminate={
+                    selectedLocationIds.length > 0 &&
+                    selectedLocationIds.length < locations.length
+                  }
+                  checked={
+                    locations.length > 0 &&
+                    selectedLocationIds.length === locations.length
+                  }
                   onChange={handleSelectAllClick}
                   inputProps={{ 'aria-label': 'select all locations' }}
                 />
@@ -272,17 +310,31 @@ const LocationManagement: React.FC = () => {
                   <TableCell padding="checkbox">
                     <Checkbox
                       checked={isSelected}
-                      onChange={(event) => handleRowCheckboxChange(event, location.id)}
-                      inputProps={{ 'aria-labelledby': `location-checkbox-${location.id}` }}
+                      onChange={(event) =>
+                        handleRowCheckboxChange(event, location.id)
+                      }
+                      inputProps={{
+                        'aria-labelledby': `location-checkbox-${location.id}`,
+                      }}
                     />
                   </TableCell>
-                  <TableCell id={`location-checkbox-${location.id}`}>{location.name}</TableCell>
+                  <TableCell id={`location-checkbox-${location.id}`}>
+                    {location.name}
+                  </TableCell>
                   <TableCell>{location.description || '-'}</TableCell>
                   <TableCell align="right">
-                    <IconButton onClick={() => handleOpenFormDialog(location)} disabled={isLoading} size="small">
+                    <IconButton
+                      onClick={() => handleOpenFormDialog(location)}
+                      disabled={isLoading}
+                      size="small"
+                    >
                       <EditIcon />
                     </IconButton>
-                    <IconButton onClick={() => handleOpenDeleteDialog(location)} disabled={isLoading} size="small">
+                    <IconButton
+                      onClick={() => handleOpenDeleteDialog(location)}
+                      disabled={isLoading}
+                      size="small"
+                    >
                       <DeleteIcon />
                     </IconButton>
                   </TableCell>
@@ -290,19 +342,32 @@ const LocationManagement: React.FC = () => {
               );
             })}
             {!isLoading && !locations.length && (
-                <TableRow>
-                    <TableCell colSpan={4} align="center">No locations found.</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell colSpan={4} align="center">
+                  No locations found.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* Form Dialog (Create/Edit) */}
-      <Dialog open={openFormDialog} onClose={handleCloseFormDialog} maxWidth="sm" fullWidth>
-        <DialogTitle>{selectedLocation ? 'Edit Location' : 'Add New Location'}</DialogTitle>
+      <Dialog
+        open={openFormDialog}
+        onClose={handleCloseFormDialog}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedLocation ? 'Edit Location' : 'Add New Location'}
+        </DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
           <TextField
             autoFocus
             margin="dense"
@@ -330,11 +395,25 @@ const LocationManagement: React.FC = () => {
           />
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFormDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseFormDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSaveLocation} variant="contained" disabled={isLoading}>
-            {isLoading && selectedLocation ? 'Saving...' : isLoading ? 'Creating...' : selectedLocation ? 'Save Changes' : 'Create Location'}
+          <Button
+            onClick={handleSaveLocation}
+            variant="contained"
+            disabled={isLoading}
+          >
+            {isLoading && selectedLocation
+              ? 'Saving...'
+              : isLoading
+                ? 'Creating...'
+                : selectedLocation
+                  ? 'Save Changes'
+                  : 'Create Location'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -344,18 +423,32 @@ const LocationManagement: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the location: <strong>{selectedLocation?.name}</strong>?
+            Are you sure you want to delete the location:{' '}
+            <strong>{selectedLocation?.name}</strong>?
           </Typography>
           <Typography variant="body2" color="textSecondary">
             This action cannot be undone.
           </Typography>
-          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirmed} color="error" variant="contained" disabled={isLoading}>
+          <Button
+            onClick={handleDeleteConfirmed}
+            color="error"
+            variant="contained"
+            disabled={isLoading}
+          >
             {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>

@@ -27,8 +27,15 @@ import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI'; // Import useUI
-import { getPurchaseOrders, updatePurchaseOrder } from '../../../../api/procurementApi'; // Import updatePurchaseOrder
-import type { PurchaseOrder, GetPurchaseOrdersParams, PurchaseOrderStatus } from '../../types';
+import {
+  getPurchaseOrders,
+  updatePurchaseOrder,
+} from '../../../../api/procurementApi'; // Import updatePurchaseOrder
+import type {
+  PurchaseOrder,
+  GetPurchaseOrdersParams,
+  PurchaseOrderStatus,
+} from '../../types';
 import { useNavigate } from 'react-router-dom';
 
 type Order = 'asc' | 'desc';
@@ -69,11 +76,17 @@ const PurchaseOrderList: React.FC = () => {
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message || 'Failed to fetch purchase orders.');
-      console.error("Failed to fetch purchase orders:", err);
+      console.error('Failed to fetch purchase orders:', err);
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, page, rowsPerPage, sortConfigKey, sortConfigDirection]);
+  }, [
+    authenticatedFetch,
+    page,
+    rowsPerPage,
+    sortConfigKey,
+    sortConfigDirection,
+  ]);
 
   useEffect(() => {
     fetchPurchaseOrders();
@@ -83,7 +96,9 @@ const PurchaseOrderList: React.FC = () => {
     setPage(newPage);
   };
 
-  const handleRowsPerPageChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleRowsPerPageChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
@@ -116,29 +131,43 @@ const PurchaseOrderList: React.FC = () => {
           return;
         }
         try {
-          await updatePurchaseOrder(authenticatedFetch, poId, { status: 'cancelled' });
+          await updatePurchaseOrder(authenticatedFetch, poId, {
+            status: 'cancelled',
+          });
           showSnackbar('Purchase Order cancelled successfully!', 'success');
           fetchPurchaseOrders(); // Refresh the list
         } catch (err) {
-          const message = err instanceof Error ? err.message : 'Failed to cancel purchase order.';
+          const message =
+            err instanceof Error
+              ? err.message
+              : 'Failed to cancel purchase order.';
           showSnackbar(message, 'error');
-          console.error("Error cancelling PO:", err);
+          console.error('Error cancelling PO:', err);
         }
-      }
+      },
     );
   };
 
   const getStatusChipColor = (status: PurchaseOrderStatus) => {
     switch (status) {
-      case 'draft': return 'default';
-      case 'pending_approval': return 'warning';
-      case 'approved': return 'success';
-      case 'partially_received': return 'info';
-      case 'fully_received': return 'primary';
-      case 'invoiced': return 'secondary';
-      case 'paid': return 'success'; // Or a different color like 'primary' if success is for approved
-      case 'cancelled': return 'error';
-      default: return 'default';
+      case 'draft':
+        return 'default';
+      case 'pending_approval':
+        return 'warning';
+      case 'approved':
+        return 'success';
+      case 'partially_received':
+        return 'info';
+      case 'fully_received':
+        return 'primary';
+      case 'invoiced':
+        return 'secondary';
+      case 'paid':
+        return 'success'; // Or a different color like 'primary' if success is for approved
+      case 'cancelled':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
@@ -151,11 +180,16 @@ const PurchaseOrderList: React.FC = () => {
     setSelectedPoIds([]);
   };
 
-  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, poId: number) => {
+  const handleRowCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    poId: number,
+  ) => {
     if (event.target.checked) {
       setSelectedPoIds((prevSelected) => [...prevSelected, poId]);
     } else {
-      setSelectedPoIds((prevSelected) => prevSelected.filter((id) => id !== poId));
+      setSelectedPoIds((prevSelected) =>
+        prevSelected.filter((id) => id !== poId),
+      );
     }
   };
 
@@ -165,17 +199,28 @@ const PurchaseOrderList: React.FC = () => {
       return;
     }
     navigate('/procurement/purchase-orders/print-preview', {
-      state: { selectedPoIds: selectedPoIds, autoPrint: autoPrint }
+      state: { selectedPoIds: selectedPoIds, autoPrint: autoPrint },
     });
   };
 
-  const headCells: { id: keyof PurchaseOrder | string; label: string; sortable: boolean; numeric?: boolean; padding?: 'none' | 'normal' }[] = [
+  const headCells: {
+    id: keyof PurchaseOrder | string;
+    label: string;
+    sortable: boolean;
+    numeric?: boolean;
+    padding?: 'none' | 'normal';
+  }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
     { id: 'po_number', label: 'PO Number', sortable: true },
     { id: 'vendor_details', label: 'Vendor', sortable: true }, // Sorting by vendor.name would be backend: 'vendor__name'
     { id: 'order_date', label: 'Order Date', sortable: true },
     { id: 'status', label: 'Status', sortable: true },
-    { id: 'total_amount', label: 'Total Amount', sortable: true, numeric: true },
+    {
+      id: 'total_amount',
+      label: 'Total Amount',
+      sortable: true,
+      numeric: true,
+    },
     { id: 'created_by_username', label: 'Created By', sortable: true },
     { id: 'actions', label: 'Actions', sortable: false, numeric: true },
   ];
@@ -213,7 +258,11 @@ const PurchaseOrderList: React.FC = () => {
         Print Selected ({selectedPoIds.length})
       </Button>
 
-      {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
 
       <TableContainer component={Paper} elevation={2}>
         <Table>
@@ -221,96 +270,148 @@ const PurchaseOrderList: React.FC = () => {
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={selectedPoIds.length > 0 && selectedPoIds.length < purchaseOrders.length}
-                  checked={purchaseOrders.length > 0 && selectedPoIds.length === purchaseOrders.length}
+                  indeterminate={
+                    selectedPoIds.length > 0 &&
+                    selectedPoIds.length < purchaseOrders.length
+                  }
+                  checked={
+                    purchaseOrders.length > 0 &&
+                    selectedPoIds.length === purchaseOrders.length
+                  }
                   onChange={handleSelectAllClick}
                   inputProps={{ 'aria-label': 'select all purchase orders' }}
                 />
               </TableCell>
-              {headCells.slice(1).map((headCell) => ( // Slice to skip 'select' cell for mapping actual headers
-                <TableCell
-                  key={headCell.id}
-                  align={headCell.numeric ? 'right' : 'left'}
-                  padding={headCell.padding === 'none' ? 'none' : 'normal'}
-                  sortDirection={sortConfigKey === headCell.id ? sortConfigDirection : false}
-                >
-                  {headCell.sortable ? (
-                    <TableSortLabel
-                      active={sortConfigKey === headCell.id}
-                      direction={sortConfigKey === headCell.id ? sortConfigDirection : 'asc'}
-                      onClick={() => handleSortRequest(headCell.id)}
-                    >
-                      {headCell.label}
-                    </TableSortLabel>
-                  ) : (
-                    headCell.label
-                  )}
-                </TableCell>
-              ))}
+              {headCells.slice(1).map(
+                (
+                  headCell, // Slice to skip 'select' cell for mapping actual headers
+                ) => (
+                  <TableCell
+                    key={headCell.id}
+                    align={headCell.numeric ? 'right' : 'left'}
+                    padding={headCell.padding === 'none' ? 'none' : 'normal'}
+                    sortDirection={
+                      sortConfigKey === headCell.id
+                        ? sortConfigDirection
+                        : false
+                    }
+                  >
+                    {headCell.sortable ? (
+                      <TableSortLabel
+                        active={sortConfigKey === headCell.id}
+                        direction={
+                          sortConfigKey === headCell.id
+                            ? sortConfigDirection
+                            : 'asc'
+                        }
+                        onClick={() => handleSortRequest(headCell.id)}
+                      >
+                        {headCell.label}
+                      </TableSortLabel>
+                    ) : (
+                      headCell.label
+                    )}
+                  </TableCell>
+                ),
+              )}
             </TableRow>
           </TableHead>
           <TableBody>
             {isLoading && purchaseOrders.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length +1} align="center"><CircularProgress /></TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={headCells.length + 1} align="center">
+                  <CircularProgress />
+                </TableCell>
+              </TableRow>
             )}
             {!isLoading && purchaseOrders.length === 0 && (
-              <TableRow><TableCell colSpan={headCells.length +1} align="center">No purchase orders found.</TableCell></TableRow>
+              <TableRow>
+                <TableCell colSpan={headCells.length + 1} align="center">
+                  No purchase orders found.
+                </TableCell>
+              </TableRow>
             )}
             {purchaseOrders.map((po) => {
               const isSelected = selectedPoIds.includes(po.id);
               return (
-              <TableRow
-                key={po.id}
-                hover
-                onClick={_event => {}}
-                role="checkbox"
-                aria-checked={isSelected}
-                tabIndex={-1}
-                selected={isSelected}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={(event) => handleRowCheckboxChange(event, po.id)}
-                    inputProps={{ 'aria-labelledby': `po-checkbox-${po.id}` }}
-                  />
-                </TableCell>
-                <TableCell id={`po-checkbox-${po.id}`}>{po.po_number}</TableCell>
-                <TableCell>{po.vendor_details?.name || '-'}</TableCell>
-                <TableCell>{new Date(po.order_date).toLocaleDateString()}</TableCell>
-                <TableCell>
-                  <Chip
-                    label={po.status.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}
-                    color={getStatusChipColor(po.status)}
-                    size="small"
-                  />
-                </TableCell>
-                <TableCell align="right">{po.total_amount != null ? `$${Number(po.total_amount).toFixed(2)}` : '-'}</TableCell>
-                <TableCell>{po.created_by_username}</TableCell>
-                <TableCell align="right">
-                  <Tooltip title="View Details">
-                    <IconButton onClick={() => handleViewDetails(po.id)} size="small">
-                      <VisibilityIcon />
-                    </IconButton>
-                  </Tooltip>
-                  {(po.status === 'draft' || po.status === 'pending_approval') && (
-                    <Tooltip title="Edit Purchase Order">
-                      <IconButton onClick={() => handleEditPO(po.id)} size="small">
-                        <EditIcon />
+                <TableRow
+                  key={po.id}
+                  hover
+                  onClick={() => {}}
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={-1}
+                  selected={isSelected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={(event) =>
+                        handleRowCheckboxChange(event, po.id)
+                      }
+                      inputProps={{ 'aria-labelledby': `po-checkbox-${po.id}` }}
+                    />
+                  </TableCell>
+                  <TableCell id={`po-checkbox-${po.id}`}>
+                    {po.po_number}
+                  </TableCell>
+                  <TableCell>{po.vendor_details?.name || '-'}</TableCell>
+                  <TableCell>
+                    {new Date(po.order_date).toLocaleDateString()}
+                  </TableCell>
+                  <TableCell>
+                    <Chip
+                      label={po.status
+                        .replace(/_/g, ' ')
+                        .replace(/\b\w/g, (l) => l.toUpperCase())}
+                      color={getStatusChipColor(po.status)}
+                      size="small"
+                    />
+                  </TableCell>
+                  <TableCell align="right">
+                    {po.total_amount != null
+                      ? `$${Number(po.total_amount).toFixed(2)}`
+                      : '-'}
+                  </TableCell>
+                  <TableCell>{po.created_by_username}</TableCell>
+                  <TableCell align="right">
+                    <Tooltip title="View Details">
+                      <IconButton
+                        onClick={() => handleViewDetails(po.id)}
+                        size="small"
+                      >
+                        <VisibilityIcon />
                       </IconButton>
                     </Tooltip>
-                  )}
-                  {(po.status === 'draft' || po.status === 'pending_approval' || po.status === 'approved') && (
-                    <Tooltip title="Cancel Purchase Order">
-                      <IconButton onClick={() => handleCancelPO(po.id)} size="small" color="error">
-                        <CancelIcon />
-                      </IconButton>
-                    </Tooltip>
-                  )}
-                  {/* Add other relevant actions like 'Receive Items' based on status and permissions */}
-                </TableCell>
-              </TableRow>
-            )})}
+                    {(po.status === 'draft' ||
+                      po.status === 'pending_approval') && (
+                      <Tooltip title="Edit Purchase Order">
+                        <IconButton
+                          onClick={() => handleEditPO(po.id)}
+                          size="small"
+                        >
+                          <EditIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {(po.status === 'draft' ||
+                      po.status === 'pending_approval' ||
+                      po.status === 'approved') && (
+                      <Tooltip title="Cancel Purchase Order">
+                        <IconButton
+                          onClick={() => handleCancelPO(po.id)}
+                          size="small"
+                          color="error"
+                        >
+                          <CancelIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {/* Add other relevant actions like 'Receive Items' based on status and permissions */}
+                  </TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
         <TablePagination

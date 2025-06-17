@@ -61,14 +61,18 @@ const VendorManagement: React.FC = () => {
   const [openDeleteDialog, setOpenDeleteDialog] = useState<boolean>(false);
 
   const [selectedVendor, setSelectedVendor] = useState<Vendor | null>(null);
-  const [vendorFormData, setVendorFormData] = useState<VendorData>(initialFormData);
+  const [vendorFormData, setVendorFormData] =
+    useState<VendorData>(initialFormData);
 
   const fetchVendors = useCallback(async () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
     setError(null);
     try {
-      const response: PaginatedResponse<Vendor> = await getVendors(authenticatedFetch, { page: 1, pageSize: 100 });
+      const response: PaginatedResponse<Vendor> = await getVendors(
+        authenticatedFetch,
+        { page: 1, pageSize: 100 },
+      );
       setVendors(response.results);
     } catch (err: unknown) {
       let message = 'Failed to fetch vendors.';
@@ -78,7 +82,7 @@ const VendorManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to fetch vendors:", err);
+      console.error('Failed to fetch vendors:', err);
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +103,7 @@ const VendorManagement: React.FC = () => {
             phone_number: vendor.phone_number || '',
             address: vendor.address || '',
           }
-        : initialFormData
+        : initialFormData,
     );
     setOpenFormDialog(true);
     setError(null);
@@ -128,8 +132,8 @@ const VendorManagement: React.FC = () => {
 
   const handleSaveVendor = async () => {
     if (!authenticatedFetch || !vendorFormData.name) {
-        setError("Vendor name is required.");
-        return;
+      setError('Vendor name is required.');
+      return;
     }
     setIsLoading(true);
     setError(null);
@@ -137,7 +141,11 @@ const VendorManagement: React.FC = () => {
 
     try {
       if (selectedVendor && selectedVendor.id) {
-        await updateVendor(authenticatedFetch, selectedVendor.id, vendorFormData);
+        await updateVendor(
+          authenticatedFetch,
+          selectedVendor.id,
+          vendorFormData,
+        );
         setSuccessMessage('Vendor updated successfully!');
       } else {
         await createVendor(authenticatedFetch, vendorFormData);
@@ -153,7 +161,7 @@ const VendorManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to save vendor:", err);
+      console.error('Failed to save vendor:', err);
     } finally {
       setIsLoading(false);
     }
@@ -178,7 +186,7 @@ const VendorManagement: React.FC = () => {
         message = err || message;
       }
       setError(message);
-      console.error("Failed to delete vendor:", err);
+      console.error('Failed to delete vendor:', err);
     } finally {
       setIsLoading(false);
     }
@@ -193,11 +201,16 @@ const VendorManagement: React.FC = () => {
     setSelectedVendorIds([]);
   };
 
-  const handleRowCheckboxChange = (event: React.ChangeEvent<HTMLInputElement>, vendorId: number) => {
+  const handleRowCheckboxChange = (
+    event: React.ChangeEvent<HTMLInputElement>,
+    vendorId: number,
+  ) => {
     if (event.target.checked) {
       setSelectedVendorIds((prevSelected) => [...prevSelected, vendorId]);
     } else {
-      setSelectedVendorIds((prevSelected) => prevSelected.filter((id) => id !== vendorId));
+      setSelectedVendorIds((prevSelected) =>
+        prevSelected.filter((id) => id !== vendorId),
+      );
     }
   };
 
@@ -206,13 +219,15 @@ const VendorManagement: React.FC = () => {
       showSnackbar('Please select vendors to print.', 'warning');
       return;
     }
-    const selectedVendorsData = vendors.filter(vendor => selectedVendorIds.includes(vendor.id));
+    const selectedVendorsData = vendors.filter((vendor) =>
+      selectedVendorIds.includes(vendor.id),
+    );
     if (selectedVendorsData.length === 0) {
-        showSnackbar('Selected vendors not found. Please refresh.', 'warning');
-        return;
+      showSnackbar('Selected vendors not found. Please refresh.', 'warning');
+      return;
     }
     navigate('/assets/vendors/print-preview', {
-      state: { selectedVendors: selectedVendorsData, autoPrint: autoPrint }
+      state: { selectedVendors: selectedVendorsData, autoPrint: autoPrint },
     });
   };
 
@@ -222,8 +237,19 @@ const VendorManagement: React.FC = () => {
         Manage Vendors
       </Typography>
 
-      {error && !openFormDialog && !openDeleteDialog && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-      {successMessage && <Snackbar open autoHideDuration={6000} onClose={() => setSuccessMessage(null)} message={successMessage} />}
+      {error && !openFormDialog && !openDeleteDialog && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
+      )}
+      {successMessage && (
+        <Snackbar
+          open
+          autoHideDuration={6000}
+          onClose={() => setSuccessMessage(null)}
+          message={successMessage}
+        />
+      )}
 
       <Box sx={{ mb: 2, display: 'flex', gap: 1 }}>
         <Button
@@ -252,7 +278,9 @@ const VendorManagement: React.FC = () => {
         </Button>
       </Box>
 
-      {isLoading && !vendors.length && <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />}
+      {isLoading && !vendors.length && (
+        <CircularProgress sx={{ display: 'block', margin: 'auto', mt: 4 }} />
+      )}
 
       <TableContainer component={Paper} elevation={3}>
         <Table>
@@ -260,8 +288,14 @@ const VendorManagement: React.FC = () => {
             <TableRow>
               <TableCell padding="checkbox">
                 <Checkbox
-                  indeterminate={selectedVendorIds.length > 0 && selectedVendorIds.length < vendors.length}
-                  checked={vendors.length > 0 && selectedVendorIds.length === vendors.length}
+                  indeterminate={
+                    selectedVendorIds.length > 0 &&
+                    selectedVendorIds.length < vendors.length
+                  }
+                  checked={
+                    vendors.length > 0 &&
+                    selectedVendorIds.length === vendors.length
+                  }
                   onChange={handleSelectAllClick}
                   inputProps={{ 'aria-label': 'select all vendors' }}
                 />
@@ -278,54 +312,88 @@ const VendorManagement: React.FC = () => {
             {vendors.map((vendor) => {
               const isSelected = selectedVendorIds.includes(vendor.id);
               return (
-              <TableRow
-                key={vendor.id}
-                hover
-                role="checkbox"
-                aria-checked={isSelected}
-                tabIndex={-1}
-                selected={isSelected}
-              >
-                <TableCell padding="checkbox">
-                  <Checkbox
-                    checked={isSelected}
-                    onChange={(event) => handleRowCheckboxChange(event, vendor.id)}
-                    inputProps={{ 'aria-labelledby': `vendor-checkbox-${vendor.id}` }}
-                  />
-                </TableCell>
-                <TableCell id={`vendor-checkbox-${vendor.id}`}>{vendor.name}</TableCell>
-                <TableCell>{vendor.contact_person || '-'}</TableCell>
-                <TableCell>{vendor.email || '-'}</TableCell>
-                <TableCell>{vendor.phone_number || '-'}</TableCell>
-                <TableCell sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                  {vendor.address || '-'}
-                </TableCell>
-                <TableCell align="right">
-                  <IconButton onClick={() => handleOpenFormDialog(vendor)} disabled={isLoading} size="small">
-                    <EditIcon />
-                  </IconButton>
-                  <IconButton onClick={() => handleOpenDeleteDialog(vendor)} disabled={isLoading} size="small">
-                    <DeleteIcon />
-                  </IconButton>
-                </TableCell>
-              </TableRow>
-            );
+                <TableRow
+                  key={vendor.id}
+                  hover
+                  role="checkbox"
+                  aria-checked={isSelected}
+                  tabIndex={-1}
+                  selected={isSelected}
+                >
+                  <TableCell padding="checkbox">
+                    <Checkbox
+                      checked={isSelected}
+                      onChange={(event) =>
+                        handleRowCheckboxChange(event, vendor.id)
+                      }
+                      inputProps={{
+                        'aria-labelledby': `vendor-checkbox-${vendor.id}`,
+                      }}
+                    />
+                  </TableCell>
+                  <TableCell id={`vendor-checkbox-${vendor.id}`}>
+                    {vendor.name}
+                  </TableCell>
+                  <TableCell>{vendor.contact_person || '-'}</TableCell>
+                  <TableCell>{vendor.email || '-'}</TableCell>
+                  <TableCell>{vendor.phone_number || '-'}</TableCell>
+                  <TableCell
+                    sx={{
+                      maxWidth: 200,
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    {vendor.address || '-'}
+                  </TableCell>
+                  <TableCell align="right">
+                    <IconButton
+                      onClick={() => handleOpenFormDialog(vendor)}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      <EditIcon />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => handleOpenDeleteDialog(vendor)}
+                      disabled={isLoading}
+                      size="small"
+                    >
+                      <DeleteIcon />
+                    </IconButton>
+                  </TableCell>
+                </TableRow>
+              );
             })}
             {!isLoading && !vendors.length && (
-                <TableRow>
-                    <TableCell colSpan={7} align="center">No vendors found.</TableCell>
-                </TableRow>
+              <TableRow>
+                <TableCell colSpan={7} align="center">
+                  No vendors found.
+                </TableCell>
+              </TableRow>
             )}
           </TableBody>
         </Table>
       </TableContainer>
 
       {/* Form Dialog (Create/Edit) */}
-      <Dialog open={openFormDialog} onClose={handleCloseFormDialog} maxWidth="md" fullWidth>
-        <DialogTitle>{selectedVendor ? 'Edit Vendor' : 'Add New Vendor'}</DialogTitle>
+      <Dialog
+        open={openFormDialog}
+        onClose={handleCloseFormDialog}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle>
+          {selectedVendor ? 'Edit Vendor' : 'Add New Vendor'}
+        </DialogTitle>
         <DialogContent>
-          {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
-          <Grid container spacing={2} sx={{mt: 1}}>
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+          <Grid container spacing={2} sx={{ mt: 1 }}>
             <Grid item xs={12} sm={6}>
               <TextField
                 autoFocus
@@ -389,11 +457,25 @@ const VendorManagement: React.FC = () => {
           </Grid>
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseFormDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseFormDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleSaveVendor} variant="contained" disabled={isLoading}>
-            {isLoading && selectedVendor ? 'Saving...' : isLoading ? 'Creating...' : selectedVendor ? 'Save Changes' : 'Create Vendor'}
+          <Button
+            onClick={handleSaveVendor}
+            variant="contained"
+            disabled={isLoading}
+          >
+            {isLoading && selectedVendor
+              ? 'Saving...'
+              : isLoading
+                ? 'Creating...'
+                : selectedVendor
+                  ? 'Save Changes'
+                  : 'Create Vendor'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -403,18 +485,32 @@ const VendorManagement: React.FC = () => {
         <DialogTitle>Confirm Delete</DialogTitle>
         <DialogContent>
           <Typography>
-            Are you sure you want to delete the vendor: <strong>{selectedVendor?.name}</strong>?
+            Are you sure you want to delete the vendor:{' '}
+            <strong>{selectedVendor?.name}</strong>?
           </Typography>
           <Typography variant="body2" color="textSecondary">
             This action cannot be undone.
           </Typography>
-          {error && <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={handleCloseDeleteDialog} color="secondary" disabled={isLoading}>
+          <Button
+            onClick={handleCloseDeleteDialog}
+            color="secondary"
+            disabled={isLoading}
+          >
             Cancel
           </Button>
-          <Button onClick={handleDeleteConfirmed} color="error" variant="contained" disabled={isLoading}>
+          <Button
+            onClick={handleDeleteConfirmed}
+            color="error"
+            variant="contained"
+            disabled={isLoading}
+          >
             {isLoading ? 'Deleting...' : 'Delete'}
           </Button>
         </DialogActions>

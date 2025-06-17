@@ -1,0 +1,29 @@
+
+> itsm_frontend@0.0.0 lint
+> eslint .
+
+
+/app/itsm_frontend/src/api/assetApi.ts
+  6:3  error  'User' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/api/procurementApi.ts
+   5:3  error  'PurchaseRequestStatus' is defined but never used  @typescript-eslint/no-unused-vars
+  15:3  error  'PurchaseOrderStatus' is defined but never used    @typescript-eslint/no-unused-vars
+  20:3  error  'CheckRequestStatus' is defined but never used     @typescript-eslint/no-unused-vars
+  21:3  error  'PaymentMethod' is defined but never used          @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/api/serviceRequestApi.ts
+   7:3  error  'ServiceRequestCategory' is defined but never used  @typescript-eslint/no-unused-vars
+   8:3  error  'ServiceRequestPriority' is defined but never used  @typescript-eslint/no-unused-vars
+  10:3  error  'RawUserResponse' is defined but never used         @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/modules/assets/components/AssetList.tsx
+  54:15  error  'AssetLocation' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/modules/procurement/components/purchase-orders/PurchaseOrderList.tsx
+  340:29  error  '_event' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/utils/formatters.ts
+  37:12  error  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 11 problems (11 errors, 0 warnings)

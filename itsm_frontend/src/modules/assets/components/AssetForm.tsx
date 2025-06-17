@@ -38,11 +38,11 @@ import type {
 
 // Mimic Django choices for status filter - ensure these match backend model choices
 const ASSET_STATUS_CHOICES = [
-  { value: "in_use", label: "In Use" },
-  { value: "in_stock", label: "In Stock" },
-  { value: "maintenance", label: "Under Maintenance" },
-  { value: "retired", label: "Retired" },
-  { value: "disposed", label: "Disposed" },
+  { value: 'in_use', label: 'In Use' },
+  { value: 'in_stock', label: 'In Stock' },
+  { value: 'maintenance', label: 'Under Maintenance' },
+  { value: 'retired', label: 'Retired' },
+  { value: 'disposed', label: 'Disposed' },
 ];
 
 const initialFormData: AssetData = {
@@ -59,11 +59,19 @@ const initialFormData: AssetData = {
   description: null,
 };
 
-type RawAssetData = Omit<AssetData, 'category_id' | 'location_id' | 'vendor_id' | 'assigned_to_id'> & {
+type RawAssetData = Omit<
+  AssetData,
+  'category_id' | 'location_id' | 'vendor_id' | 'assigned_to_id'
+> & {
   category?: { id: number; name: string } | null;
   location?: { id: number; name: string } | null;
   vendor?: { id: number; name: string } | null;
-  assigned_to?: { id: number; username: string; first_name?: string; last_name?: string } | null;
+  assigned_to?: {
+    id: number;
+    username: string;
+    first_name?: string;
+    last_name?: string;
+  } | null;
 };
 
 const AssetForm: React.FC = () => {
@@ -91,23 +99,25 @@ const AssetForm: React.FC = () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
     try {
-      const [categoriesRes, locationsRes, vendorsRes, usersRes] = await Promise.all([
-        getAssetCategories(authenticatedFetch, { page: 1, pageSize: 200 }), // Fetch more for dropdowns
-        getLocations(authenticatedFetch, { page: 1, pageSize: 200 }),
-        getVendors(authenticatedFetch, { page: 1, pageSize: 200 }),
-        getUserList(authenticatedFetch), // Assuming getUserList is refactored
-      ]);
+      const [categoriesRes, locationsRes, vendorsRes, usersRes] =
+        await Promise.all([
+          getAssetCategories(authenticatedFetch, { page: 1, pageSize: 200 }), // Fetch more for dropdowns
+          getLocations(authenticatedFetch, { page: 1, pageSize: 200 }),
+          getVendors(authenticatedFetch, { page: 1, pageSize: 200 }),
+          getUserList(authenticatedFetch), // Assuming getUserList is refactored
+        ]);
       setAssetCategories(categoriesRes.results);
       setLocations(locationsRes.results);
       setVendors(vendorsRes.results);
       setUsers(usersRes); // getUserList might not return paginated response, adjust if it does
-    } catch (err: unknown) { // Changed to unknown
-      console.error("Failed to fetch supporting data:", err);
+    } catch (err: unknown) {
+      // Changed to unknown
+      console.error('Failed to fetch supporting data:', err);
       const message = err instanceof Error ? err.message : String(err);
-      setError("Failed to load data for dropdowns. " + message);
+      setError('Failed to load data for dropdowns. ' + message);
     } finally {
-        // Keep loading true if we are in edit mode and asset data is still to be fetched
-        if (!assetId) setIsLoading(false);
+      // Keep loading true if we are in edit mode and asset data is still to be fetched
+      if (!assetId) setIsLoading(false);
     }
   }, [authenticatedFetch, assetId]);
 
@@ -117,14 +127,18 @@ const AssetForm: React.FC = () => {
     setIsLoading(true); // Ensure loading is true when fetching asset
     setError(null);
     try {
-      const asset = await getAssetById(authenticatedFetch, parseInt(assetId, 10));
+      const asset = await getAssetById(
+        authenticatedFetch,
+        parseInt(assetId, 10),
+      );
       setAssetDataRaw(asset); // <-- store raw asset data
       setIsEditMode(true);
-    } catch (err: unknown) { // Changed to unknown
-      console.error("Failed to fetch asset for editing:", err);
+    } catch (err: unknown) {
+      // Changed to unknown
+      console.error('Failed to fetch asset for editing:', err);
       const message = err instanceof Error ? err.message : String(err);
-      setError("Failed to load asset details. " + message);
-      navigate("/assets"); // Navigate away if asset not found or error
+      setError('Failed to load asset details. ' + message);
+      navigate('/assets'); // Navigate away if asset not found or error
     } finally {
       setIsLoading(false);
     }
@@ -154,8 +168,12 @@ const AssetForm: React.FC = () => {
         location_id: assetDataRaw.location?.id || null,
         vendor_id: assetDataRaw.vendor?.id || null,
         assigned_to_id: assetDataRaw.assigned_to?.id || null,
-        purchase_date: assetDataRaw.purchase_date ? assetDataRaw.purchase_date.split('T')[0] : null,
-        warranty_end_date: assetDataRaw.warranty_end_date ? assetDataRaw.warranty_end_date.split('T')[0] : null,
+        purchase_date: assetDataRaw.purchase_date
+          ? assetDataRaw.purchase_date.split('T')[0]
+          : null,
+        warranty_end_date: assetDataRaw.warranty_end_date
+          ? assetDataRaw.warranty_end_date.split('T')[0]
+          : null,
         description: assetDataRaw.description || null,
       });
     }
@@ -179,8 +197,9 @@ const AssetForm: React.FC = () => {
     }
   }, [assetId, fetchAssetForEdit, currentUser]);
 
-
-  const handleChange = (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = event.target;
     setFormData((prev) => ({ ...prev, [name]: value || null })); // Handle empty string as null for optional fields
   };
@@ -202,23 +221,22 @@ const AssetForm: React.FC = () => {
   const handleDateChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = event.target;
     setFormData((prev) => ({
-        ...prev,
-        [name]: value || null, // Store null if date is cleared
+      ...prev,
+      [name]: value || null, // Store null if date is cleared
     }));
   };
-
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!authenticatedFetch) {
-      setError("Authentication not available. Please log in.");
-      showSnackbar("Authentication not available.", "error");
+      setError('Authentication not available. Please log in.');
+      showSnackbar('Authentication not available.', 'error');
       return;
     }
     if (!formData.name || !formData.asset_tag || !formData.status) {
-        setError("Name, Asset Tag, and Status are required fields.");
-        showSnackbar("Name, Asset Tag, and Status are required.", "warning");
-        return;
+      setError('Name, Asset Tag, and Status are required fields.');
+      showSnackbar('Name, Asset Tag, and Status are required.', 'warning');
+      return;
     }
     setIsSubmitting(true);
     setError(null);
@@ -229,7 +247,9 @@ const AssetForm: React.FC = () => {
       category_id: formData.category_id,
       location_id: formData.location_id ? Number(formData.location_id) : null,
       vendor_id: formData.vendor_id ? Number(formData.vendor_id) : null,
-      assigned_to_id: formData.assigned_to_id ? Number(formData.assigned_to_id) : null,
+      assigned_to_id: formData.assigned_to_id
+        ? Number(formData.assigned_to_id)
+        : null,
       // Ensure empty strings for dates/text fields are converted to null if backend expects null
       serial_number: formData.serial_number || null,
       purchase_date: formData.purchase_date || null,
@@ -246,10 +266,13 @@ const AssetForm: React.FC = () => {
         showSnackbar('Asset created successfully!', 'success');
       }
       navigate('/assets'); // Navigate to asset list page
-    } catch (err: unknown) { // Changed to unknown
-      console.error("Failed to save asset:", err);
+    } catch (err: unknown) {
+      // Changed to unknown
+      console.error('Failed to save asset:', err);
       const message = err instanceof Error ? err.message : String(err);
-      const apiError = message || (typeof err === 'string' ? err : 'An unknown error occurred');
+      const apiError =
+        message ||
+        (typeof err === 'string' ? err : 'An unknown error occurred');
       setError(`Failed to save asset: ${apiError}`);
       showSnackbar(`Failed to save asset: ${apiError}`, 'error');
     } finally {
@@ -259,7 +282,14 @@ const AssetForm: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '80vh' }}>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          height: '80vh',
+        }}
+      >
         <CircularProgress />
         <Typography sx={{ ml: 2 }}>Loading asset data...</Typography>
       </Box>
@@ -270,30 +300,43 @@ const AssetForm: React.FC = () => {
   // This block is for when fetching the asset in edit mode fails.
   if (isEditMode && error && !formData.asset_tag && !isLoading) {
     return (
-        <Box sx={{ p:3 }}>
-            <Alert severity="error">{error}</Alert>
-            <Button variant="outlined" startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{mt: 2}}>Back</Button>
-        </Box>
+      <Box sx={{ p: 3 }}>
+        <Alert severity="error">{error}</Alert>
+        <Button
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mt: 2 }}
+        >
+          Back
+        </Button>
+      </Box>
     );
   }
-
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
       <Box sx={{ display: 'flex', alignItems: 'center', mb: 3, gap: 2 }}>
         <Button
-            variant="outlined"
-            startIcon={<ArrowBackIcon />}
-            onClick={() => navigate(-1)}
+          variant="outlined"
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
         >
-            Back
+          Back
         </Button>
         <Typography variant="h5" component="h1">
-          {isEditMode ? `Edit Asset: ${formData.asset_tag || ''}` : 'Create New Asset'}
+          {isEditMode
+            ? `Edit Asset: ${formData.asset_tag || ''}`
+            : 'Create New Asset'}
         </Typography>
       </Box>
       <Box component="form" onSubmit={handleSubmit} noValidate>
-        {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>} {/* For submission errors */}
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}{' '}
+        {/* For submission errors */}
         <Grid container spacing={3}>
           <Grid item xs={12} sm={6}>
             <TextField
@@ -356,7 +399,9 @@ const AssetForm: React.FC = () => {
                 label="Category"
                 onChange={handleSelectChange}
               >
-                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
                 {assetCategories.map((category) => (
                   <MenuItem key={category.id} value={category.id}>
                     {category.name}
@@ -374,7 +419,9 @@ const AssetForm: React.FC = () => {
                 label="Location"
                 onChange={handleSelectChange}
               >
-                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
                 {locations.map((location) => (
                   <MenuItem key={location.id} value={location.id}>
                     {location.name}
@@ -392,7 +439,9 @@ const AssetForm: React.FC = () => {
                 label="Vendor"
                 onChange={handleSelectChange}
               >
-                <MenuItem value=""><em>None</em></MenuItem>
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
                 {vendors.map((vendor) => (
                   <MenuItem key={vendor.id} value={vendor.id}>
                     {vendor.name}
@@ -410,7 +459,9 @@ const AssetForm: React.FC = () => {
                 label="Assigned To"
                 onChange={handleSelectChange}
               >
-                <MenuItem value=""><em>Unassigned</em></MenuItem>
+                <MenuItem value="">
+                  <em>Unassigned</em>
+                </MenuItem>
                 {users.map((user) => (
                   <MenuItem key={user.id} value={user.id}>
                     {user.username} ({user.first_name} {user.last_name})
@@ -452,12 +503,32 @@ const AssetForm: React.FC = () => {
               rows={4}
             />
           </Grid>
-          <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}>
-            <Button variant="outlined" color="secondary" onClick={() => navigate(-1)} disabled={isSubmitting}>
+          <Grid
+            item
+            xs={12}
+            sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 2 }}
+          >
+            <Button
+              variant="outlined"
+              color="secondary"
+              onClick={() => navigate(-1)}
+              disabled={isSubmitting}
+            >
               Cancel
             </Button>
-            <Button type="submit" variant="contained" color="primary" disabled={isSubmitting || isLoading}>
-              {isSubmitting ? <CircularProgress size={24} /> : (isEditMode ? 'Update Asset' : 'Create Asset')}
+            <Button
+              type="submit"
+              variant="contained"
+              color="primary"
+              disabled={isSubmitting || isLoading}
+            >
+              {isSubmitting ? (
+                <CircularProgress size={24} />
+              ) : isEditMode ? (
+                'Update Asset'
+              ) : (
+                'Create Asset'
+              )}
             </Button>
           </Grid>
         </Grid>

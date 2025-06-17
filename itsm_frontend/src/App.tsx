@@ -12,14 +12,26 @@ import DashboardPage from './modules/dashboard/DashboardPage';
 import { ServiceRequestsPage } from './modules/service-requests/pages';
 import { NewServiceRequestPage } from './modules/service-requests/pages';
 import { AssetsPage } from './modules/assets/pages';
-import { AssetForm, AssetPrintView, CategoryPrintView, LocationPrintView, VendorPrintView } from './modules/assets/components'; // Import VendorPrintView
+import {
+  AssetForm,
+  AssetPrintView,
+  CategoryPrintView,
+  LocationPrintView,
+  VendorPrintView,
+} from './modules/assets/components'; // Import VendorPrintView
 import { PurchaseRequestMemoList } from './modules/procurement/components/purchase-request-memos';
 import { PurchaseRequestMemoForm } from './modules/procurement/components/purchase-request-memos';
 import { ProcurementDashboardPage } from './modules/procurement/pages';
 import { PurchaseOrderList } from './modules/procurement/components/purchase-orders';
 import { PurchaseOrderForm } from './modules/procurement/components/purchase-orders';
-import { PurchaseOrderDetailView, PurchaseOrderPrintView } from './modules/procurement/components/purchase-orders'; // Import PurchaseOrderPrintView
-import { PurchaseRequestMemoDetailView, PurchaseRequestMemoPrintView } from './modules/procurement/components/purchase-request-memos'; // Import PurchaseRequestMemoPrintView
+import {
+  PurchaseOrderDetailView,
+  PurchaseOrderPrintView,
+} from './modules/procurement/components/purchase-orders'; // Import PurchaseOrderPrintView
+import {
+  PurchaseRequestMemoDetailView,
+  PurchaseRequestMemoPrintView,
+} from './modules/procurement/components/purchase-request-memos'; // Import PurchaseRequestMemoPrintView
 import { CheckRequestList } from './modules/procurement/components/check-requests';
 import { CheckRequestForm } from './modules/procurement/components/check-requests';
 import { CheckRequestDetailView } from './modules/procurement/components/check-requests';
@@ -58,27 +70,82 @@ function AppContent() {
           <Route path="assets/new" element={<AssetForm />} />
           <Route path="assets/edit/:assetId" element={<AssetForm />} />
           <Route path="assets/print-preview" element={<AssetPrintView />} />
-          <Route path="assets/categories/print-preview" element={<CategoryPrintView />} />
-          <Route path="assets/locations/print-preview" element={<LocationPrintView />} />
-          <Route path="assets/vendors/print-preview" element={<VendorPrintView />} /> {/* Added Vendor Print Preview Route */}
+          <Route
+            path="assets/categories/print-preview"
+            element={<CategoryPrintView />}
+          />
+          <Route
+            path="assets/locations/print-preview"
+            element={<LocationPrintView />}
+          />
+          <Route
+            path="assets/vendors/print-preview"
+            element={<VendorPrintView />}
+          />{' '}
+          {/* Added Vendor Print Preview Route */}
           {/* Procurement Routes */}
           <Route path="procurement" element={<ProcurementDashboardPage />} />
           <Route path="procurement/iom" element={<PurchaseRequestMemoList />} />
-          <Route path="procurement/iom/new" element={<PurchaseRequestMemoForm />} />
-          <Route path="procurement/iom/edit/:memoId" element={<PurchaseRequestMemoForm />} />
-          <Route path="procurement/iom/view/:memoId" element={<PurchaseRequestMemoDetailView />} />
-          <Route path="procurement/iom/print-preview" element={<PurchaseRequestMemoPrintView />} /> {/* Added IOM Print Preview Route */}
-          <Route path="procurement/purchase-orders" element={<PurchaseOrderList />} />
-          <Route path="procurement/purchase-orders/new" element={<PurchaseOrderForm />} />
-          <Route path="procurement/purchase-orders/edit/:poId" element={<PurchaseOrderForm />} />
-          <Route path="procurement/purchase-orders/view/:poId" element={<PurchaseOrderDetailView />} />
-          <Route path="procurement/purchase-orders/print-preview" element={<PurchaseOrderPrintView />} /> {/* Added Print Preview Route */}
+          <Route
+            path="procurement/iom/new"
+            element={<PurchaseRequestMemoForm />}
+          />
+          <Route
+            path="procurement/iom/edit/:memoId"
+            element={<PurchaseRequestMemoForm />}
+          />
+          <Route
+            path="procurement/iom/view/:memoId"
+            element={<PurchaseRequestMemoDetailView />}
+          />
+          <Route
+            path="procurement/iom/print-preview"
+            element={<PurchaseRequestMemoPrintView />}
+          />{' '}
+          {/* Added IOM Print Preview Route */}
+          <Route
+            path="procurement/purchase-orders"
+            element={<PurchaseOrderList />}
+          />
+          <Route
+            path="procurement/purchase-orders/new"
+            element={<PurchaseOrderForm />}
+          />
+          <Route
+            path="procurement/purchase-orders/edit/:poId"
+            element={<PurchaseOrderForm />}
+          />
+          <Route
+            path="procurement/purchase-orders/view/:poId"
+            element={<PurchaseOrderDetailView />}
+          />
+          <Route
+            path="procurement/purchase-orders/print-preview"
+            element={<PurchaseOrderPrintView />}
+          />{' '}
+          {/* Added Print Preview Route */}
           {/* Check Request Routes */}
-          <Route path="procurement/check-requests" element={<CheckRequestList />} />
-          <Route path="procurement/check-requests/new" element={<CheckRequestForm />} />
-          <Route path="procurement/check-requests/edit/:checkRequestId" element={<CheckRequestForm />} />
-          <Route path="procurement/check-requests/view/:checkRequestId" element={<CheckRequestDetailView />} />
-          <Route path="procurement/check-requests/print-preview" element={<CheckRequestPrintView />} /> {/* Added Print Preview Route */}
+          <Route
+            path="procurement/check-requests"
+            element={<CheckRequestList />}
+          />
+          <Route
+            path="procurement/check-requests/new"
+            element={<CheckRequestForm />}
+          />
+          <Route
+            path="procurement/check-requests/edit/:checkRequestId"
+            element={<CheckRequestForm />}
+          />
+          <Route
+            path="procurement/check-requests/view/:checkRequestId"
+            element={<CheckRequestDetailView />}
+          />
+          <Route
+            path="procurement/check-requests/print-preview"
+            element={<CheckRequestPrintView />}
+          />{' '}
+          {/* Added Print Preview Route */}
           <Route path="security-access" element={<SecurityAccessPage />} />
           <Route path="incidents" element={<IncidentManagementPage />} />
           <Route path="changes" element={<ChangeManagementPage />} />
