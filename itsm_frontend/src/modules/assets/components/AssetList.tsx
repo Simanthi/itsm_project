@@ -36,6 +36,7 @@ import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
 import AddIcon from '@mui/icons-material/Add';
+import VisibilityIcon from '@mui/icons-material/Visibility'; // Import VisibilityIcon
 import SearchIcon from '@mui/icons-material/Search';
 import ClearIcon from '@mui/icons-material/Clear'; // For clearing filters
 
@@ -458,6 +459,11 @@ const AssetList: React.FC = () => {
                 <TableCell>{asset.location?.name || '-'}</TableCell>
                 <TableCell>{asset.purchase_date ? new Date(asset.purchase_date).toLocaleDateString() : '-'}</TableCell>
                 <TableCell align="right">
+                  <Tooltip title="View Asset">
+                    <IconButton onClick={() => handleEditAsset(asset.id)} size="small">
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="Edit Asset">
                     <IconButton onClick={() => handleEditAsset(asset.id)} size="small">
                       <EditIcon />
