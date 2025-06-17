@@ -298,7 +298,7 @@ const CheckRequestList: React.FC = () => {
                   {(req.status === 'pending_submission' || req.status === 'pending_approval') && (req.requested_by === user?.id || isStaffUser) && (<Tooltip title="Cancel Request"><IconButton onClick={() => showConfirmDialog('Confirm Cancel', 'Are you sure you want to cancel this check request?', () => handleCancel(req.id))} size="small"><CancelIcon /></IconButton></Tooltip>)}
                 </TableCell>
               </TableRow>
-            ))}
+            );})}
           </TableBody>
         </Table>
         <TablePagination rowsPerPageOptions={[5, 10, 25, 50]} component="div" count={totalRequests} rowsPerPage={rowsPerPage} page={page} onPageChange={handlePageChange} onRowsPerPageChange={handleRowsPerPageChange} />
