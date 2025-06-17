@@ -3,7 +3,8 @@ from rest_framework.permissions import IsAuthenticated
 from django_filters.rest_framework import DjangoFilterBackend
 from .models import Asset, AssetCategory, Location, Vendor
 from .serializers import AssetSerializer, AssetCategorySerializer, LocationSerializer, VendorSerializer
-from service_requests.views import StandardResultsSetPagination # Import existing pagination
+from service_requests.views import StandardResultsSetPagination  # Import existing pagination
+
 
 class AssetViewSet(viewsets.ModelViewSet):
     """
@@ -13,9 +14,10 @@ class AssetViewSet(viewsets.ModelViewSet):
     queryset = Asset.objects.select_related('assigned_to', 'category', 'location', 'vendor').all().order_by('asset_tag')
     serializer_class = AssetSerializer
     permission_classes = [IsAuthenticated]
-    pagination_class = StandardResultsSetPagination # Use existing pagination
+    pagination_class = StandardResultsSetPagination  # Use existing pagination
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['status', 'category', 'location', 'vendor', 'assigned_to']
+
 
 class AssetCategoryViewSet(viewsets.ModelViewSet):
     """
@@ -26,6 +28,7 @@ class AssetCategoryViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
 
+
 class LocationViewSet(viewsets.ModelViewSet):
     """
     API endpoint that allows locations to be viewed or edited.
@@ -34,6 +37,7 @@ class LocationViewSet(viewsets.ModelViewSet):
     serializer_class = LocationSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = StandardResultsSetPagination
+
 
 class VendorViewSet(viewsets.ModelViewSet):
     """

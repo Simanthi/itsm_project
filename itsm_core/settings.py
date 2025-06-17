@@ -31,7 +31,7 @@ INSTALLED_APPS = [
     "reports_analytics",
     "api",
     "core_api",
-    "procurement", # Added new app
+    "procurement",  # Added new app
 ]
 
 MIDDLEWARE = [

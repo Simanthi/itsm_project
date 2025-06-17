@@ -1,9 +1,10 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest # Added CheckRequest
-from assets.serializers import VendorSerializer # Corrected import path
+from .models import PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest  # Added CheckRequest
+from assets.serializers import VendorSerializer  # Corrected import path
 
 User = get_user_model()
+
 
 class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
     requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
@@ -26,11 +27,13 @@ class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
             'approver_comments'
         ]
 
+
 class OrderItemSerializer(serializers.ModelSerializer):
     class Meta:
         model = OrderItem
         fields = ['id', 'item_description', 'quantity', 'unit_price', 'total_price']
-        read_only_fields = ['total_price'] # total_price is a @property on the model
+        read_only_fields = ['total_price']  # total_price is a @property on the model
+
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True)
@@ -86,6 +89,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             instance.save(update_fields=['total_amount'])
         return instance
 
+
 class CheckRequestSerializer(serializers.ModelSerializer):
     requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
     approved_by_accounts_username = serializers.CharField(source='approved_by_accounts.username', read_only=True, allow_null=True)
@@ -108,17 +112,17 @@ class CheckRequestSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'request_date',
-            'status', # Initial status set in perform_create, then by actions
-            'requested_by_username', # Derived
-            'approved_by_accounts', # Set by action
-            'approved_by_accounts_username', # Derived
-            'accounts_approval_date', # Set by action
-            'accounts_comments', # Set by action
-            'purchase_order_number', # Derived
-            'payment_method', # Set by action
-            'payment_date', # Set by action
-            'transaction_id', # Set by action
-            'payment_notes' # Set by action
+            'status',  # Initial status set in perform_create, then by actions
+            'requested_by_username',  # Derived
+            'approved_by_accounts',  # Set by action
+            'approved_by_accounts_username',  # Derived
+            'accounts_approval_date',  # Set by action
+            'accounts_comments',  # Set by action
+            'purchase_order_number',  # Derived
+            'payment_method',  # Set by action
+            'payment_date',  # Set by action
+            'transaction_id',  # Set by action
+            'payment_notes'  # Set by action
         ]
         # Fields for creation by user:
         # purchase_order (optional ID), invoice_number, invoice_date, amount,
