@@ -21,7 +21,7 @@ urlpatterns = [
     path("api/security-access/", include("security_access.urls")),
     path("api/token/", TokenObtainPairView.as_view(), name="token_obtain_pair"),
     path("api/token/refresh/", TokenRefreshView.as_view(), name="token_refresh"),
-    path('api/procurement/', include('procurement.urls')), # Added procurement URLs
+    path('api/procurement/', include('procurement.urls')),  # Added procurement URLs
     # You will add paths for other modules here as we develop them:
     path('api/incidents/', include('incidents.urls')),
     # path('api/changes/', include('changes.urls')),

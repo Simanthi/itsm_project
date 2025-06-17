@@ -1,18 +1,19 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
-from django.utils import timezone # Added
-from assets.models import Vendor # Added, assuming this is the correct path to Vendor model
+from django.utils import timezone  # Added
+from assets.models import Vendor  # Added, assuming this is the correct path to Vendor model
 
 User = get_user_model()
+
 
 class PurchaseRequestMemo(models.Model):
     STATUS_CHOICES = [
         ('pending', _('Pending')),
         ('approved', _('Approved')),
         ('rejected', _('Rejected')),
-        ('po_created', _('PO Created')), # When a Purchase Order is made from this
-        ('cancelled', _('Cancelled')), # If the requester cancels it
+        ('po_created', _('PO Created')),  # When a Purchase Order is made from this
+        ('cancelled', _('Cancelled')),  # If the requester cancels it
     ]
 
     item_description = models.TextField(_("Item Description"))
@@ -27,7 +28,7 @@ class PurchaseRequestMemo(models.Model):
     )
     requested_by = models.ForeignKey(
         User,
-        on_delete=models.CASCADE, # If user deleted, their requests are gone
+        on_delete=models.CASCADE,  # If user deleted, their requests are gone
         related_name='purchase_requests',
         verbose_name=_("Requested By")
     )
@@ -41,7 +42,7 @@ class PurchaseRequestMemo(models.Model):
     # Approval details
     approver = models.ForeignKey(
         User,
-        on_delete=models.SET_NULL, # Keep the memo even if approver account is deleted
+        on_delete=models.SET_NULL,  # Keep the memo even if approver account is deleted
         related_name='approved_purchase_requests',
         null=True,
         blank=True,
@@ -143,6 +144,7 @@ class OrderItem(models.Model):
         if self.unit_price is not None:
             return self.quantity * self.unit_price
         return 0
+
 
 class CheckRequest(models.Model):
     CHECK_REQUEST_STATUS_CHOICES = [

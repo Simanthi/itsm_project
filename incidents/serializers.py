@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from .models import Incident, Asset, ConfigurationItem, User # Assuming User is from django.contrib.auth.models
+from .models import Incident, Asset, ConfigurationItem, User  # Assuming User is from django.contrib.auth.models
+
 
 class IncidentSerializer(serializers.ModelSerializer):
     reported_by = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
