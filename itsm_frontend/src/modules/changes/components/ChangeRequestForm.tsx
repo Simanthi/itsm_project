@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
-  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip
+  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip,
+  Box, Typography, List, ListItem, ListItemText, Divider, Alert
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -20,6 +21,11 @@ import { getConfigItems } from '../../configs/api';
 import { getUserList } from '../../../api/authApi';
 import type { User } from '../../../types/UserTypes';
 import { useAuth } from '../../../context/auth/useAuth';
+import { getApprovalRequests } from '../../workflows/api/workflowApi';
+import type { ApprovalRequest, ApprovalStep } from '../../workflows/types/WorkflowTypes';
+
+// Placeholder - Replace with actual ContentType ID for ChangeRequest model
+const CHANGES_CONTENT_TYPE_ID = 123;
 
 interface ChangeRequestFormProps {
   open: boolean;
@@ -52,6 +58,10 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
   const [availableCIs, setAvailableCIs] = useState<ConfigurationItem[]>([]);
   const [loadingCIs, setLoadingCIs] = useState<boolean>(false);
+
+  const [approvalDetails, setApprovalDetails] = useState<ApprovalRequest[] | null>(null);
+  const [loadingApprovals, setLoadingApprovals] = useState<boolean>(false);
+  const [approvalError, setApprovalError] = useState<string | null>(null);
 
   useEffect(() => {
     if (open) {
@@ -100,6 +110,8 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setAffectedCIs([]);
       }
       setRollbackPlan(initialData.rollback_plan || '');
+      setApprovalDetails(null); // Reset approvals when initialData changes
+      setApprovalError(null);
     } else {
       setTitle('');
       setDescription('');
@@ -112,8 +124,45 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
       setAssignedTo(null);
       setAffectedCIs([]);
       setRollbackPlan('');
+      setApprovalDetails(null); // Reset on form close/reset
+      setApprovalError(null);
     }
   }, [initialData, open, availableUsers, availableCIs]);
+
+  useEffect(() => {
+    if (open && initialData?.id) {
+      const fetchApprovals = async () => {
+        if (!authenticatedFetch) return;
+        setLoadingApprovals(true);
+        setApprovalError(null);
+        try {
+          // Corrected: Pass authenticatedFetch to getApprovalRequests
+          const approvals = await getApprovalRequests(authenticatedFetch, {
+            content_type: CHANGES_CONTENT_TYPE_ID,
+            object_id: initialData.id,
+          });
+          setApprovalDetails(approvals);
+        } catch (error) {
+          console.error("Failed to fetch approval details", error);
+          setApprovalError(error instanceof Error ? error.message : "An unknown error occurred while fetching approvals.");
+        } finally {
+          setLoadingApprovals(false);
+        }
+      };
+      fetchApprovals();
+    } else {
+      // Clear approval details if the form is closed, or there's no initialData
+      setApprovalDetails(null);
+      setApprovalError(null);
+      setLoadingApprovals(false);
+    }
+    // Cleanup function
+    return () => {
+      setApprovalDetails(null);
+      setApprovalError(null);
+      setLoadingApprovals(false);
+    };
+  }, [open, initialData, authenticatedFetch]);
 
   const handleSubmit = async () => {
     if (!plannedStartDate || !plannedEndDate) {
@@ -232,6 +281,60 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
             <Grid item xs={12}>
               <TextField label="Rollback Plan" value={rollbackPlan} onChange={(e) => setRollbackPlan(e.target.value)} fullWidth multiline rows={3} margin="dense" />
             </Grid>
+
+            {initialData?.id && ( // Only show approval section if editing an existing CR
+            <Grid item xs={12}>
+              <Typography variant="h6" sx={{ mt: 3, mb: 1 }}>Approval Status</Typography>
+              {loadingApprovals && <CircularProgress size={24} />}
+              {approvalError && <Alert severity="error">{approvalError}</Alert>}
+              {!loadingApprovals && !approvalError && (!approvalDetails || approvalDetails.length === 0) && (
+                <Typography>No approval information found or yet requested for this change.</Typography>
+              )}
+              {!loadingApprovals && !approvalError && approvalDetails && approvalDetails.length > 0 && (
+                approvalDetails.map((approval) => (
+                  <Box key={approval.id} sx={{ mb: 2, p: 2, border: '1px solid grey', borderRadius: '4px' }}>
+                    <Typography variant="subtitle1">
+                      Overall Status: {approval.current_status.charAt(0).toUpperCase() + approval.current_status.slice(1)}
+                    </Typography>
+                    {approval.current_step && (
+                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
+                            Current Step: {approval.current_step.name} (Order: {approval.current_step.order})
+                        </Typography>
+                    )}
+                    {approval.steps && approval.steps.length > 0 ? (
+                      <>
+                        <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>Approval Steps:</Typography>
+                        <List dense disablePadding>
+                          {approval.steps.sort((a,b) => a.order - b.order).map((step, index) => (
+                            <React.Fragment key={step.id}>
+                              <ListItem sx={{ pl: 2 }}>
+                                <ListItemText
+                                  primaryTypographyProps={{ variant: 'body2' }}
+                                  secondaryTypographyProps={{ variant: 'caption' }}
+                                  primary={`Step ${step.order}: ${step.name} - Status: ${step.status.charAt(0).toUpperCase() + step.status.slice(1)}`}
+                                  secondary={
+                                    <>
+                                      {`Approver: ${step.approver_username || (step.approver_group_name ? `Group: ${step.approver_group_name}` : 'N/A')}`}
+                                      <br />
+                                      {`Comments: ${step.comments || 'None'}`}
+                                      {step.actioned_at ? ` - Action At: ${new Date(step.actioned_at).toLocaleString()}` : ''}
+                                    </>
+                                  }
+                                />
+                              </ListItem>
+                              {index < approval.steps.length - 1 && <Divider component="li" />}
+                            </React.Fragment>
+                          ))}
+                        </List>
+                      </>
+                    ) : (
+                      <Typography sx={{mt:1}}>No individual approval steps found for this request.</Typography>
+                    )}
+                  </Box>
+                ))
+              )}
+            </Grid>
+            )}
           </Grid>
         </DialogContent>
         <DialogActions>
