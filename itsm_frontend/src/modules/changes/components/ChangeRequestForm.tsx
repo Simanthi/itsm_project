@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react'; // Removed useCallback
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
-  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip
+  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip,
+  Box, Divider, Paper, Typography // Added these
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -9,15 +10,18 @@ import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import { formatISO } from 'date-fns'; // To format dates to ISO string for backend
 
-import {
-    ChangeRequest, NewChangeRequestData, ChangeType, ChangeStatus, ChangeImpact,
-    ChangeTypeOptions, ChangeStatusOptions, ChangeImpactOptions
+import type {
+    ChangeRequest, NewChangeRequestData, ChangeType, ChangeStatus, ChangeImpact
 } from '../types';
-import { ConfigurationItem } from '../../configs/types';
+import {
+    ChangeTypeOptions, ChangeStatusOptions, ChangeImpactOptions
+} from '../types'; // Values/Constants
+import type { ConfigurationItem } from '../../configs/types';
 import { getConfigItems } from '../../configs/api'; // To fetch CIs
-import { UserLite, getUsersLite } from '../../../api/authApi'; // Assuming a lite version for users
+import { getUserList } from '../../../api/authApi';
+import type { User } from '../../../types/UserTypes'; // Corrected User type import
 import { useAuth } from '../../../context/auth/useAuth';
-import { ApprovalRequest } from '../../workflows/types'; // Import workflow types
+import type { ApprovalRequest } from '../../workflows/types'; // Import workflow types
 import { getApprovalRequests } from '../../workflows/api'; // Import workflow API
 
 interface ChangeRequestFormProps {
@@ -33,27 +37,27 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   onSubmit,
   initialData,
 }) => {
-  const { authenticatedFetch, user: currentUser } = useAuth();
+  const { authenticatedFetch } = useAuth(); // Removed user: currentUser
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [changeType, setChangeType] = useState<ChangeType>(ChangeTypeOptions[0]);
-  const [status, setStatus] = useState<ChangeStatus>(ChangeStatusOptions[0]); // Default to 'draft' or 'pending_approval'
-  const [impact, setImpact] = useState<ChangeImpact>(ChangeImpactOptions[1]); // Default to 'medium'
+  const [status, setStatus] = useState<ChangeStatus>(ChangeStatusOptions[0]);
+  const [impact, setImpact] = useState<ChangeImpact>(ChangeImpactOptions[1]);
   const [justification, setJustification] = useState('');
   const [plannedStartDate, setPlannedStartDate] = useState<Date | null>(null);
   const [plannedEndDate, setPlannedEndDate] = useState<Date | null>(null);
-  const [assignedTo, setAssignedTo] = useState<UserLite | null>(null);
+  const [assignedTo, setAssignedTo] = useState<User | null>(null); // Changed UserLite to User
   const [affectedCIs, setAffectedCIs] = useState<ConfigurationItem[]>([]);
   const [rollbackPlan, setRollbackPlan] = useState('');
 
-  const [availableUsers, setAvailableUsers] = useState<UserLite[]>([]);
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]); // Changed UserLite to User
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
   const [availableCIs, setAvailableCIs] = useState<ConfigurationItem[]>([]);
   const [loadingCIs, setLoadingCIs] = useState<boolean>(false);
 
-  const [approvalRequest, setApprovalRequest] = useState<ApprovalRequest | null>(null);
-  const [loadingApproval, setLoadingApproval] = useState<boolean>(false);
+  // const [approvalRequest, setApprovalRequest] = useState<ApprovalRequest | null>(null); // Removed
+  // const [loadingApproval, setLoadingApproval] = useState<boolean>(false); // Removed
 
   useEffect(() => {
     if (open) {
@@ -62,12 +66,12 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setLoadingUsers(true);
         setLoadingCIs(true);
         try {
-          const [users, cis] = await Promise.all([
-            getUsersLite(authenticatedFetch), // Assumes getUsersLite takes authenticatedFetch
-            getConfigItems(), // Assumes getConfigItems is setup with apiClient that uses auth
+          const [usersData, cisData] = await Promise.all([
+            getUserList(authenticatedFetch), // Changed getUsersLite to getUserList
+            getConfigItems(),
           ]);
-          setAvailableUsers(users);
-          setAvailableCIs(cis);
+          setAvailableUsers(usersData);
+          setAvailableCIs(cisData);
         } catch (error) {
           console.error("Failed to fetch data for Change Request form", error);
         } finally {
@@ -103,53 +107,17 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
       }
       setRollbackPlan(initialData.rollback_plan || '');
 
-      // Fetch approval request if editing and status indicates it might exist
-      if (initialData.id && (initialData.status === 'pending_approval' || initialData.status === 'approved' || initialData.status === 'rejected')) {
-        const fetchApprovalData = async () => {
-          setLoadingApproval(true);
-          try {
-            // Assuming backend has ContentType model name 'changerequest' for ChangeRequest
-            // This might need adjustment based on actual ContentType naming in backend
-            // For simplicity, this example assumes direct query by object_id if your API supports it broadly,
-            // or you might need a specific endpoint or a more complex query.
-            // A more robust way would be to have a link to the approval_request_id on the ChangeRequest model itself.
-            // Let's assume for now the backend serializer for ChangeRequest might provide approval_request_id or similar.
-            // If not, this is a simplified approach:
-            const relatedApprovals = await getApprovalRequests({
-              // This is a guess, actual filtering might be different.
-              // It's better if ChangeRequest serializer provides the approval_request ID or nested object.
-              // For now, we'll assume we can find it this way or it's provided in initialData.
-              // For this example, let's say initialData.approval_request_id is available.
-              // object_id: initialData.id,
-              // content_type_model: 'changerequest' // This filter might not exist.
-            });
-            // Filter for the specific one if multiple returned (e.g. if querying by object_id only)
-            // This is highly dependent on your API's filtering capabilities for generic relations.
-            // A simpler approach would be to have initialData.approval_details (nested) or initialData.approval_request_id.
-            // For this example, we'll mock this part or assume initialData could include basic approval status.
-            // Let's assume `initialData` could have a field like `approval_status_display` or nested `approval_request_summary`.
-            // For this example, let's just try to find one if an ID is hypothetically on initialData.
-            // if (initialData.approval_request_id_placeholder) {
-            //    const approval = await getApprovalRequestById(initialData.approval_request_id_placeholder);
-            //    setApprovalRequest(approval);
-            // }
-            // This part is complex without knowing the exact API structure for linking CR to ApprovalRequest.
-            // For now, we'll just display what's on initialData.status and assume detailed steps are elsewhere.
-          } catch (error) {
-            console.error("Failed to fetch approval data for Change Request", error);
-          } finally {
-            setLoadingApproval(false);
-          }
-        };
-        // fetchApprovalData(); // Call this if you have a way to get the approval_request_id
-      }
+      // Removed fetchApprovalData logic block
+      // if (initialData.id && (initialData.status === 'pending_approval' || initialData.status === 'approved' || initialData.status === 'rejected')) {
+      //   // ...
+      // }
     } else {
       // Defaults for new Change Request
       setTitle('');
       setDescription('');
       setChangeType(ChangeTypeOptions[0]);
-      setStatus(ChangeStatusOptions[0]); // e.g. 'draft'
-      setImpact(ChangeImpactOptions[1]); // e.g. 'medium'
+      setStatus(ChangeStatusOptions[0]);
+      setImpact(ChangeImpactOptions[1]);
       setJustification('');
       setPlannedStartDate(null);
       setPlannedEndDate(null);
@@ -161,7 +129,6 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
 
   const handleSubmit = async () => {
     if (!plannedStartDate || !plannedEndDate) {
-        // Or show a snackbar error
         alert("Planned start and end dates are required.");
         return;
     }
@@ -169,12 +136,12 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
       title,
       description,
       change_type: changeType,
-      status: status, // Backend might override this based on workflow for new changes
+      status: status,
       assigned_to: assignedTo?.id || undefined,
       impact,
       justification: justification || undefined,
-      planned_start_date: formatISO(plannedStartDate), // Format to ISO string
-      planned_end_date: formatISO(plannedEndDate),   // Format to ISO string
+      planned_start_date: formatISO(plannedStartDate),
+      planned_end_date: formatISO(plannedEndDate),
       affected_cis: affectedCIs.map(ci => ci.id),
       rollback_plan: rollbackPlan || undefined,
     };
@@ -187,6 +154,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         <DialogTitle>{initialData ? 'Edit Change Request' : 'Create New Change Request'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
+            {/* Form fields remain largely the same, ensure Autocomplete for assignedTo uses User type */}
             <Grid item xs={12}>
               <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth required margin="dense" />
             </Grid>
@@ -278,6 +246,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
               <TextField label="Rollback Plan" value={rollbackPlan} onChange={(e) => setRollbackPlan(e.target.value)} fullWidth multiline rows={3} margin="dense" />
             </Grid>
 
+            {/* Commented out approval status display section:
             {initialData && initialData.id && (initialData.status === 'pending_approval' || initialData.status === 'approved' || initialData.status === 'rejected') && (
               <Grid item xs={12}>
                 <Divider sx={{ my: 2 }} />
@@ -307,6 +276,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
                 )}
               </Grid>
             )}
+            */}
           </Grid>
         </DialogContent>
         <DialogActions>

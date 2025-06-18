@@ -1,5 +1,5 @@
-import apiClient from '../../../api/apiClient'; // Adjust path
-import { ChangeRequest, NewChangeRequestData } from '../types';
+import { apiClient } from '../../../api/apiClient'; // Corrected: Named import
+import type { ChangeRequest, NewChangeRequestData } from '../types'; // Corrected: Type-only import
 
 // Helper for list responses if pagination is used by default by apiClient
 const processListResponse = <T>(response: any): T[] => {
