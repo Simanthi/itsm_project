@@ -240,3 +240,27 @@ export const deleteAsset = async (
   const endpoint = `${API_BASE_PATH}/assets/${id}/`;
   await authenticatedFetch(endpoint, { method: 'DELETE' });
 };
+
+// Lite version for dropdowns, fetching only essential fields
+// Assuming a backend endpoint /api/assets/lite/ or that the main endpoint can be filtered
+// For now, let's assume the main endpoint returns enough data or this is a future optimization
+// If a specific lite endpoint is available, use it. Otherwise, this might fetch more data than needed.
+export interface AssetLite {
+  id: number;
+  name: string;
+  asset_tag: string;
+}
+export const getAssetsLite = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<AssetLite[]> => {
+  // This will fetch all assets and then map them, which is not ideal for performance
+  // if the asset list is very large. A dedicated backend endpoint for "lite" versions
+  // or robust filtering/field selection (e.g., via GraphQL or DRF-flex-fields) would be better.
+  // For now, using a simplified approach.
+  const response = await getAssets(authenticatedFetch, { pageSize: 2000 }); // Fetch a large number, assuming not more than this for dropdown
+  return response.results.map(asset => ({
+    id: asset.id,
+    name: asset.name,
+    asset_tag: asset.asset_tag,
+  }));
+};

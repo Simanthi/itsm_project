@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'; // Add useRef
+// import ReactDOM from 'react-dom'; // Remove ReactDOM
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print'; // Add useReactToPrint
 import {
   Typography,
   Box,
@@ -107,20 +108,24 @@ const CheckRequestPrintView: React.FC = () => {
   const [requests, setRequests] = useState<CheckRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
-    null,
-  );
+  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Remove state
+  const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
 
-  useEffect(() => {
-    const element = document.getElementById('print-root');
-    if (element) setPrintRootElement(element);
-    else {
-      setError(
-        'Print functionality not initialized. Missing #print-root element.',
-      );
-      setLoading(false);
-    }
-  }, []);
+  const handleCheckRequestPrint = useReactToPrint({ // Renamed for clarity
+    content: () => componentRef.current,
+    removeAfterPrint: true,
+  });
+
+  // useEffect(() => { // Remove useEffect for print-root
+  //   const element = document.getElementById('print-root');
+  //   if (element) setPrintRootElement(element);
+  //   else {
+  //     setError(
+  //       'Print functionality not initialized. Missing #print-root element.',
+  //     );
+  //     setLoading(false);
+  //   }
+  // }, []);
 
   // Fetch all selected requests (sequentially, like in PurchaseRequestMemoPrintView)
   const fetchRequests = useCallback(async () => {
@@ -170,29 +175,22 @@ const CheckRequestPrintView: React.FC = () => {
       !error &&
       requests.length > 0 &&
       autoPrint &&
-      printRootElement
+      componentRef.current // Check if componentRef is populated
     ) {
-      printRootElement.style.display = 'block';
-      const timer = setTimeout(() => {
-        window.print();
-        printRootElement.style.display = 'none';
-        navigate(location.pathname, {
-          replace: true,
-          state: { ...state, autoPrint: false },
-        });
-      }, 500);
-      return () => {
-        clearTimeout(timer);
-        if (printRootElement) printRootElement.style.display = 'none';
-      };
+      handleCheckRequestPrint(); // Call the new print handler
+      // Reset autoPrint state in navigation
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...state, autoPrint: false },
+      });
     }
   }, [
+    autoPrint,
     loading,
     error,
     requests,
-    autoPrint,
+    handleCheckRequestPrint, // Added new handler
     navigate,
-    printRootElement,
     location.pathname,
     state,
   ]);
@@ -250,6 +248,7 @@ const CheckRequestPrintView: React.FC = () => {
     <>
       {!autoPrint && (
         <Box
+          className="no-print" // Added no-print class
           sx={{
             position: 'fixed',
             top: 80,
@@ -266,12 +265,7 @@ const CheckRequestPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() =>
-              navigate(location.pathname, {
-                replace: true,
-                state: { ...state, autoPrint: true },
-              })
-            }
+            onClick={handleCheckRequestPrint} // Use new print handler
             startIcon={<PrintIcon />}
           >
             Print
@@ -279,10 +273,11 @@ const CheckRequestPrintView: React.FC = () => {
         </Box>
       )}
       <Box
-        className="print-container"
+        ref={componentRef} // Added ref
+        className="print-container printable-content" // Added printable-content class
         sx={{
           maxWidth: '80%',
-          marginTop: autoPrint ? '0' : '64px',
+          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -476,9 +471,10 @@ const CheckRequestPrintView: React.FC = () => {
     </>
   );
 
-  return autoPrint && printRootElement
-    ? ReactDOM.createPortal(printContent, printRootElement)
-    : printContent;
+  // return autoPrint && printRootElement // Removed portal logic
+  //   ? ReactDOM.createPortal(printContent, printRootElement)
+  //   : printContent;
+  return printContent; // Return content directly
 };
 
 export default CheckRequestPrintView;

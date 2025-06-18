@@ -2,6 +2,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.db import transaction  # Import transaction for atomic operations
+from simple_history.models import HistoricalRecords # Added for model history
 
 User = get_user_model()
 
@@ -152,12 +153,21 @@ class ServiceRequest(models.Model):
     priority = models.CharField(
         max_length=20, choices=PRIORITY_CHOICES, default="medium"
     )
+    catalog_item = models.ForeignKey(
+        'service_catalog.CatalogItem',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='service_requests',
+        help_text="The catalog item this service request originated from, if any."
+    )
     resolution_notes = models.TextField(
         blank=True, null=True, help_text="Notes on how the request was fulfilled"
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
     resolved_at = models.DateTimeField(null=True, blank=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "Service Request"
