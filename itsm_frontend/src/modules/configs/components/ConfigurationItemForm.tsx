@@ -5,15 +5,18 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { type ConfigurationItem,type  NewConfigurationItemData,type  CIType,type  CIStatus,type  CICriticality, CITypeOptions, CIStatusOptions, CICriticalityOptions } from '../types';
-import { type AssetLite, getAssetsLite } from '../../../api/assetApi'; // Assuming assetApi is one level up from modules
+import { type AssetLite, getAssetsLite } from '../../../api/assetApi';
 import { getConfigItems } from '../api'; // To fetch other CIs for linking
-import { useAuth } from '../../../context/auth/useAuth';
+// Remove useAuth from here if authenticatedFetch is passed as prop for all relevant calls
+// import { useAuth } from '../../../context/auth/useAuth'; // No longer needed if all calls use prop
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition';
 
 interface ConfigurationItemFormProps {
   open: boolean;
   onClose: () => void;
   onSubmit: (data: NewConfigurationItemData, id?: number) => Promise<void>;
   initialData?: ConfigurationItem | null;
+  authenticatedFetch: AuthenticatedFetch; // Add authenticatedFetch to props
 }
 
 const ConfigurationItemForm: React.FC<ConfigurationItemFormProps> = ({
@@ -21,8 +24,11 @@ const ConfigurationItemForm: React.FC<ConfigurationItemFormProps> = ({
   onClose,
   onSubmit,
   initialData,
+  authenticatedFetch, // Destructure from props
 }) => {
-  const { authenticatedFetch } = useAuth();
+  // Removed localAuthFetchForAssets as authenticatedFetch from props will be used
+  // const { authenticatedFetch: localAuthFetchForAssets } = useAuth();
+
   const [name, setName] = useState('');
   const [ciType, setCiType] = useState<CIType>(CITypeOptions[0]);
   const [description, setDescription] = useState('');
@@ -41,10 +47,16 @@ const ConfigurationItemForm: React.FC<ConfigurationItemFormProps> = ({
     if (open) {
       // Fetch assets for dropdown
       const fetchAssets = async () => {
+        // Assuming getAssetsLite uses its own authenticatedFetch from useAuth if not passed one
+        // Or, if getAssetsLite is also refactored to take authenticatedFetch, pass the prop.
+        // The current assetApi.ts shows getAssetsLite already takes authenticatedFetch.
+        // So, we should use the one available in this component's scope.
+        // If the intention is to use the one from props for ALL calls, then localAuthFetchForAssets should be replaced.
+        // Now, using authenticatedFetch from props for getAssetsLite.
         if (!authenticatedFetch) return;
         setLoadingAssets(true);
         try {
-          const assets = await getAssetsLite(authenticatedFetch);
+          const assets = await getAssetsLite(authenticatedFetch); // Use prop authenticatedFetch
           setAvailableAssets(assets);
         } catch (error) {
           console.error("Failed to fetch assets for CI form", error);
@@ -55,10 +67,11 @@ const ConfigurationItemForm: React.FC<ConfigurationItemFormProps> = ({
 
       // Fetch other CIs for linking (excluding self if editing)
       const fetchCIs = async () => {
+         // Use the authenticatedFetch passed via props for getConfigItems
          if (!authenticatedFetch) return;
          setLoadingCIs(true);
          try {
-            const allCIs = await getConfigItems(); // Assumes getConfigItems is available via authenticatedFetch if needed by apiClient
+            const allCIs = await getConfigItems(authenticatedFetch); // Pass prop authenticatedFetch
             setAvailableCIs(initialData ? allCIs.filter(ci => ci.id !== initialData.id) : allCIs);
          } catch (error) {
             console.error("Failed to fetch CIs for linking", error);
@@ -70,7 +83,7 @@ const ConfigurationItemForm: React.FC<ConfigurationItemFormProps> = ({
       fetchAssets();
       fetchCIs();
     }
-  }, [open, authenticatedFetch, initialData]);
+  }, [open, authenticatedFetch, initialData]); // Removed localAuthFetchForAssets from dependencies
 
 
   useEffect(() => {

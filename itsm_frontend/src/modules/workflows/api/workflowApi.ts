@@ -1,86 +1,80 @@
-import { apiClient } from '../../../api/apiClient';
+// import { apiClient } from '../../../api/apiClient'; // No longer directly used
 import { type ApprovalRequest, type ApprovalStep, type ApprovalActionPayload } from '../types';
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch
 
 // Define a type for paginated or direct list responses
-type ListResponse<T> = { data: T[] } | { data: { results: T[] } };
+// Assuming authenticatedFetch returns the direct data structure (e.g., results array or single object)
+type DirectListResponse<T> = { results: T[] } | T[];
+
 
 // Helper for list responses
-const processListResponse = <T>(response: ListResponse<T>): T[] => {
-    if ('data' in response && Array.isArray((response as { data: T[] }).data)) {
-        return (response as { data: T[] }).data;
+const processListResponse = <T>(response: DirectListResponse<T>): T[] => {
+    if (response && Array.isArray((response as { results: T[] }).results)) {
+        return (response as { results: T[] }).results;
     }
-    if (
-        'data' in response &&
-        (response as { data: { results: T[] } }).data &&
-        Array.isArray((response as { data: { results: T[] } }).data.results)
-    ) {
-        return (response as { data: { results: T[] } }).data.results;
+    // If it's already an array (no 'results' wrapper)
+    if (Array.isArray(response)) {
+        return response;
     }
     console.warn("Unexpected API response structure for list:", response);
     return [];
 };
 
 // Approval Requests
-export const getApprovalRequests = async (filters?: Record<string, unknown>): Promise<ApprovalRequest[]> => {
+export const getApprovalRequests = async (authenticatedFetch: AuthenticatedFetch, filters?: Record<string, unknown>): Promise<ApprovalRequest[]> => {
     const params = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
-    const response = await apiClient<ListResponse<ApprovalRequest>>(
-        `/workflows/requests/${params}`, // Removed /api prefix
-        '',
+    const response = await authenticatedFetch<DirectListResponse<ApprovalRequest>>(
+        `/workflows/requests/${params}`,
         { method: 'GET' }
     );
     return processListResponse<ApprovalRequest>(response);
 };
 
-export const getApprovalRequestById = async (id: number): Promise<ApprovalRequest> => {
-    const response = await apiClient<{ data: ApprovalRequest }>(
-        `/workflows/requests/${id}/`, // Removed /api prefix
-        '',
+export const getApprovalRequestById = async (authenticatedFetch: AuthenticatedFetch, id: number): Promise<ApprovalRequest> => {
+    const response = await authenticatedFetch<ApprovalRequest>(
+        `/workflows/requests/${id}/`,
         { method: 'GET' }
     );
-    return response.data;
+    return response; // Assuming direct data return
 };
 
 // Approval Steps
-export const getMyApprovalSteps = async (status: string = 'pending'): Promise<ApprovalStep[]> => {
-    const response = await apiClient<ListResponse<ApprovalStep>>(
-        `/workflows/steps/?status=${encodeURIComponent(status)}`, // Removed /api prefix
-        '',
+export const getMyApprovalSteps = async (authenticatedFetch: AuthenticatedFetch, status: string = 'pending'): Promise<ApprovalStep[]> => {
+    const response = await authenticatedFetch<DirectListResponse<ApprovalStep>>(
+        `/workflows/steps/?status=${encodeURIComponent(status)}`,
         { method: 'GET' }
     );
     return processListResponse<ApprovalStep>(response);
 };
 
-export const getApprovalStepsForRequest = async (requestId: number): Promise<ApprovalStep[]> => {
-    const response = await apiClient<ListResponse<ApprovalStep>>(
-        `/workflows/steps/?approval_request=${requestId}`, // Removed /api prefix
-        '',
+export const getApprovalStepsForRequest = async (authenticatedFetch: AuthenticatedFetch, requestId: number): Promise<ApprovalStep[]> => {
+    const response = await authenticatedFetch<DirectListResponse<ApprovalStep>>(
+        `/workflows/steps/?approval_request=${requestId}`,
         { method: 'GET' }
     );
     return processListResponse<ApprovalStep>(response);
 };
 
-export const approveStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
-    const response = await apiClient<{ data: ApprovalStep }>(
-        `/workflows/steps/${stepId}/approve/`, // Removed /api prefix
-        '',
+export const approveStep = async (authenticatedFetch: AuthenticatedFetch, stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
+    const response = await authenticatedFetch<ApprovalStep>(
+        `/workflows/steps/${stepId}/approve/`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload ?? {}),
         }
     );
-    return response.data;
+    return response; // Assuming direct data return
 };
 
-export const rejectStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
-    const response = await apiClient<{ data: ApprovalStep }>(
-        `/workflows/steps/${stepId}/reject/`, // Removed /api prefix
-        '',
+export const rejectStep = async (authenticatedFetch: AuthenticatedFetch, stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
+    const response = await authenticatedFetch<ApprovalStep>(
+        `/workflows/steps/${stepId}/reject/`,
         {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(payload ?? {}),
         }
     );
-    return response.data;
+    return response; // Assuming direct data return
 };

@@ -7,10 +7,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import { type ConfigurationItem, type NewConfigurationItemData } from '../types';
 import { getConfigItems, deleteConfigItem, createConfigItem, updateConfigItem } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type
 import ConfigurationItemForm from '../components/ConfigurationItemForm';
 
 const ConfigurationManagementPage: React.FC = () => {
   const { showSnackbar, showConfirmDialog } = useUI();
+  const { authenticatedFetch, loading: authLoading, isAuthenticated } = useAuth(); // Add authenticatedFetch
 
   const [configItems, setConfigItems] = useState<ConfigurationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -19,9 +22,21 @@ const ConfigurationManagementPage: React.FC = () => {
   const [editingCI, setEditingCI] = useState<ConfigurationItem | null>(null);
 
   const fetchCIs = useCallback(async () => {
+    if (!isAuthenticated && !authLoading) {
+      setError("User is not authenticated. Cannot load configuration items.");
+      setLoading(false);
+      setConfigItems([]);
+      return;
+    }
+    if (authLoading) {
+      setLoading(true); // Show loading while auth is in progress
+      return;
+    }
+    if (!authenticatedFetch) return; // Should be available if !authLoading && isAuthenticated
+
     setLoading(true);
     try {
-      const items = await getConfigItems();
+      const items = await getConfigItems(authenticatedFetch); // Pass authenticatedFetch
       setConfigItems(items);
       setError(null);
     } catch (err) {
@@ -32,11 +47,16 @@ const ConfigurationManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [showSnackbar]);
+  }, [showSnackbar, authenticatedFetch, authLoading, isAuthenticated]);
 
   useEffect(() => {
-    fetchCIs();
-  }, [fetchCIs]);
+    // Initial fetch or re-fetch if auth state changes
+    if (!authLoading) { // Only fetch if auth state is resolved
+        fetchCIs();
+    } else {
+        setLoading(true); // Set loading true if auth is initially loading
+    }
+  }, [fetchCIs, authLoading]);
 
   const handleOpenCreateForm = () => {
     setEditingCI(null);
@@ -54,38 +74,55 @@ const ConfigurationManagementPage: React.FC = () => {
   };
 
   const handleSubmitForm = async (data: NewConfigurationItemData, id?: number) => {
-    setLoading(true);
+    if (!authenticatedFetch || !isAuthenticated) {
+      showSnackbar('User not authenticated.', 'error');
+      return;
+    }
+    setLoading(true); // Indicate loading for the submit operation itself
     try {
       if (id) {
-        await updateConfigItem(id, data);
+        await updateConfigItem(authenticatedFetch, id, data); // Pass authenticatedFetch
         showSnackbar('Configuration Item updated successfully!', 'success');
       } else {
-        await createConfigItem(data);
+        await createConfigItem(authenticatedFetch, data); // Pass authenticatedFetch
         showSnackbar('Configuration Item created successfully!', 'success');
       }
-      await fetchCIs();
+      // No need to setLoading(false) here if fetchCIs will be called and manage it.
+      await fetchCIs(); // fetchCIs will set loading states
       handleCloseForm();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to save Configuration Item';
       showSnackbar(errorMsg, 'error');
-      setError(errorMsg);
+      setError(errorMsg); // Set error for potential display
+      setLoading(false); // Explicitly set loading false on error if fetchCIs isn't called or if it bails early
     }
   };
 
   const handleDeleteCI = (id: number) => {
+    if (!authenticatedFetch || !isAuthenticated) {
+      showSnackbar('User not authenticated.', 'error');
+      return;
+    }
     showConfirmDialog(
       'Confirm Delete',
       `Are you sure you want to delete Configuration Item ID ${id}? This action cannot be undone.`,
       async () => {
-        setLoading(true);
+        // setLoading(true) will be handled by fetchCIs if successful, or set explicitly on error
         try {
-          await deleteConfigItem(id);
+          await deleteConfigItem(authenticatedFetch, id); // Pass authenticatedFetch
           showSnackbar('Configuration Item deleted successfully!', 'success');
-          await fetchCIs();
+          await fetchCIs(); // Refresh list, this will handle loading state
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Failed to delete Configuration Item';
           showSnackbar(errorMsg, 'error');
-          setError(errorMsg);
+          setError(errorMsg); // Set error for potential display
+          // If fetchCIs might not run or might bail due to auth, ensure loading is false.
+          // However, fetchCIs itself should handle its loading states.
+          // If the delete failed, the list isn't changing, so setLoading(false) might be needed if fetchCIs doesn't run.
+          // For simplicity, let fetchCIs manage loading, assuming delete was successful for it to be called.
+          // If delete fails, we might want a setLoading(false) here.
+          // Let's assume for now that if delete fails, we don't want to stop a global page loader if one was active.
+          // The original code set setLoading(true) before the try block.
         }
       }
     );
@@ -130,11 +167,29 @@ const ConfigurationManagementPage: React.FC = () => {
     },
   ];
 
-  if (loading && configItems.length === 0) {
+  // Combined loading state, also consider authLoading for initial page load
+  if ((loading && configItems.length === 0) || (authLoading && !isAuthenticated && configItems.length === 0)) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
-  if (error && configItems.length === 0) {
-    return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+
+  // Handle not authenticated state after auth loading is complete
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <Box sx={{ p: 3, width: '100%' }}>
+        <Typography variant="h5" component="h1" sx={{ mb: 2 }}>Manage Configuration Items</Typography>
+        <Alert severity="info">Please log in to view configuration items.</Alert>
+      </Box>
+    );
+  }
+
+  // Error when fetching CIs, but user is authenticated (and not initial auth loading)
+  if (error && configItems.length === 0 && isAuthenticated && !authLoading) {
+    return (
+         <Box sx={{ p: 3, width: '100%' }}>
+            <Typography variant="h5" component="h1" sx={{ mb: 2 }}>Manage Configuration Items</Typography>
+            <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+         </Box>
+    );
   }
 
   return (
@@ -145,22 +200,26 @@ const ConfigurationManagementPage: React.FC = () => {
           New CI
         </Button>
       </Box>
-      {error && configItems.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Last operation error: ${error}`}</Alert>}
+      {/* Display non-critical errors if CIs are present */}
+      {error && configItems.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Operation error: ${error}`}</Alert>}
       <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           rows={configItems}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          loading={loading}
+          loading={loading} // This loading state is managed by fetchCIs
         />
       </Box>
-      <ConfigurationItemForm
-        open={isFormOpen}
-        onClose={handleCloseForm}
-        onSubmit={handleSubmitForm}
-        initialData={editingCI}
-      />
+      {isFormOpen && authenticatedFetch && ( // Ensure authenticatedFetch is available before rendering form
+        <ConfigurationItemForm
+          open={isFormOpen}
+          onClose={handleCloseForm}
+          onSubmit={handleSubmitForm}
+          initialData={editingCI}
+          authenticatedFetch={authenticatedFetch} // Pass authenticatedFetch
+        />
+      )}
     </Box>
   );
 };
