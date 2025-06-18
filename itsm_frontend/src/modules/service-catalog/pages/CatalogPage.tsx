@@ -24,7 +24,8 @@ import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
 
 const CatalogPage: React.FC = () => {
   const navigate = useNavigate();
-  const { token, loading: authLoading, isAuthenticated } = useAuth(); // Get auth context
+  // Updated useAuth destructuring: token removed, authenticatedFetch added
+  const { loading: authLoading, isAuthenticated, authenticatedFetch } = useAuth();
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [itemsByCategory, setItemsByCategory] = useState<Record<number, CatalogItem[]>>({});
   const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
@@ -33,17 +34,18 @@ const CatalogPage: React.FC = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
-      if (!isAuthenticated || !token) {
+      // Guard with isAuthenticated; authenticatedFetch will handle missing token error
+      if (!isAuthenticated) {
         if (!authLoading) {
           setError('User is not authenticated. Cannot load categories.');
-          setCategories([]); // Clear existing categories
+          setCategories([]);
         }
         setLoadingCategories(false);
         return;
       }
       try {
         setLoadingCategories(true);
-        const fetchedCategories = await getCatalogCategories(token); // Pass token
+        const fetchedCategories = await getCatalogCategories(authenticatedFetch); // Pass authenticatedFetch
         setCategories(fetchedCategories);
         setError(null);
       } catch (err) {
@@ -61,14 +63,14 @@ const CatalogPage: React.FC = () => {
       // If auth is loading, reflect this in categories loading state
       setLoadingCategories(true);
     }
-  }, [authLoading, isAuthenticated, token]); // Add dependencies
+  }, [authLoading, isAuthenticated, authenticatedFetch]); // Update dependencies, token removed, authenticatedFetch added
 
   const handleCategoryToggle = async (categoryId: number, isExpanded: boolean) => {
     if (isExpanded && !itemsByCategory[categoryId] && !loadingItems[categoryId]) {
-      if (!isAuthenticated || !token) {
+      // Guard with isAuthenticated
+      if (!isAuthenticated) {
         if (!authLoading) {
           setError(`User is not authenticated. Cannot load items for category ${categoryId}.`);
-          // Optionally clear items for this category or handle globally
           setItemsByCategory(prev => ({ ...prev, [categoryId]: [] }));
         }
         setLoadingItems(prev => ({ ...prev, [categoryId]: false }));
@@ -76,7 +78,7 @@ const CatalogPage: React.FC = () => {
       }
       setLoadingItems(prev => ({ ...prev, [categoryId]: true }));
       try {
-        const fetchedItems = await getCatalogItems(token, categoryId); // Pass token
+        const fetchedItems = await getCatalogItems(authenticatedFetch, categoryId); // Pass authenticatedFetch
         setItemsByCategory(prev => ({ ...prev, [categoryId]: fetchedItems }));
       } catch (err) {
         setError(err instanceof Error ? err.message : `Failed to fetch items for category ${categoryId}.`);
@@ -116,7 +118,7 @@ const CatalogPage: React.FC = () => {
   }
 
   // Error when fetching categories, but user is authenticated
-  if (error && categories.length === 0 && isAuthenticated) {
+  if (error && Array.isArray(categories) && categories.length === 0 && isAuthenticated) {
     return (
       <Box sx={{ p: 3 }}>
         <Typography variant="h4" component="h1" gutterBottom>

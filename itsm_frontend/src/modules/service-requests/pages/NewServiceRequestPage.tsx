@@ -28,7 +28,8 @@ function NewServiceRequestPage() {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
   const location = useLocation();
-  const { token, authenticatedFetch, loading: authLoading, isAuthenticated } = useAuth(); // Updated useAuth
+  // Token removed from destructuring as it's no longer directly used
+  const { authenticatedFetch, loading: authLoading, isAuthenticated } = useAuth();
 
   // Allow catalog_item_id as an extra property for prefill
   const [initialFormData, setInitialFormData] = useState<Partial<ServiceRequest> & { catalog_item_id?: number } | undefined>(undefined);
@@ -74,10 +75,10 @@ function NewServiceRequestPage() {
       const fetchCatalogItem = async () => {
         if (authLoading) return; // Wait for auth to resolve
 
-        if (!isAuthenticated || !token) {
-          console.error('Cannot fetch catalog item details: User not authenticated or token missing.');
+        // Simplified guard: authenticatedFetch will handle token presence internally
+        if (!isAuthenticated) {
+          console.error('Cannot fetch catalog item details: User not authenticated.');
           setError('Authentication required to fetch catalog item details.');
-          // Set prefill data from location state even if item fetch fails due to auth
           setPrefillData({
             catalog_item_id: locationState.catalog_item_id,
             title: locationState.prefill_title,
@@ -88,7 +89,7 @@ function NewServiceRequestPage() {
         }
         try {
           setLoading(true); // Set loading true only when actually fetching
-          const item = await getCatalogItemById(token, locationState.catalog_item_id!);
+          const item = await getCatalogItemById(authenticatedFetch, locationState.catalog_item_id!);
           setCatalogItemDetails(item);
           setPrefillData({
             catalog_item_id: item.id,
@@ -111,15 +112,16 @@ function NewServiceRequestPage() {
       // This case might occur if navigating directly to new request page without catalog interaction
       if (!id) setLoading(false);
     }
-  }, [location.state, id, parseError, token, isAuthenticated, authLoading]); // Added auth dependencies
+  }, [location.state, id, parseError, isAuthenticated, authLoading, authenticatedFetch]); // Deps updated
 
   useEffect(() => {
     const fetchInitialOrSetPrefill = async () => {
       if (id) { // Editing an existing request
         if (authLoading) return; // Wait for auth to resolve for existing requests too
 
-        if (!isAuthenticated || !token) { // Should ideally not happen if getServiceRequestById needs auth
-          console.error('Cannot fetch service request or catalog item details: User not authenticated or token missing.');
+        // Simplified guard
+        if (!isAuthenticated) {
+          console.error('Cannot fetch service request or catalog item details: User not authenticated.');
           setError('Authentication is required.');
           setLoading(false);
           return;
@@ -132,7 +134,7 @@ function NewServiceRequestPage() {
           const reqWithCatalogId = requestData as ServiceRequest & { catalog_item_id?: number };
           if (reqWithCatalogId.catalog_item_id) {
             // Fetch linked catalog item
-            const item = await getCatalogItemById(token, reqWithCatalogId.catalog_item_id);
+            const item = await getCatalogItemById(authenticatedFetch, reqWithCatalogId.catalog_item_id);
             setCatalogItemDetails(item);
           }
         } catch (err) {
@@ -169,7 +171,7 @@ function NewServiceRequestPage() {
             setLoading(true);
         }
     }
-  }, [id, authenticatedFetch, parseError, prefillData, location.state, token, isAuthenticated, authLoading]); // Added auth dependencies
+  }, [id, authenticatedFetch, parseError, prefillData, location.state, isAuthenticated, authLoading]); // Deps updated
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`

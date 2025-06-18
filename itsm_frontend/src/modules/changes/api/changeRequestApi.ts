@@ -1,5 +1,6 @@
-import { apiClient } from '../../../api/apiClient';
+// import { apiClient } from '../../../api/apiClient'; // No longer directly used
 import type { ChangeRequest, NewChangeRequestData } from '../types';
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch
 
 interface PaginatedResponse<T> {
   count: number;
@@ -24,31 +25,31 @@ const processListResponse = <T>(response: PaginatedResponse<T> | T[]): T[] => {
   return []; // Or handle error appropriately
 };
 
-export const getChangeRequests = async (): Promise<ChangeRequest[]> => {
-  const response = await apiClient<PaginatedResponse<ChangeRequest>>('/changes/requests/', '', { method: 'GET' }); // Removed /api prefix
+export const getChangeRequests = async (authenticatedFetch: AuthenticatedFetch): Promise<ChangeRequest[]> => {
+  const response = await authenticatedFetch<PaginatedResponse<ChangeRequest> | ChangeRequest[]>('/changes/requests/', { method: 'GET' });
   return processListResponse<ChangeRequest>(response);
 };
 
-export const getChangeRequestById = async (id: number): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>(`/changes/requests/${id}/`, '', { method: 'GET' }); // Removed /api prefix
+export const getChangeRequestById = async (authenticatedFetch: AuthenticatedFetch, id: number): Promise<ChangeRequest> => {
+  return await authenticatedFetch<ChangeRequest>(`/changes/requests/${id}/`, { method: 'GET' });
 };
 
-export const createChangeRequest = async (data: NewChangeRequestData): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>('/changes/requests/', '', { // Removed /api prefix
+export const createChangeRequest = async (authenticatedFetch: AuthenticatedFetch, data: NewChangeRequestData): Promise<ChangeRequest> => {
+  return await authenticatedFetch<ChangeRequest>('/changes/requests/', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 };
 
-export const updateChangeRequest = async (id: number, data: Partial<NewChangeRequestData>): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>(`/changes/requests/${id}/`, '', { // Removed /api prefix
+export const updateChangeRequest = async (authenticatedFetch: AuthenticatedFetch, id: number, data: Partial<NewChangeRequestData>): Promise<ChangeRequest> => {
+  return await authenticatedFetch<ChangeRequest>(`/changes/requests/${id}/`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
   });
 };
 
-export const deleteChangeRequest = async (id: number): Promise<void> => {
-  await apiClient<void>(`/changes/requests/${id}/`, '', { method: 'DELETE' }); // Removed /api prefix
+export const deleteChangeRequest = async (authenticatedFetch: AuthenticatedFetch, id: number): Promise<void> => {
+  await authenticatedFetch<void>(`/changes/requests/${id}/`, { method: 'DELETE' });
 };
