@@ -24,7 +24,7 @@ const processListResponse = <T>(response: ListResponse<T>): T[] => {
 export const getApprovalRequests = async (filters?: Record<string, unknown>): Promise<ApprovalRequest[]> => {
     const params = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
     const response = await apiClient<ListResponse<ApprovalRequest>>(
-        `/api/workflows/requests/${params}`,
+        `/workflows/requests/${params}`, // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -33,7 +33,7 @@ export const getApprovalRequests = async (filters?: Record<string, unknown>): Pr
 
 export const getApprovalRequestById = async (id: number): Promise<ApprovalRequest> => {
     const response = await apiClient<{ data: ApprovalRequest }>(
-        `/api/workflows/requests/${id}/`,
+        `/workflows/requests/${id}/`, // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -43,7 +43,7 @@ export const getApprovalRequestById = async (id: number): Promise<ApprovalReques
 // Approval Steps
 export const getMyApprovalSteps = async (status: string = 'pending'): Promise<ApprovalStep[]> => {
     const response = await apiClient<ListResponse<ApprovalStep>>(
-        `/api/workflows/steps/?status=${encodeURIComponent(status)}`,
+        `/workflows/steps/?status=${encodeURIComponent(status)}`, // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -52,7 +52,7 @@ export const getMyApprovalSteps = async (status: string = 'pending'): Promise<Ap
 
 export const getApprovalStepsForRequest = async (requestId: number): Promise<ApprovalStep[]> => {
     const response = await apiClient<ListResponse<ApprovalStep>>(
-        `/api/workflows/steps/?approval_request=${requestId}`,
+        `/workflows/steps/?approval_request=${requestId}`, // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -61,7 +61,7 @@ export const getApprovalStepsForRequest = async (requestId: number): Promise<App
 
 export const approveStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
     const response = await apiClient<{ data: ApprovalStep }>(
-        `/api/workflows/steps/${stepId}/approve/`,
+        `/workflows/steps/${stepId}/approve/`, // Removed /api prefix
         '',
         {
             method: 'POST',
@@ -74,7 +74,7 @@ export const approveStep = async (stepId: number, payload?: ApprovalActionPayloa
 
 export const rejectStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
     const response = await apiClient<{ data: ApprovalStep }>(
-        `/api/workflows/steps/${stepId}/reject/`,
+        `/workflows/steps/${stepId}/reject/`, // Removed /api prefix
         '',
         {
             method: 'POST',
