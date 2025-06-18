@@ -5,14 +5,15 @@ import {
 import { DataGrid, type GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { type ApprovalStep, type ApprovalActionPayload } from '../types';
+import { type ApprovalStep, type ApprovalActionPayload, type ApprovalRequest } from '../types'; // Added ApprovalRequest
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
-import { useAuth } from '../../../context/auth/useAuth';
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
+// import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Removed as it's unused for explicit type annotation
 
 const MyApprovalsPage: React.FC = () => {
   const { showSnackbar } = useUI();
-  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth();
+  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth(); // Destructure from useAuth
   const [myPendingSteps, setMyPendingSteps] = useState<ApprovalStep[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,8 +24,7 @@ const MyApprovalsPage: React.FC = () => {
   const [comments, setComments] = useState('');
   const [isSubmittingAction, setIsSubmittingAction] = useState(false);
 
-  // State to store fetched ApprovalRequest titles/details
-  const [requestDetails, setRequestDetails] = useState<Record<number, { title: string, contentDisplay?: string }>>({});
+  const [requestDetails, setRequestDetails] = useState<Record<number, { title: string, contentDisplay?: string, created_at?: string }>>({});
 
   // FIX: Add dependency array to useCallback
   const fetchMyPendingSteps = useCallback(async () => {
@@ -52,14 +52,17 @@ const MyApprovalsPage: React.FC = () => {
         const detailsPromises = uniqueRequestIds.map(id => getApprovalRequestById(authenticatedFetch, id));
         const fetchedRequests = await Promise.all(detailsPromises);
 
-        const detailsMap: Record<number, { title: string, contentDisplay?: string }> = {};
+        const detailsMap: Record<number, { title: string, contentDisplay?: string, created_at?: string }> = {};
         fetchedRequests.forEach(req => {
           detailsMap[req.id] = {
             title: req.title,
-            contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
+            contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`,
+            created_at: req.created_at, // Store created_at from the request
           };
         });
         setRequestDetails(detailsMap);
+      } else {
+        setRequestDetails({});
       }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch pending approvals.';
@@ -155,10 +158,8 @@ const MyApprovalsPage: React.FC = () => {
       headerName: 'Request Created',
       width: 180,
       valueGetter: (_value, row) => {
-        const reqDetail = requestDetails[row.approval_request];
-        return reqDetail && (myPendingSteps.find(s => s.approval_request === row.approval_request) as ApprovalStep & { approval_request_details?: { created_at?: string } })?.approval_request_details?.created_at
-          ? formatDate((myPendingSteps.find(s => s.approval_request === row.approval_request) as ApprovalStep & { approval_request_details?: { created_at?: string } }).approval_request_details?.created_at)
-          : 'Loading...';
+        const req = requestDetails[row.approval_request];
+        return req?.created_at ? formatDate(req.created_at) : 'Loading...';
       }
     },
     {
@@ -183,9 +184,13 @@ const MyApprovalsPage: React.FC = () => {
     },
   ];
 
-  if ((loading && myPendingSteps.length === 0) || (authLoading && !isAuthenticated && myPendingSteps.length === 0)) {
+  if (authLoading && myPendingSteps.length === 0) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
+  if (loading && myPendingSteps.length === 0 && !authLoading && isAuthenticated ) {
+     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
+  }
+
 
   if (!isAuthenticated && !authLoading) {
     return (
@@ -210,19 +215,23 @@ const MyApprovalsPage: React.FC = () => {
       <Typography variant="h5" component="h1" gutterBottom>
         My Pending Approvals
       </Typography>
-      {error && myPendingSteps.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Operation error: ${error}`}</Alert>}
+      {error && myPendingSteps.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Error fetching updates: ${error}`}</Alert>}
+
       {myPendingSteps.length === 0 && !loading && !error && isAuthenticated && !authLoading && (
          <Typography sx={{mt: 2}}>You have no pending approvals.</Typography>
       )}
-      <Box sx={{ height: 600, width: '100%', mt: myPendingSteps.length === 0 ? 0 : 2  }}>
-        <DataGrid
-          rows={myPendingSteps}
-          columns={columns}
-          pageSizeOptions={[10, 25, 50]}
-          initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          loading={loading}
-        />
-      </Box>
+
+      {(myPendingSteps.length > 0 || loading) && ! (error && myPendingSteps.length === 0) && (
+        <Box sx={{ height: 600, width: '100%', mt: 2 }}>
+          <DataGrid
+            rows={myPendingSteps}
+            columns={columns}
+            pageSizeOptions={[10, 25, 50]}
+            initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
+            loading={loading && isAuthenticated}
+          />
+        </Box>
+      )}
 
       <Dialog open={actionDialogOpen} onClose={handleCloseActionDialog} maxWidth="sm" fullWidth>
         <DialogTitle>{actionType === 'approve' ? 'Approve Step' : 'Reject Step'}</DialogTitle>

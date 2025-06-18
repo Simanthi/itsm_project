@@ -41,8 +41,8 @@ const CheckRequestPrintView = lazy(() => import('./modules/procurement/component
 
 const SecurityAccessPage = lazy(() => import('./modules/security-access/SecurityAccessPage'));
 const IncidentManagementPage = lazy(() => import('./modules/incidents/IncidentManagementPage'));
-const ChangeManagementPage = lazy(() => import('./modules/changes/ChangeManagementPage'));
-const ConfigurationManagementPage = lazy(() => import('./modules/configs/ConfigurationManagementPage'));
+const ChangeManagementPage = lazy(() => import('./modules/changes/pages/ChangeManagementPage'));
+const ConfigurationManagementPage = lazy(() => import('./modules/configs/pages/ConfigurationManagementPage'));
 const ApprovalWorkflowPage = lazy(() => import('./modules/workflows/ApprovalWorkflowPage'));
 const MyApprovalsPage = lazy(() => import('./modules/workflows/pages/MyApprovalsPage')); // Added MyApprovalsPage
 const ReportsAnalyticsPage = lazy(() => import('./modules/reports/ReportsAnalyticsPage'));
