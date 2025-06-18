@@ -7,12 +7,13 @@ import DeleteIcon from '@mui/icons-material/Delete';
 import type { ChangeRequest, NewChangeRequestData } from '../types';
 import { getChangeRequests, deleteChangeRequest, createChangeRequest, updateChangeRequest } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type
 import ChangeRequestForm from '../components/ChangeRequestForm';
-// import { useAuth } from '../../../context/auth/useAuth'; // Not strictly needed if apiClient handles auth
 
 const ChangeManagementPage: React.FC = () => {
   const { showSnackbar, showConfirmDialog } = useUI();
-  // const { authenticatedFetch } = useAuth(); // Use if your api functions need it explicitly
+  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth(); // Destructure from useAuth
 
   const [changeRequests, setChangeRequests] = useState<ChangeRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -21,9 +22,21 @@ const ChangeManagementPage: React.FC = () => {
   const [editingCR, setEditingCR] = useState<ChangeRequest | null>(null);
 
   const fetchCRs = useCallback(async () => {
+    if (!isAuthenticated && !authLoading) {
+      setError("User is not authenticated. Cannot load change requests.");
+      setLoading(false);
+      setChangeRequests([]);
+      return;
+    }
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!authenticatedFetch) return;
+
     setLoading(true);
     try {
-      const items = await getChangeRequests();
+      const items = await getChangeRequests(authenticatedFetch); // Pass authenticatedFetch
       setChangeRequests(items);
       setError(null);
     } catch (err) {
@@ -34,11 +47,15 @@ const ChangeManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [showSnackbar]);
+  }, [showSnackbar, authenticatedFetch, isAuthenticated, authLoading]);
 
   useEffect(() => {
-    fetchCRs();
-  }, [fetchCRs]);
+    if (!authLoading) {
+        fetchCRs();
+    } else {
+        setLoading(true);
+    }
+  }, [fetchCRs, authLoading]);
 
   const handleOpenCreateForm = () => {
     setEditingCR(null);
@@ -58,12 +75,17 @@ const ChangeManagementPage: React.FC = () => {
   const handleSubmitForm = async (data: NewChangeRequestData, id?: number) => {
     // No need to setLoading(true) here, individual actions will set their own loading if needed
     // or rely on the DataGrid's loading prop during refresh.
+    if (!authenticatedFetch || !isAuthenticated) {
+      showSnackbar('User not authenticated.', 'error');
+      return;
+    }
+    // setLoading(true); // Let fetchCRs handle main loading indicator
     try {
       if (id) {
-        await updateChangeRequest(id, data);
+        await updateChangeRequest(authenticatedFetch, id, data); // Pass authenticatedFetch
         showSnackbar('Change Request updated successfully!', 'success');
       } else {
-        await createChangeRequest(data);
+        await createChangeRequest(authenticatedFetch, data); // Pass authenticatedFetch
         showSnackbar('Change Request created successfully!', 'success');
       }
       await fetchCRs(); // Refresh list
@@ -71,22 +93,27 @@ const ChangeManagementPage: React.FC = () => {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to save Change Request';
       showSnackbar(errorMsg, 'error');
-      // setError(errorMsg); // Optionally set page-level error
+      setError(errorMsg);
     }
   };
 
   const handleDeleteCR = (id: number) => {
+    if (!authenticatedFetch || !isAuthenticated) {
+      showSnackbar('User not authenticated.', 'error');
+      return;
+    }
     showConfirmDialog(
       'Confirm Delete',
       `Are you sure you want to delete Change Request ID ${id}? This action cannot be undone.`,
       async () => {
         try {
-          await deleteChangeRequest(id);
+          await deleteChangeRequest(authenticatedFetch, id); // Pass authenticatedFetch
           showSnackbar('Change Request deleted successfully!', 'success');
           await fetchCRs(); // Refresh list
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Failed to delete Change Request';
           showSnackbar(errorMsg, 'error');
+          setError(errorMsg);
         }
       }
     );
@@ -129,11 +156,26 @@ const ChangeManagementPage: React.FC = () => {
     },
   ];
 
-  if (loading && changeRequests.length === 0) {
+  if ((loading && changeRequests.length === 0) || (authLoading && !isAuthenticated && changeRequests.length === 0)) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
-  if (error && changeRequests.length === 0) {
-    return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <Box sx={{ p: 3, width: '100%' }}>
+        <Typography variant="h5" component="h1" sx={{ mb: 2 }}>Manage Change Requests</Typography>
+        <Alert severity="info">Please log in to view change requests.</Alert>
+      </Box>
+    );
+  }
+
+  if (error && changeRequests.length === 0 && isAuthenticated && !authLoading) {
+    return (
+        <Box sx={{ p: 3, width: '100%' }}>
+            <Typography variant="h5" component="h1" sx={{ mb: 2 }}>Manage Change Requests</Typography>
+            <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+        </Box>
+    );
   }
 
   return (
@@ -144,22 +186,25 @@ const ChangeManagementPage: React.FC = () => {
           New Change Request
         </Button>
       </Box>
-      {error && changeRequests.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Last operation error: ${error}`}</Alert>}
+      {error && changeRequests.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Operation error: ${error}`}</Alert>}
       <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid
           rows={changeRequests}
           columns={columns}
           pageSizeOptions={[10, 25, 50]}
           initialState={{ pagination: { paginationModel: { pageSize: 10 } } }}
-          loading={loading}
+          loading={loading} // Managed by fetchCRs
         />
       </Box>
-      <ChangeRequestForm
-        open={isFormOpen}
-        onClose={handleCloseForm}
-        onSubmit={handleSubmitForm}
-        initialData={editingCR}
-      />
+      {isFormOpen && authenticatedFetch && ( // Conditionally render form when authenticatedFetch is available
+        <ChangeRequestForm
+          open={isFormOpen}
+          onClose={handleCloseForm}
+          onSubmit={handleSubmitForm}
+          initialData={editingCR}
+          authenticatedFetch={authenticatedFetch} // Pass authenticatedFetch
+        />
+      )}
     </Box>
   );
 };

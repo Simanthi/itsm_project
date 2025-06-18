@@ -20,9 +20,10 @@ import type { ConfigurationItem } from '../../configs/types';
 import { getConfigItems } from '../../configs/api';
 import { getUserList } from '../../../api/authApi';
 import type { User } from '../../../types/UserTypes';
-import { useAuth } from '../../../context/auth/useAuth';
+// import { useAuth } from '../../../context/auth/useAuth'; // To be removed
 import { getApprovalRequests } from '../../workflows/api/workflowApi';
 import type { ApprovalRequest, ApprovalStep } from '../../workflows/types/WorkflowTypes';
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch
 
 // Placeholder - Replace with actual ContentType ID for ChangeRequest model
 const CHANGES_CONTENT_TYPE_ID = 123;
@@ -32,6 +33,7 @@ interface ChangeRequestFormProps {
   onClose: () => void;
   onSubmit: (data: NewChangeRequestData, id?: number) => Promise<void>;
   initialData?: ChangeRequest | null;
+  authenticatedFetch: AuthenticatedFetch; // Add authenticatedFetch to props
 }
 
 const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
@@ -39,8 +41,9 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   onClose,
   onSubmit,
   initialData,
+  authenticatedFetch, // Destructure from props
 }) => {
-  const { authenticatedFetch } = useAuth();
+  // const { authenticatedFetch } = useAuth(); // Removed local useAuth
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -66,13 +69,13 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   useEffect(() => {
     if (open) {
       const fetchDropdownData = async () => {
-        if (!authenticatedFetch) return;
+        if (!authenticatedFetch) return; // Guard against missing authenticatedFetch prop
         setLoadingUsers(true);
         setLoadingCIs(true);
         try {
           const [usersData, cisData] = await Promise.all([
-            getUserList(authenticatedFetch),
-            getConfigItems(),
+            getUserList(authenticatedFetch), // Pass authenticatedFetch from props
+            getConfigItems(authenticatedFetch), // Pass authenticatedFetch from props
           ]);
           setAvailableUsers(usersData);
           setAvailableCIs(cisData);
@@ -136,7 +139,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setLoadingApprovals(true);
         setApprovalError(null);
         try {
-          const approvals = await getApprovalRequests({ // Corrected: authenticatedFetch removed from the call
+          const approvals = await getApprovalRequests(authenticatedFetch, { // Pass authenticatedFetch from props
             content_type: CHANGES_CONTENT_TYPE_ID,
             object_id: initialData.id,
           });

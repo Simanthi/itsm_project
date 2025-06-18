@@ -8,9 +8,12 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { type ApprovalStep, type ApprovalActionPayload } from '../types';
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
+import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type
 
 const MyApprovalsPage: React.FC = () => {
   const { showSnackbar } = useUI();
+  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth(); // Destructure from useAuth
   const [myPendingSteps, setMyPendingSteps] = useState<ApprovalStep[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,19 +28,32 @@ const MyApprovalsPage: React.FC = () => {
   const [requestDetails, setRequestDetails] = useState<Record<number, { title: string, contentDisplay?: string }>>({});
 
   const fetchMyPendingSteps = useCallback(async () => {
+    if (!isAuthenticated && !authLoading) {
+      setError("User is not authenticated. Cannot load approvals.");
+      setLoading(false);
+      setMyPendingSteps([]);
+      setRequestDetails({});
+      return;
+    }
+    if (authLoading) {
+      setLoading(true);
+      return;
+    }
+    if (!authenticatedFetch) return;
+
     setLoading(true);
     try {
-      const steps = await getMyApprovalSteps('pending');
+      const steps = await getMyApprovalSteps(authenticatedFetch, 'pending'); // Pass authenticatedFetch
       setMyPendingSteps(steps);
       setError(null);
 
-      // Fetch details for each associated ApprovalRequest to display title/content
-      const uniqueRequestIds = Array.from(new Set(steps.map(step => step.approval_request)));
-      const detailsPromises = uniqueRequestIds.map(id => getApprovalRequestById(id));
-      const fetchedRequests = await Promise.all(detailsPromises);
+      if (steps.length > 0) {
+        const uniqueRequestIds = Array.from(new Set(steps.map(step => step.approval_request)));
+        const detailsPromises = uniqueRequestIds.map(id => getApprovalRequestById(authenticatedFetch, id)); // Pass authenticatedFetch
+        const fetchedRequests = await Promise.all(detailsPromises);
 
-      const detailsMap: Record<number, { title: string, contentDisplay?: string }> = {};
-      fetchedRequests.forEach(req => {
+        const detailsMap: Record<number, { title: string, contentDisplay?: string }> = {};
+        fetchedRequests.forEach(req => {
         detailsMap[req.id] = {
           title: req.title,
           contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
@@ -50,14 +66,19 @@ const MyApprovalsPage: React.FC = () => {
       setError(errorMsg);
       showSnackbar(errorMsg, 'error');
       setMyPendingSteps([]);
+      setRequestDetails({});
     } finally {
       setLoading(false);
     }
-  }, [showSnackbar]);
+  }, [showSnackbar, authenticatedFetch, isAuthenticated, authLoading]);
 
   useEffect(() => {
-    fetchMyPendingSteps();
-  }, [fetchMyPendingSteps]);
+    if (!authLoading) { // Only fetch if auth state is resolved
+        fetchMyPendingSteps();
+    } else {
+        setLoading(true); // Set loading true if auth is initially loading
+    }
+  }, [fetchMyPendingSteps, authLoading]);
 
   const handleOpenActionDialog = (step: ApprovalStep, type: 'approve' | 'reject') => {
     setCurrentStep(step);
@@ -74,14 +95,18 @@ const MyApprovalsPage: React.FC = () => {
 
   const handleSubmitAction = async () => {
     if (!currentStep || !actionType) return;
+    if (!authenticatedFetch || !isAuthenticated) {
+      showSnackbar('User not authenticated. Cannot perform action.', 'error');
+      return;
+    }
     setIsSubmittingAction(true);
     const payload: ApprovalActionPayload = { comments };
     try {
       if (actionType === 'approve') {
-        await approveStep(currentStep.id, payload);
+        await approveStep(authenticatedFetch, currentStep.id, payload); // Pass authenticatedFetch
         showSnackbar('Step approved successfully!', 'success');
       } else {
-        await rejectStep(currentStep.id, payload);
+        await rejectStep(authenticatedFetch, currentStep.id, payload); // Pass authenticatedFetch
         showSnackbar('Step rejected successfully!', 'success');
       }
       await fetchMyPendingSteps(); // Refresh list
@@ -155,11 +180,26 @@ const MyApprovalsPage: React.FC = () => {
     },
   ];
 
-  if (loading) {
+  if ((loading && myPendingSteps.length === 0) || (authLoading && !isAuthenticated && myPendingSteps.length === 0)) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
-  if (error && myPendingSteps.length === 0) {
-    return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <Box sx={{ p: 3, width: '100%' }}>
+        <Typography variant="h5" component="h1" sx={{ mb: 2 }}>My Pending Approvals</Typography>
+        <Alert severity="info">Please log in to view your pending approvals.</Alert>
+      </Box>
+    );
+  }
+
+  if (error && myPendingSteps.length === 0 && isAuthenticated && !authLoading) {
+    return (
+        <Box sx={{ p: 3, width: '100%' }}>
+            <Typography variant="h5" component="h1" sx={{ mb: 2 }}>My Pending Approvals</Typography>
+            <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+        </Box>
+    );
   }
 
   return (
@@ -167,9 +207,11 @@ const MyApprovalsPage: React.FC = () => {
       <Typography variant="h5" component="h1" gutterBottom>
         My Pending Approvals
       </Typography>
-      {error && myPendingSteps.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Error refreshing data: ${error}`}</Alert>}
-
-      <Box sx={{ height: 600, width: '100%' }}>
+      {error && myPendingSteps.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Operation error: ${error}`}</Alert>}
+      {myPendingSteps.length === 0 && !loading && !error && isAuthenticated && !authLoading && (
+         <Typography sx={{mt: 2}}>You have no pending approvals.</Typography>
+      )}
+      <Box sx={{ height: 600, width: '100%', mt: myPendingSteps.length === 0 ? 0 : 2  }}>
         <DataGrid
           rows={myPendingSteps}
           columns={columns}

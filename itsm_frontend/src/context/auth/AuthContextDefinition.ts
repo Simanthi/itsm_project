@@ -9,6 +9,12 @@ export interface AuthUser {
   is_staff: boolean; // Added to reflect staff status from backend
 }
 
+// Define and export the AuthenticatedFetch type
+export type AuthenticatedFetch = <T = unknown>(
+  endpoint: string,
+  options?: RequestInit
+) => Promise<T>;
+
 // Defines the shape of the authentication context itself.
 export interface AuthContextType {
   token: string | null; // JWT token for API authentication
@@ -17,10 +23,7 @@ export interface AuthContextType {
   loading: boolean; // Indicates if authentication state is currently being loaded/initialized
   login: (username: string, password: string) => Promise<boolean>; // Function to handle user login
   logout: () => void; // Function to handle user logout
-  authenticatedFetch: (
-    endpoint: string,
-    options?: RequestInit,
-  ) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
+  authenticatedFetch: AuthenticatedFetch; // Use the defined type here
 }
 
 // Creates the React Context object. Default value is undefined, to be provided by AuthProvider.
