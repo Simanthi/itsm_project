@@ -25,16 +25,16 @@ const processListResponse = <T>(response: PaginatedResponse<T> | T[]): T[] => {
 };
 
 export const getChangeRequests = async (): Promise<ChangeRequest[]> => {
-  const response = await apiClient<PaginatedResponse<ChangeRequest>>('/api/changes/requests/', '', { method: 'GET' });
+  const response = await apiClient<PaginatedResponse<ChangeRequest>>('/changes/requests/', '', { method: 'GET' }); // Removed /api prefix
   return processListResponse<ChangeRequest>(response);
 };
 
 export const getChangeRequestById = async (id: number): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>(`/api/changes/requests/${id}/`, '', { method: 'GET' });
+  return await apiClient<ChangeRequest>(`/changes/requests/${id}/`, '', { method: 'GET' }); // Removed /api prefix
 };
 
 export const createChangeRequest = async (data: NewChangeRequestData): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>('/api/changes/requests/', '', {
+  return await apiClient<ChangeRequest>('/changes/requests/', '', { // Removed /api prefix
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -42,7 +42,7 @@ export const createChangeRequest = async (data: NewChangeRequestData): Promise<C
 };
 
 export const updateChangeRequest = async (id: number, data: Partial<NewChangeRequestData>): Promise<ChangeRequest> => {
-  return await apiClient<ChangeRequest>(`/api/changes/requests/${id}/`, '', {
+  return await apiClient<ChangeRequest>(`/changes/requests/${id}/`, '', { // Removed /api prefix
     method: 'PUT',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),
@@ -50,5 +50,5 @@ export const updateChangeRequest = async (id: number, data: Partial<NewChangeReq
 };
 
 export const deleteChangeRequest = async (id: number): Promise<void> => {
-  await apiClient<void>(`/api/changes/requests/${id}/`, '', { method: 'DELETE' });
+  await apiClient<void>(`/changes/requests/${id}/`, '', { method: 'DELETE' }); // Removed /api prefix
 };

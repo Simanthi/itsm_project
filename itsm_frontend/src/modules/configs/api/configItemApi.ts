@@ -11,7 +11,7 @@ const processListResponse = <T>(response: { data: { results: T[] } | T[] }): T[]
 
 export const getConfigItems = async (): Promise<ConfigurationItem[]> => {
     const response = await apiClient<{ data: { results: ConfigurationItem[] } | ConfigurationItem[] }>(
-        '/api/configs/items/',
+        '/configs/items/', // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -20,7 +20,7 @@ export const getConfigItems = async (): Promise<ConfigurationItem[]> => {
 
 export const getConfigItemById = async (id: number): Promise<ConfigurationItem> => {
     const response = await apiClient<{ data: ConfigurationItem }>(
-        `/api/configs/items/${id}/`,
+        `/configs/items/${id}/`, // Removed /api prefix
         '',
         { method: 'GET' }
     );
@@ -29,7 +29,7 @@ export const getConfigItemById = async (id: number): Promise<ConfigurationItem> 
 
 export const createConfigItem = async (data: NewConfigurationItemData): Promise<ConfigurationItem> => {
     const response = await apiClient<{ data: ConfigurationItem }>(
-        '/api/configs/items/',
+        '/configs/items/', // Removed /api prefix
         '',
         {
             method: 'POST',
@@ -42,7 +42,7 @@ export const createConfigItem = async (data: NewConfigurationItemData): Promise<
 
 export const updateConfigItem = async (id: number, data: Partial<NewConfigurationItemData>): Promise<ConfigurationItem> => {
     const response = await apiClient<{ data: ConfigurationItem }>(
-        `/api/configs/items/${id}/`,
+        `/configs/items/${id}/`, // Removed /api prefix
         '',
         {
             method: 'PUT',
@@ -55,7 +55,7 @@ export const updateConfigItem = async (id: number, data: Partial<NewConfiguratio
 
 export const deleteConfigItem = async (id: number): Promise<void> => {
     await apiClient<void>(
-        `/api/configs/items/${id}/`,
+        `/configs/items/${id}/`, // Removed /api prefix
         '',
         { method: 'DELETE' }
     );
