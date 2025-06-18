@@ -1,12 +1,19 @@
 # itsm_project/itsm_core/urls.py
 from django.contrib import admin
 from django.urls import path, include
+from django.contrib.auth import views as auth_views # Added for password reset
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
     TokenRefreshView,
 )
 
 urlpatterns = [
+    # Password Reset URLs (using django.contrib.auth.views)
+    path('password_reset/', auth_views.PasswordResetView.as_view(template_name='password_reset_form.html'), name='password_reset'),
+    path('password_reset/done/', auth_views.PasswordResetDoneView.as_view(template_name='password_reset_done.html'), name='password_reset_done'),
+    path('reset/<uidb64>/<token>/', auth_views.PasswordResetConfirmView.as_view(template_name='password_reset_confirm.html'), name='password_reset_confirm'),
+    path('reset/done/', auth_views.PasswordResetCompleteView.as_view(template_name='password_reset_complete.html'), name='password_reset_complete'),
+
     path("admin/", admin.site.urls),
     # DRF authentication (optional for now, but good to have the path)
     path("api-auth/", include("rest_framework.urls")),
@@ -24,8 +31,9 @@ urlpatterns = [
     path('api/procurement/', include('procurement.urls')),  # Added procurement URLs
     # You will add paths for other modules here as we develop them:
     path('api/incidents/', include('incidents.urls')),
-    # path('api/changes/', include('changes.urls')),
-    # path('api/configs/', include('configs.urls')),
-    # path('api/workflows/', include('workflows.urls')),
+    path('api/service-catalog/', include('service_catalog.urls')), # Added Service Catalog URLs
+    path('api/changes/', include('changes.urls')), # Uncommented Changes URLs
+    path('api/configs/', include('configs.urls')), # Uncommented Configs URLs
+    path('api/workflows/', include('workflows.urls')), # Uncommented Workflows URLs
     # path('api/reports-analytics/', include('reports_analytics.urls')),
 ]

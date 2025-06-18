@@ -1,6 +1,7 @@
 # itsm_project/assets/models.py
 from django.db import models
 from django.contrib.auth import get_user_model  # To reference your User model
+from simple_history.models import HistoricalRecords # Added for model history
 
 User = get_user_model()  # Get the currently active User model
 
@@ -101,6 +102,7 @@ class Asset(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
+    history = HistoricalRecords()
 
     class Meta:
         verbose_name = "IT Asset"
