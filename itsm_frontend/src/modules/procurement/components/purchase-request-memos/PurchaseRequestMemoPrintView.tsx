@@ -242,7 +242,14 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={handleMemoPrint} // Use new print handler
+            onClick={() => {
+              if (componentRef.current && memosToPrint.length > 0) {
+                handleMemoPrint();
+              } else {
+                console.error("PurchaseRequestMemoPrintView: Manual print trigger called but content not ready or componentRef is null.");
+                // Optionally, show a snackbar message to the user
+              }
+            }}
             startIcon={<PrintIcon />}
           >
             Print

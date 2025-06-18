@@ -7,10 +7,10 @@ export const ChangeTypeOptions: ChangeType[] = ['standard', 'normal', 'emergency
 
 export type ChangeStatus =
     | 'draft' | 'pending_approval' | 'approved' | 'scheduled'
-    | 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'reviewed';
+    | 'in_progress' | 'completed' | 'failed' | 'cancelled' | 'reviewed' | 'rejected'; // Added 'rejected'
 export const ChangeStatusOptions: ChangeStatus[] = [
-    'draft', 'pending_approval', 'approved', 'scheduled',
-    'in_progress', 'completed', 'failed', 'cancelled', 'reviewed'
+    'draft', 'pending_approval', 'approved', 'rejected', // Added 'rejected'
+    'scheduled', 'in_progress', 'completed', 'failed', 'cancelled', 'reviewed'
 ];
 
 export type ChangeImpact = 'low' | 'medium' | 'high';
