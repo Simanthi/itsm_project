@@ -8,12 +8,11 @@ import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import { type ApprovalStep, type ApprovalActionPayload } from '../types';
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
-import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
-// import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Removed as it's unused for explicit type annotation
+import { useAuth } from '../../../context/auth/useAuth';
 
 const MyApprovalsPage: React.FC = () => {
   const { showSnackbar } = useUI();
-  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth(); // Destructure from useAuth
+  const { authenticatedFetch, isAuthenticated, loading: authLoading } = useAuth();
   const [myPendingSteps, setMyPendingSteps] = useState<ApprovalStep[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
@@ -27,6 +26,7 @@ const MyApprovalsPage: React.FC = () => {
   // State to store fetched ApprovalRequest titles/details
   const [requestDetails, setRequestDetails] = useState<Record<number, { title: string, contentDisplay?: string }>>({});
 
+  // FIX: Add dependency array to useCallback
   const fetchMyPendingSteps = useCallback(async () => {
     if (!isAuthenticated && !authLoading) {
       setError("User is not authenticated. Cannot load approvals.");
@@ -43,24 +43,24 @@ const MyApprovalsPage: React.FC = () => {
 
     setLoading(true);
     try {
-      const steps = await getMyApprovalSteps(authenticatedFetch, 'pending'); // Pass authenticatedFetch
+      const steps = await getMyApprovalSteps(authenticatedFetch, 'pending');
       setMyPendingSteps(steps);
       setError(null);
 
       if (steps.length > 0) {
         const uniqueRequestIds = Array.from(new Set(steps.map(step => step.approval_request)));
-        const detailsPromises = uniqueRequestIds.map(id => getApprovalRequestById(authenticatedFetch, id)); // Pass authenticatedFetch
+        const detailsPromises = uniqueRequestIds.map(id => getApprovalRequestById(authenticatedFetch, id));
         const fetchedRequests = await Promise.all(detailsPromises);
 
         const detailsMap: Record<number, { title: string, contentDisplay?: string }> = {};
         fetchedRequests.forEach(req => {
-        detailsMap[req.id] = {
-          title: req.title,
-          contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
-        };
-      });
-      setRequestDetails(detailsMap);
-
+          detailsMap[req.id] = {
+            title: req.title,
+            contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
+          };
+        });
+        setRequestDetails(detailsMap);
+      }
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to fetch pending approvals.';
       setError(errorMsg);
@@ -73,17 +73,17 @@ const MyApprovalsPage: React.FC = () => {
   }, [showSnackbar, authenticatedFetch, isAuthenticated, authLoading]);
 
   useEffect(() => {
-    if (!authLoading) { // Only fetch if auth state is resolved
-        fetchMyPendingSteps();
+    if (!authLoading) {
+      fetchMyPendingSteps();
     } else {
-        setLoading(true); // Set loading true if auth is initially loading
+      setLoading(true);
     }
   }, [fetchMyPendingSteps, authLoading]);
 
   const handleOpenActionDialog = (step: ApprovalStep, type: 'approve' | 'reject') => {
     setCurrentStep(step);
     setActionType(type);
-    setComments(''); // Reset comments
+    setComments('');
     setActionDialogOpen(true);
   };
 
@@ -109,9 +109,8 @@ const MyApprovalsPage: React.FC = () => {
         await rejectStep(authenticatedFetch, currentStep.id, payload);
         showSnackbar('Step rejected successfully!', 'success');
       } else {
-        console.error("Invalid actionType in handleSubmitAction:", actionType);
         showSnackbar(`Invalid action: ${actionType}`, 'error');
-        setIsSubmittingAction(false); // Reset loading if action is invalid
+        setIsSubmittingAction(false);
         return;
       }
       await fetchMyPendingSteps();
@@ -119,7 +118,6 @@ const MyApprovalsPage: React.FC = () => {
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : `Failed to ${actionType} step.`;
       showSnackbar(errorMsg, 'error');
-      // Dialog remains open for user to retry or cancel
     } finally {
       setIsSubmittingAction(false);
     }
@@ -129,7 +127,6 @@ const MyApprovalsPage: React.FC = () => {
     if (!dateString) return 'N/A';
     return new Date(dateString).toLocaleString();
   };
-
 
   const columns: GridColDef<ApprovalStep>[] = [
     {
