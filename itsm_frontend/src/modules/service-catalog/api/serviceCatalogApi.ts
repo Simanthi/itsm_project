@@ -1,5 +1,6 @@
 import apiClient from '../../../api/apiClient'; // Adjust path as needed
-import { CatalogCategory, CatalogItem } from '../types';
+import { type CatalogCategory } from '../types/ServiceCatalogTypes'; // Direct import
+import { type CatalogItem } from '../types'; // Keep via index
 
 export const getCatalogCategories = async (): Promise<CatalogCategory[]> => {
     // Ensure the response structure matches PaginatedResponse or direct list
