@@ -17,7 +17,8 @@ import {
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ShoppingCartIcon from '@mui/icons-material/ShoppingCart'; // Example Icon
 import { useNavigate } from 'react-router-dom';
-import { CatalogCategory, CatalogItem } from '../types';
+import type { CatalogCategory } from '../types/ServiceCatalogTypes'; // Direct import for CatalogCategory
+import { type CatalogItem } from '../types'; // Keep CatalogItem via index, make type-only
 import { getCatalogCategories, getCatalogItems } from '../api'; // Assuming index export
 
 const CatalogPage: React.FC = () => {

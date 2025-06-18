@@ -1,8 +1,15 @@
 import { apiClient } from '../../../api/apiClient'; // Corrected: Named import
 import type { ChangeRequest, NewChangeRequestData } from '../types'; // Corrected: Type-only import
 
+interface PaginatedResponse<T> {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+}
+
 // Helper for list responses if pagination is used by default by apiClient
-const processListResponse = <T>(response: any): T[] => {
+const processListResponse = <T>(response: { data: PaginatedResponse<T> | T[] }): T[] => {
     // Check if response.data itself is the array (direct list)
     if (Array.isArray(response.data)) {
         return response.data as T[];
