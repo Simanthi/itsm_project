@@ -50,7 +50,8 @@ code {
     margin: 1cm; /* Consistent margin for print */
   }
 
-  /* Hide the main application root and show the print root */
+  /* Styles for old portal-based printing, likely not needed with react-to-print */
+  /*
   #root {
     display: none !important;
   }
@@ -64,6 +65,7 @@ code {
     min-height: auto !important;
     overflow: visible !important;
   }
+  */
 
   /* Ensure body and html are clean for print */
   html,
@@ -222,6 +224,11 @@ code {
 
   /* Hide any explicit page break elements */
   .print-page-break {
+    display: none !important;
+  }
+
+  /* Class to hide elements specifically for print */
+  .no-print {
     display: none !important;
   }
 }
