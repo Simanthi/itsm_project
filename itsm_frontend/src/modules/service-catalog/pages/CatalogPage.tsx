@@ -20,9 +20,11 @@ import { useNavigate } from 'react-router-dom';
 import type { CatalogCategory } from '../types/ServiceCatalogTypes'; // Direct import for CatalogCategory
 import { type CatalogItem } from '../types'; // Keep CatalogItem via index, make type-only
 import { getCatalogCategories, getCatalogItems } from '../api'; // Assuming index export
+import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
 
 const CatalogPage: React.FC = () => {
   const navigate = useNavigate();
+  const { token, loading: authLoading, isAuthenticated } = useAuth(); // Get auth context
   const [categories, setCategories] = useState<CatalogCategory[]>([]);
   const [itemsByCategory, setItemsByCategory] = useState<Record<number, CatalogItem[]>>({});
   const [loadingCategories, setLoadingCategories] = useState<boolean>(true);
@@ -31,30 +33,55 @@ const CatalogPage: React.FC = () => {
 
   useEffect(() => {
     const fetchCategories = async () => {
+      if (!isAuthenticated || !token) {
+        if (!authLoading) {
+          setError('User is not authenticated. Cannot load categories.');
+          setCategories([]); // Clear existing categories
+        }
+        setLoadingCategories(false);
+        return;
+      }
       try {
         setLoadingCategories(true);
-        const fetchedCategories = await getCatalogCategories();
+        const fetchedCategories = await getCatalogCategories(token); // Pass token
         setCategories(fetchedCategories);
         setError(null);
       } catch (err) {
         setError(err instanceof Error ? err.message : 'Failed to fetch service catalog categories.');
         console.error(err);
+        setCategories([]); // Clear categories on error
       } finally {
         setLoadingCategories(false);
       }
     };
-    fetchCategories();
-  }, []);
+
+    if (!authLoading) { // Trigger fetch only when auth state is resolved
+      fetchCategories();
+    } else {
+      // If auth is loading, reflect this in categories loading state
+      setLoadingCategories(true);
+    }
+  }, [authLoading, isAuthenticated, token]); // Add dependencies
 
   const handleCategoryToggle = async (categoryId: number, isExpanded: boolean) => {
     if (isExpanded && !itemsByCategory[categoryId] && !loadingItems[categoryId]) {
+      if (!isAuthenticated || !token) {
+        if (!authLoading) {
+          setError(`User is not authenticated. Cannot load items for category ${categoryId}.`);
+          // Optionally clear items for this category or handle globally
+          setItemsByCategory(prev => ({ ...prev, [categoryId]: [] }));
+        }
+        setLoadingItems(prev => ({ ...prev, [categoryId]: false }));
+        return;
+      }
       setLoadingItems(prev => ({ ...prev, [categoryId]: true }));
       try {
-        const fetchedItems = await getCatalogItems(categoryId);
+        const fetchedItems = await getCatalogItems(token, categoryId); // Pass token
         setItemsByCategory(prev => ({ ...prev, [categoryId]: fetchedItems }));
       } catch (err) {
         setError(err instanceof Error ? err.message : `Failed to fetch items for category ${categoryId}.`);
         console.error(err);
+        setItemsByCategory(prev => ({ ...prev, [categoryId]: [] })); // Clear items on error
       } finally {
         setLoadingItems(prev => ({ ...prev, [categoryId]: false }));
       }
@@ -71,12 +98,33 @@ const CatalogPage: React.FC = () => {
     });
   };
 
-  if (loadingCategories) {
+  // Combined loading state
+  if (loadingCategories || authLoading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
 
-  if (error && categories.length === 0) { // Show error only if no categories could be loaded at all
-    return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
+  // Handle not authenticated state after auth loading is complete
+  if (!isAuthenticated && !authLoading) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Service Catalog
+        </Typography>
+        <Alert severity="info">Please log in to view the service catalog.</Alert>
+      </Box>
+    );
+  }
+
+  // Error when fetching categories, but user is authenticated
+  if (error && categories.length === 0 && isAuthenticated) {
+    return (
+      <Box sx={{ p: 3 }}>
+        <Typography variant="h4" component="h1" gutterBottom>
+          Service Catalog
+        </Typography>
+        <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>
+      </Box>
+    );
   }
 
   return (
@@ -84,9 +132,10 @@ const CatalogPage: React.FC = () => {
       <Typography variant="h4" component="h1" gutterBottom>
         Service Catalog
       </Typography>
-      {error && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>} {/* Show non-blocking error */}
+      {/* Display non-critical errors (e.g., item loading error) if categories are present */}
+      {error && categories.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{error}</Alert>}
 
-      {categories.length === 0 && !loadingCategories && (
+      {categories.length === 0 && !loadingCategories && !authLoading && isAuthenticated && (
         <Typography>No service catalog categories found.</Typography>
       )}
 
