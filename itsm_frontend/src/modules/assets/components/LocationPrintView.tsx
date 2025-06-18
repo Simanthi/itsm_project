@@ -1,6 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState, useRef } from 'react'; // Added useRef
+// import ReactDOM from 'react-dom'; // Removed ReactDOM
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print'; // Added useReactToPrint
 import {
   Typography,
   Box,
@@ -36,18 +37,22 @@ const LocationPrintView: React.FC = () => {
   const [locationsToPrint, setLocationsToPrint] = useState<AssetLocation[]>([]);
   const [loading, setLoading] = useState<boolean>(false); // Initially false as no fetching
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
-    null,
-  );
+  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Removed state
+  const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
 
-  useEffect(() => {
-    const element = document.getElementById('print-root');
-    if (element) setPrintRootElement(element);
-    else {
-      console.error('Print root element #print-root not found.');
-      setError('Print functionality not initialized.');
-    }
-  }, []);
+  const handleLocationPrint = useReactToPrint({ // Renamed for clarity
+    content: () => componentRef.current,
+    removeAfterPrint: true,
+  });
+
+  // useEffect(() => { // Removed useEffect for print-root
+  //   const element = document.getElementById('print-root');
+  //   if (element) setPrintRootElement(element);
+  //   else {
+  //     console.error('Print root element #print-root not found.');
+  //     setError('Print functionality not initialized.');
+  //   }
+  // }, []);
 
   useEffect(() => {
     // Directly use data from location.state
@@ -72,29 +77,22 @@ const LocationPrintView: React.FC = () => {
       !error &&
       locationsToPrint.length > 0 &&
       autoPrint &&
-      printRootElement
+      componentRef.current // Check if componentRef is populated
     ) {
-      printRootElement.style.display = 'block';
-      const timer = setTimeout(() => {
-        window.print();
-        printRootElement.style.display = 'none';
-        navigate(location.pathname, {
-          replace: true,
-          state: { ...state, autoPrint: false },
-        });
-      }, 500);
-      return () => {
-        clearTimeout(timer);
-        if (printRootElement) printRootElement.style.display = 'none';
-      };
+      handleLocationPrint(); // Call the new print handler
+      // Reset autoPrint state in navigation
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...state, autoPrint: false },
+      });
     }
   }, [
+    autoPrint,
     loading,
     error,
     locationsToPrint,
-    autoPrint,
+    handleLocationPrint, // Added new handler
     navigate,
-    printRootElement,
     location.pathname,
     state,
   ]);
@@ -150,6 +148,7 @@ const LocationPrintView: React.FC = () => {
     <>
       {!autoPrint && (
         <Box
+          className="no-print" // Added no-print class
           sx={{
             position: 'fixed',
             top: 80,
@@ -166,12 +165,7 @@ const LocationPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() =>
-              navigate(location.pathname, {
-                replace: true,
-                state: { ...state, autoPrint: true },
-              })
-            }
+            onClick={handleLocationPrint} // Use new print handler
             startIcon={<PrintIcon />}
           >
             Print
@@ -179,10 +173,11 @@ const LocationPrintView: React.FC = () => {
         </Box>
       )}
       <Box
-        className="print-container"
+        ref={componentRef} // Added ref
+        className="print-container printable-content" // Added printable-content class
         sx={{
           maxWidth: '80%',
-          marginTop: autoPrint ? '0' : '64px',
+          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -255,9 +250,10 @@ const LocationPrintView: React.FC = () => {
     </>
   );
 
-  return autoPrint && printRootElement
-    ? ReactDOM.createPortal(printContent, printRootElement)
-    : printContent;
+  // return autoPrint && printRootElement // Removed portal logic
+  //   ? ReactDOM.createPortal(printContent, printRootElement)
+  //   : printContent;
+  return printContent; // Return content directly
 };
 
 export default LocationPrintView;

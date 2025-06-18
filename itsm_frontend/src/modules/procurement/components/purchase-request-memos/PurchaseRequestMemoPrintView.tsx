@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'; // Add useRef
+// import ReactDOM from 'react-dom'; // Remove ReactDOM
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print'; // Add useReactToPrint
 import {
   Typography,
   Box,
@@ -87,19 +88,23 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
   const [memosToPrint, setMemosToPrint] = useState<PurchaseRequestMemo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
-    null,
-  );
+  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Remove state
+  const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
 
-  useEffect(() => {
-    const element = document.getElementById('print-root');
-    if (element) setPrintRootElement(element);
-    else {
-      console.error('Print root element #print-root not found.');
-      setError('Print functionality not initialized.');
-      setLoading(false);
-    }
-  }, []);
+  const handleMemoPrint = useReactToPrint({ // Renamed for clarity
+    content: () => componentRef.current,
+    removeAfterPrint: true,
+  });
+
+  // useEffect(() => { // Remove useEffect for print-root
+  //   const element = document.getElementById('print-root');
+  //   if (element) setPrintRootElement(element);
+  //   else {
+  //     console.error('Print root element #print-root not found.');
+  //     setError('Print functionality not initialized.');
+  //     setLoading(false);
+  //   }
+  // }, []);
 
   const fetchMemosForPrint = useCallback(async () => {
     if (!authenticatedFetch) {
@@ -149,29 +154,22 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
       !error &&
       memosToPrint.length > 0 &&
       autoPrint &&
-      printRootElement
+      componentRef.current // Check if componentRef is populated
     ) {
-      printRootElement.style.display = 'block';
-      const timer = setTimeout(() => {
-        window.print();
-        printRootElement.style.display = 'none';
-        navigate(location.pathname, {
-          replace: true,
-          state: { ...state, autoPrint: false },
-        });
-      }, 500);
-      return () => {
-        clearTimeout(timer);
-        if (printRootElement) printRootElement.style.display = 'none';
-      };
+      handleMemoPrint(); // Call the new print handler
+      // Reset autoPrint state in navigation
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...state, autoPrint: false },
+      });
     }
   }, [
+    autoPrint,
     loading,
     error,
     memosToPrint,
-    autoPrint,
+    handleMemoPrint, // Added new handler
     navigate,
-    printRootElement,
     location.pathname,
     state,
   ]);
@@ -227,6 +225,7 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
     <>
       {!autoPrint && (
         <Box
+          className="no-print" // Added no-print class
           sx={{
             position: 'fixed',
             top: 80,
@@ -243,12 +242,7 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() =>
-              navigate(location.pathname, {
-                replace: true,
-                state: { ...state, autoPrint: true },
-              })
-            }
+            onClick={handleMemoPrint} // Use new print handler
             startIcon={<PrintIcon />}
           >
             Print
@@ -256,10 +250,11 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
         </Box>
       )}
       <Box
-        className="print-container"
+        ref={componentRef} // Added ref
+        className="print-container printable-content" // Added printable-content class
         sx={{
           maxWidth: '80%',
-          marginTop: autoPrint ? '0' : '64px',
+          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -392,9 +387,10 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
     </>
   );
 
-  return autoPrint && printRootElement
-    ? ReactDOM.createPortal(printContent, printRootElement)
-    : printContent;
+  // return autoPrint && printRootElement // Removed portal logic
+  //   ? ReactDOM.createPortal(printContent, printRootElement)
+  //   : printContent;
+  return printContent; // Return content directly
 };
 
 export default PurchaseRequestMemoPrintView;

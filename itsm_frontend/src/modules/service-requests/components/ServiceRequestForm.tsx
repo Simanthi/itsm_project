@@ -61,14 +61,17 @@ interface ServiceRequestFormState {
   requested_by_id: number | null;
   assigned_to_id: number | null;
   request_id_display?: string;
+  catalog_item_id?: number | null; // Added catalog_item_id
 }
 
 interface ServiceRequestFormProps {
-  initialData?: ServiceRequest;
+  initialData?: Partial<ServiceRequest>; // Allow partial for prefill from catalog
+  catalogItemName?: string; // For display
 }
 
 const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
   initialData,
+  catalogItemName,
 }) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
@@ -86,6 +89,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     requested_by_id: null,
     assigned_to_id: null,
     request_id_display: undefined,
+    catalog_item_id: undefined, // Initialize catalog_item_id
   });
 
   const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
@@ -148,35 +152,60 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
   }, [fetchUsers]);
 
   useEffect(() => {
-    if (id && initialData) {
+    if (id && initialData && Object.keys(initialData).length > 0) { // Editing existing SR
       setFormData({
-        title: initialData.title,
-        description: initialData.description,
-        category: initialData.category,
-        status: initialData.status,
-        priority: initialData.priority,
+        title: initialData.title || '',
+        description: initialData.description || '',
+        category: initialData.category || CATEGORY_OPTIONS[0],
+        status: initialData.status || STATUS_OPTIONS[0],
+        priority: initialData.priority || PRIORITY_OPTIONS[1],
         requested_by_id: initialData.requested_by_id || null,
         assigned_to_id: initialData.assigned_to_id || null,
         request_id_display: initialData.request_id,
+        catalog_item_id: (initialData.catalog_item as number | undefined) || undefined,
       });
-    } else if (!id) {
+    } else if (!id) { // Creating new SR
+      const prefillTitle = initialData?.title || '';
+      const prefillDescription = initialData?.description || '';
+      const prefillCatalogItemId = (initialData?.catalog_item as number | undefined) || undefined;
+
       if (!authLoading && user && user.id && user.id !== 0) {
         setFormData((prev) => ({
           ...prev,
-          requested_by_id: user.id,
+          title: prefillTitle || prev.title, // Use prefill if available
+          description: prefillDescription || prev.description, // Use prefill
+          catalog_item_id: prefillCatalogItemId || prev.catalog_item_id, // Use prefill
+          requested_by_id: user.id, // Current user is requester
+          // Reset other fields to default for a new form based on catalog item
+          category: CATEGORY_OPTIONS[0],
+          status: STATUS_OPTIONS[0],
+          priority: PRIORITY_OPTIONS[1],
+          assigned_to_id: null,
+          request_id_display: undefined,
         }));
         setError(null);
       } else if (!authLoading && (!user || user.id === 0)) {
-        setFormData((prev) => ({
+         setFormData((prev) => ({ // Still apply prefills if user is not logged in yet
           ...prev,
-          requested_by_id: null,
+          title: prefillTitle || prev.title,
+          description: prefillDescription || prev.description,
+          catalog_item_id: prefillCatalogItemId || prev.catalog_item_id,
+          requested_by_id: null, // No user to assign
         }));
         setError(
-          'Logged-in user not found or invalid ID. Please log in to create a request.',
+          'Logged-in user not found. Please log in to be set as the requester.',
         );
+      } else if (authLoading) {
+        // If auth is loading, we might want to wait or set default values that don't depend on user
+         setFormData((prev) => ({
+          ...prev,
+          title: prefillTitle || prev.title,
+          description: prefillDescription || prev.description,
+          catalog_item_id: prefillCatalogItemId || prev.catalog_item_id,
+        }));
       }
     }
-  }, [id, initialData, user, authLoading]);
+  }, [id, initialData, user, authLoading]); // Rerun when initialData (from catalog or edit) or user changes
 
   useEffect(() => {
     if (
@@ -298,6 +327,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
           priority: formData.priority,
           requested_by_id: formData.requested_by_id!,
           assigned_to_id: formData.assigned_to_id,
+          catalog_item: formData.catalog_item_id || undefined, // Add catalog_item_id
         };
         await addServiceRequest(createPayload); // Use the context function here
         showSnackbar('Service Request created successfully!', 'success');
@@ -360,6 +390,18 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
   return (
     <Box sx={{ p: 0, maxWidth: 600, mx: 'auto' }}>
       <Box component="form" onSubmit={handleSubmit} sx={{ mt: 0 }}>
+        {catalogItemName && (
+          <TextField
+            label="Catalog Item"
+            value={catalogItemName}
+            fullWidth
+            margin="normal"
+            InputProps={{
+              readOnly: true,
+            }}
+            sx={{ mb: 2 }}
+          />
+        )}
         <TextField
           label="Title"
           name="title"

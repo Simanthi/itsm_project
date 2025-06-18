@@ -1,10 +1,11 @@
 # itsm_project/service_requests/admin.py
 from django.contrib import admin
 from .models import ServiceRequest, ServiceRequestSequence
+from simple_history.admin import SimpleHistoryAdmin # Added for model history
 
 
 @admin.register(ServiceRequest)
-class ServiceRequestAdmin(admin.ModelAdmin):
+class ServiceRequestAdmin(SimpleHistoryAdmin): # Changed from admin.ModelAdmin
     list_display = (
         "request_id",
         "title",

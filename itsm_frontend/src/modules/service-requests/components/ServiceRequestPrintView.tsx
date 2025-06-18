@@ -1,6 +1,7 @@
-import React, { useEffect, useState, useCallback } from 'react';
-import ReactDOM from 'react-dom';
+import React, { useEffect, useState, useCallback, useRef } from 'react'; // Added useRef
+// import ReactDOM from 'react-dom'; // Removed ReactDOM
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useReactToPrint } from 'react-to-print'; // Added useReactToPrint
 import {
   Typography,
   Box,
@@ -37,24 +38,31 @@ const ServiceRequestPrintView: React.FC = () => {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(
-    null,
-  );
+  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Removed state
+  const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
 
-  useEffect(() => {
-    const element = document.getElementById('print-root');
-    if (element) {
-      setPrintRootElement(element);
-    } else {
-      console.error(
-        'Print root element #print-root not found in index.html. Print functionality may not work.',
-      );
-      setError(
-        'Print functionality not initialized. Missing #print-root element in your public/index.html.',
-      );
-      setLoading(false);
-    }
-  }, []);
+  const handlePrint = useReactToPrint({
+    content: () => componentRef.current,
+    removeAfterPrint: true,
+    // documentTitle can be set here, e.g., `Service Request - ${serviceRequests[0]?.request_id}`
+    // onAfterPrint: () => { /* any cleanup or navigation */ }
+  });
+
+  // Removed useEffect that initializes printRootElement
+  // useEffect(() => {
+  //   const element = document.getElementById('print-root');
+  //   if (element) {
+  //     setPrintRootElement(element);
+  //   } else {
+  //     console.error(
+  //       'Print root element #print-root not found in index.html. Print functionality may not work.',
+  //     );
+  //     setError(
+  //       'Print functionality not initialized. Missing #print-root element in your public/index.html.',
+  //     );
+  //     setLoading(false);
+  //   }
+  // }, []);
 
   const fetchRequestsForPrint = useCallback(async () => {
     if (!authenticatedFetch) {
@@ -106,44 +114,29 @@ const ServiceRequestPrintView: React.FC = () => {
 
   useEffect(() => {
     if (
+      autoPrint &&
       !loading &&
       !error &&
       serviceRequests.length > 0 &&
-      autoPrint &&
-      printRootElement
+      componentRef.current // Check if componentRef is populated
     ) {
-      printRootElement.style.display = 'block';
-
-      const timer = setTimeout(() => {
-        window.print();
-
-        printRootElement.style.display = 'none';
-
-        navigate(location.pathname, {
-          replace: true,
-          state: {
-            selectedRequestIds: selectedRequestIds,
-            autoPrint: false,
-          },
-        });
-      }, 500);
-
-      return () => {
-        clearTimeout(timer);
-        if (printRootElement) {
-          printRootElement.style.display = 'none';
-        }
-      };
+      handlePrint(); // Call the new print handler
+      // Reset autoPrint state in navigation to prevent re-print on refresh/back
+      navigate(location.pathname, {
+        replace: true,
+        state: { ...location.state, autoPrint: false }, // Preserve other state if any
+      });
     }
   }, [
+    autoPrint,
     loading,
     error,
-    serviceRequests.length,
-    autoPrint,
+    serviceRequests, // Full serviceRequests array as dependency
+    handlePrint,
     navigate,
-    printRootElement,
     location.pathname,
-    selectedRequestIds,
+    location.state, // Added location.state
+    selectedRequestIds, // Retained as it's used in the navigate state
   ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
@@ -201,6 +194,7 @@ const ServiceRequestPrintView: React.FC = () => {
           the main content container's 80% max-width. */}
       {!autoPrint && (
         <Box
+          className="no-print" // Added no-print class
           sx={{
             position: 'fixed',
             top: 80, // Positioned 80px from the top of the viewport.
@@ -223,15 +217,7 @@ const ServiceRequestPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={() => {
-              navigate(location.pathname, {
-                replace: true,
-                state: {
-                  selectedRequestIds: selectedRequestIds,
-                  autoPrint: true,
-                },
-              });
-            }}
+            onClick={handlePrint} // Changed to call handlePrint directly
             startIcon={<PrintIcon />}
           >
             Print
@@ -241,12 +227,13 @@ const ServiceRequestPrintView: React.FC = () => {
 
       {/* Main content container for service request details. */}
       <Box
-        className="print-container"
+        ref={componentRef} // Added ref
+        className="print-container printable-content" // Added printable-content class
         sx={{
           maxWidth: '80%',
           // Adjust margin-top to account for the fixed button box's height and desired spacing.
           // Roughly: fixed_box_top (80px) + fixed_box_height (~40-50px) + desired_spacing (e.g., 20px) = ~140-150px
-          marginTop: autoPrint ? '0' : '64px', // When not printing, push content below fixed buttons
+          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -393,9 +380,10 @@ const ServiceRequestPrintView: React.FC = () => {
     </>
   );
 
-  return autoPrint && printRootElement
-    ? ReactDOM.createPortal(printContent, printRootElement)
-    : printContent;
+  // return autoPrint && printRootElement // Removed portal logic
+  //   ? ReactDOM.createPortal(printContent, printRootElement)
+  //   : printContent;
+  return printContent; // Return content directly
 };
 
 export default ServiceRequestPrintView;

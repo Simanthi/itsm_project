@@ -23,6 +23,7 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
         required=False,
         allow_null=True,
     )
+    catalog_item_name = serializers.CharField(source='catalog_item.name', read_only=True, allow_null=True)
 
     class Meta:
         model = ServiceRequest
@@ -38,6 +39,8 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
             "status",
             "category",
             "priority",
+            "catalog_item", # Added for writing catalog_item ID
+            "catalog_item_name", # Added for reading catalog_item name
             "resolution_notes",
             "created_at",
             "updated_at",
@@ -46,7 +49,11 @@ class ServiceRequestSerializer(serializers.ModelSerializer):
         read_only_fields = [
             "id",
             "request_id",
+            "catalog_item_name", # Make name read-only
             "created_at",
             "updated_at",
             "resolved_at",
         ]
+        extra_kwargs = {
+            'catalog_item': {'allow_null': True, 'required': False}
+        }

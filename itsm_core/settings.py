@@ -1,14 +1,36 @@
 # itsm_core/settings.py
 
+import os
+from dotenv import load_dotenv
 from pathlib import Path
+
+load_dotenv()
 
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-SECRET_KEY = "django-insecure-@0mk)o_c@_7^p+=pm0ue!boc))*6w95pt)82eu(u#9k8+h*-*@"
+SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY', 'a-very-unsafe-default-key-for-dev-only-!!!')
+if SECRET_KEY == 'a-very-unsafe-default-key-for-dev-only-!!!' and not DEBUG: # DEBUG will be defined below
+    # This check will run after DEBUG is set from env var
+    pass
 
-DEBUG = True
+DEBUG_ENV = os.environ.get('DJANGO_DEBUG', 'True')
+DEBUG = DEBUG_ENV.lower() in ['true', '1', 't']
 
-ALLOWED_HOSTS = []
+# Now that DEBUG is set, re-check SECRET_KEY if it's the default in a non-DEBUG environment
+if SECRET_KEY == 'a-very-unsafe-default-key-for-dev-only-!!!' and not DEBUG:
+    raise ValueError("DJANGO_SECRET_KEY must be set in production when DEBUG is False!")
+
+ALLOWED_HOSTS_ENV = os.environ.get('DJANGO_ALLOWED_HOSTS')
+if DEBUG and not ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = ['localhost', '127.0.0.1']
+elif ALLOWED_HOSTS_ENV:
+    ALLOWED_HOSTS = [host.strip() for host in ALLOWED_HOSTS_ENV.split(',')]
+else:
+    ALLOWED_HOSTS = [] # Should be empty if not DEBUG and no env var
+
+# Ensure ALLOWED_HOSTS is properly set in production
+if not DEBUG and not ALLOWED_HOSTS:
+    raise ValueError("DJANGO_ALLOWED_HOSTS must be set in production when DEBUG is False!")
 
 # Application definition
 INSTALLED_APPS = [
@@ -21,6 +43,7 @@ INSTALLED_APPS = [
     "corsheaders",
     "rest_framework",  # Make sure rest_framework is here
     "rest_framework_simplejwt",
+    "simple_history", # Added for model history tracking
     "assets",
     "configs",
     "service_requests",
@@ -32,6 +55,7 @@ INSTALLED_APPS = [
     "api",
     "core_api",
     "procurement",  # Added new app
+    'service_catalog.apps.ServiceCatalogConfig', # Added Service Catalog app
 ]
 
 MIDDLEWARE = [
@@ -67,15 +91,40 @@ WSGI_APPLICATION = "itsm_core.wsgi.application"
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 DATABASES = {
-    "default": {
-        "ENGINE": "django.db.backends.postgresql",
-        "NAME": "itsm_db",  # Name of your database (create this in pgAdmin)
-        "USER": "postgres",  # Your PostgreSQL superuser (or a new user)
-        "PASSWORD": "postgres",  # THE PASSWORD YOU SET DURING INSTALLATION
-        "HOST": "localhost",  # Or the IP address of your PostgreSQL server
-        "PORT": "5432",  # Default PostgreSQL port
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': os.environ.get('DB_NAME', 'itsm_db'),
+        'USER': os.environ.get('DB_USER', 'postgres'),
+        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres_password'), # Changed default for clarity
+        'HOST': os.environ.get('DB_HOST', 'localhost'),
+        'PORT': os.environ.get('DB_PORT', '5432'),
     }
 }
+# Add checks for production database settings
+if not DEBUG:
+    if DATABASES['default']['NAME'] == 'itsm_db' or \
+       DATABASES['default']['USER'] == 'postgres' or \
+       DATABASES['default']['PASSWORD'] == 'postgres_password':
+        # This is a simple check. You might want to ensure these are *not* the defaults,
+        # or that specific production env vars are present.
+        print("WARNING: Default database credentials might be in use for production. Ensure DB_NAME, DB_USER, DB_PASSWORD are set via environment variables.")
+
+# Email Configuration
+EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend') # Default to console for dev
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
+EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587)) # Default to 587 for TLS
+EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ['true', '1', 't']
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD')
+DEFAULT_FROM_EMAIL = os.environ.get('DEFAULT_FROM_EMAIL', 'webmaster@localhost')
+SERVER_EMAIL = os.environ.get('SERVER_EMAIL', DEFAULT_FROM_EMAIL) # For error reports to admins
+ADMINS = [tuple(admin.split(':')) for admin in os.environ.get('DJANGO_ADMINS', '').split(',') if ':' in admin and os.environ.get('DJANGO_ADMINS')] # e.g., "Admin Name:admin@example.com,Other Admin:other@example.com"
+MANAGERS = ADMINS
+
+# Production check for email settings (if not using console backend)
+if not DEBUG and EMAIL_BACKEND != 'django.core.mail.backends.console.EmailBackend':
+    if not EMAIL_HOST or not EMAIL_HOST_USER or not DEFAULT_FROM_EMAIL:
+        print("WARNING: Real email backend is configured, but EMAIL_HOST, EMAIL_HOST_USER, or DEFAULT_FROM_EMAIL may not be set. Emails might fail.")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators

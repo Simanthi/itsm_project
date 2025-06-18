@@ -10,5 +10,14 @@ class IncidentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Incident
-        fields = '__all__'
-        read_only_fields = ('created_at', 'updated_at', 'resolved_at', 'closed_at')
+        fields = '__all__' # This will include calculated_priority, sla_response_target_at, sla_resolve_target_at
+        # Add SLA fields to read_only_fields
+        read_only_fields = (
+            'created_at',
+            'updated_at',
+            'resolved_at',
+            'closed_at',
+            'calculated_priority',
+            'sla_response_target_at',
+            'sla_resolve_target_at'
+        )

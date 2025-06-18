@@ -1,10 +1,11 @@
 # itsm_project/incidents/admin.py
 from django.contrib import admin
 from .models import Incident, IncidentUpdate
+from simple_history.admin import SimpleHistoryAdmin # Added for model history
 
 
 @admin.register(Incident)
-class IncidentAdmin(admin.ModelAdmin):
+class IncidentAdmin(SimpleHistoryAdmin): # Changed from admin.ModelAdmin
     list_display = (
         "id",
         "title",
