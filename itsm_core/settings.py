@@ -103,7 +103,7 @@ DATABASES = {
 if not DEBUG:
     if DATABASES['default']['NAME'] == 'itsm_db' or \
        DATABASES['default']['USER'] == 'postgres' or \
-       DATABASES['default']['PASSWORD'] == 'postgres_password':
+       DATABASES['default']['PASSWORD'] == 'postgres':
         # This is a simple check. You might want to ensure these are *not* the defaults,
         # or that specific production env vars are present.
         print("WARNING: Default database credentials might be in use for production. Ensure DB_NAME, DB_USER, DB_PASSWORD are set via environment variables.")
