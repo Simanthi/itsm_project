@@ -136,8 +136,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setLoadingApprovals(true);
         setApprovalError(null);
         try {
-          // Corrected: Pass authenticatedFetch to getApprovalRequests
-          const approvals = await getApprovalRequests(authenticatedFetch, {
+          const approvals = await getApprovalRequests({ // Corrected: authenticatedFetch removed from the call
             content_type: CHANGES_CONTENT_TYPE_ID,
             object_id: initialData.id,
           });
@@ -296,28 +295,24 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
                     <Typography variant="subtitle1">
                       Overall Status: {approval.current_status.charAt(0).toUpperCase() + approval.current_status.slice(1)}
                     </Typography>
-                    {approval.current_step && (
-                        <Typography variant="body2" sx={{ fontStyle: 'italic' }}>
-                            Current Step: {approval.current_step.name} (Order: {approval.current_step.order})
-                        </Typography>
-                    )}
+                    {/* Removed approval.current_step display based on feedback */}
                     {approval.steps && approval.steps.length > 0 ? (
                       <>
                         <Typography variant="subtitle2" sx={{ mt: 1, mb: 0.5 }}>Approval Steps:</Typography>
                         <List dense disablePadding>
-                          {approval.steps.sort((a,b) => a.order - b.order).map((step, index) => (
+                          {/* Corrected sorting and mapping, explicit type for step */}
+                          {approval.steps.slice().sort((a: ApprovalStep, b: ApprovalStep) => a.step_order - b.step_order).map((step: ApprovalStep, index) => (
                             <React.Fragment key={step.id}>
                               <ListItem sx={{ pl: 2 }}>
                                 <ListItemText
                                   primaryTypographyProps={{ variant: 'body2' }}
                                   secondaryTypographyProps={{ variant: 'caption' }}
-                                  primary={`Step ${step.order}: ${step.name} - Status: ${step.status.charAt(0).toUpperCase() + step.status.slice(1)}`}
+                                  primary={`Step ${step.step_order}: ${step.status.charAt(0).toUpperCase() + step.status.slice(1)} by ${step.approver_username || 'N/A'}`}
                                   secondary={
                                     <>
-                                      {`Approver: ${step.approver_username || (step.approver_group_name ? `Group: ${step.approver_group_name}` : 'N/A')}`}
-                                      <br />
                                       {`Comments: ${step.comments || 'None'}`}
-                                      {step.actioned_at ? ` - Action At: ${new Date(step.actioned_at).toLocaleString()}` : ''}
+                                      {/* Corrected to step.approved_at and handling null */}
+                                      {step.approved_at ? ` - Action At: ${new Date(step.approved_at).toLocaleString()}` : ''}
                                     </>
                                   }
                                 />
