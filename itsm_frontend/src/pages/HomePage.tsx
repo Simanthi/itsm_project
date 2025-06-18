@@ -29,6 +29,8 @@ import MenuIcon from '@mui/icons-material/Menu';
 // import Brightness7Icon from '@mui/icons-material/Brightness7'; // No longer needed
 import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'; // Icon for theme selector
 import AccountCircle from '@mui/icons-material/AccountCircle';
+import CategoryIcon from '@mui/icons-material/Category';
+import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -180,6 +182,7 @@ function HomePage() {
       icon: <DesignServicesIcon />,
       path: '/service-requests',
     },
+    { text: 'Service Catalog', icon: <CategoryIcon />, path: '/service-catalog' },
     { text: 'Manage Assets', icon: <DevicesIcon />, path: '/assets' },
     {
       text: 'Procurement',
@@ -194,6 +197,7 @@ function HomePage() {
       path: '/configs',
     },
     { text: 'Manage Workflows', icon: <ApprovalIcon />, path: '/workflows' },
+    { text: 'My Approvals', icon: <PlaylistAddCheckIcon />, path: '/my-approvals' },
     {
       text: 'Security & Access',
       icon: <SecurityIcon />,
