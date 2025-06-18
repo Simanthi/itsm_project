@@ -12,7 +12,7 @@ function processListResponse<T>(response: { data: { results: T[] } | T[] }): T[]
 
 export const getCatalogCategories = async (): Promise<CatalogCategory[]> => {
     const response = await apiClient<{ data: { results: CatalogCategory[] } | CatalogCategory[] }>(
-        '/api/service-catalog/categories/',
+        '/service-catalog/categories/',
         '',
         { method: 'GET' }
     );
@@ -22,7 +22,7 @@ export const getCatalogCategories = async (): Promise<CatalogCategory[]> => {
 export const getCatalogItems = async (categoryId?: number | string): Promise<CatalogItem[]> => {
     const params = categoryId ? `?category=${categoryId}` : '';
     const response = await apiClient<{ data: { results: CatalogItem[] } | CatalogItem[] }>(
-        `/api/service-catalog/items/${params}`,
+        `/service-catalog/items/${params}`,
         '',
         { method: 'GET' }
     );
@@ -31,7 +31,7 @@ export const getCatalogItems = async (categoryId?: number | string): Promise<Cat
 
 export const getCatalogItemById = async (itemId: number | string): Promise<CatalogItem> => {
     const response = await apiClient<{ data: CatalogItem }>(
-        `/api/service-catalog/items/${itemId}/`,
+        `/service-catalog/items/${itemId}/`,
         '',
         { method: 'GET' }
     );
