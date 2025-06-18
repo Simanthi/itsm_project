@@ -5,7 +5,7 @@ import {
 import { DataGrid, type GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { type ApprovalStep, type ApprovalActionPayload, type ApprovalRequest } from '../types'; // Added ApprovalRequest
+import { type ApprovalStep, type ApprovalActionPayload } from '../types'; // Added ApprovalRequest
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
 import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
