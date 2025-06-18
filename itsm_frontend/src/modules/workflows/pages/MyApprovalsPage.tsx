@@ -9,7 +9,7 @@ import { type ApprovalStep, type ApprovalActionPayload } from '../types';
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
 import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
-import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type
+// import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Removed as it's unused for explicit type annotation
 
 const MyApprovalsPage: React.FC = () => {
   const { showSnackbar } = useUI();
@@ -103,17 +103,23 @@ const MyApprovalsPage: React.FC = () => {
     const payload: ApprovalActionPayload = { comments };
     try {
       if (actionType === 'approve') {
-        await approveStep(authenticatedFetch, currentStep.id, payload); // Pass authenticatedFetch
+        await approveStep(authenticatedFetch, currentStep.id, payload);
         showSnackbar('Step approved successfully!', 'success');
-      } else {
-        await rejectStep(authenticatedFetch, currentStep.id, payload); // Pass authenticatedFetch
+      } else if (actionType === 'reject') {
+        await rejectStep(authenticatedFetch, currentStep.id, payload);
         showSnackbar('Step rejected successfully!', 'success');
+      } else {
+        console.error("Invalid actionType in handleSubmitAction:", actionType);
+        showSnackbar(`Invalid action: ${actionType}`, 'error');
+        setIsSubmittingAction(false); // Reset loading if action is invalid
+        return;
       }
-      await fetchMyPendingSteps(); // Refresh list
+      await fetchMyPendingSteps();
       handleCloseActionDialog();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : `Failed to ${actionType} step.`;
       showSnackbar(errorMsg, 'error');
+      // Dialog remains open for user to retry or cancel
     } finally {
       setIsSubmittingAction(false);
     }

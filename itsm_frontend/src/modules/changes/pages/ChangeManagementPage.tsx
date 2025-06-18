@@ -8,7 +8,7 @@ import type { ChangeRequest, NewChangeRequestData } from '../types';
 import { getChangeRequests, deleteChangeRequest, createChangeRequest, updateChangeRequest } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
 import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth
-import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type
+// import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Import AuthenticatedFetch type - Removed as unused for explicit annotation
 import ChangeRequestForm from '../components/ChangeRequestForm';
 
 const ChangeManagementPage: React.FC = () => {
