@@ -151,11 +151,11 @@ const CatalogPage: React.FC = () => {
           <AccordionDetails>
             {category.description && <Typography variant="body2" color="text.secondary" sx={{mb: 2}}>{category.description}</Typography>}
             {loadingItems[category.id] && <CircularProgress size={24} />}
-            {!loadingItems[category.id] && itemsByCategory[category.id]?.length === 0 && (
+            {!loadingItems[category.id] && Array.isArray(itemsByCategory[category.id]) && itemsByCategory[category.id].length === 0 && (
               <Typography>No items found in this category.</Typography>
             )}
             <Grid container spacing={2}>
-              {itemsByCategory[category.id]?.map((item) => (
+              {Array.isArray(itemsByCategory[category.id]) && itemsByCategory[category.id].map((item) => (
                 <Grid item xs={12} sm={6} md={4} key={item.id}>
                   <Card sx={{ display: 'flex', flexDirection: 'column', height: '100%' }}>
                     <CardContent sx={{ flexGrow: 1 }}>
