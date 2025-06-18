@@ -1,7 +1,7 @@
 // itsm_frontend/src/modules/service-requests/pages/NewServiceRequestPage.tsx
 
-import { useState, useEffect, useCallback } from 'react'; // Removed React default import
-import { useParams, useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
+import { useState, useEffect, useCallback } from 'react';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import {
   Box,
   Typography,
@@ -12,11 +12,11 @@ import {
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 
 import ServiceRequestForm from '../components/ServiceRequestForm';
-import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Import API call for fetching request
-import { useAuth } from '../../../context/auth/useAuth'; // Import useAuth to get token
-import { type ServiceRequest } from '../types/ServiceRequestTypes'; // Import ServiceRequest type
-import { getCatalogItemById } from '../../service-catalog/api'; // API to fetch catalog item
-import { CatalogItem } from '../../service-catalog/types'; // Type for catalog item
+import { getServiceRequestById } from '../../../api/serviceRequestApi';
+import { useAuth } from '../../../context/auth/useAuth';
+import { type ServiceRequest } from '../types/ServiceRequestTypes';
+import { getCatalogItemById } from '../../service-catalog/api';
+import { type CatalogItem } from '../../service-catalog/types';
 
 interface LocationState {
   catalog_item_id?: number;
@@ -25,12 +25,13 @@ interface LocationState {
 }
 
 function NewServiceRequestPage() {
-  const { id } = useParams<{ id?: string }>(); // 'id' will be the request_id string (e.g., "SR-AA-0001")
+  const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const location = useLocation(); // Get location object
+  const location = useLocation();
   const { authenticatedFetch } = useAuth();
 
-  const [initialFormData, setInitialFormData] = useState<Partial<ServiceRequest> | undefined>(undefined);
+  // Allow catalog_item_id as an extra property for prefill
+  const [initialFormData, setInitialFormData] = useState<Partial<ServiceRequest> & { catalog_item_id?: number } | undefined>(undefined);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -56,8 +57,7 @@ function NewServiceRequestPage() {
             return `${firstKey.replace(/_/g, ' ')}: ${errorDetails[firstKey][0]}`;
           }
           return `Details: ${JSON.stringify(errorDetails)}`;
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        } catch (_) {
+        } catch {
           return err.message;
         }
       }
@@ -69,13 +69,12 @@ function NewServiceRequestPage() {
   // Effect to handle pre-fill data from location state (from Service Catalog)
   useEffect(() => {
     const locationState = location.state as LocationState | null;
-    if (locationState?.catalog_item_id && !id) { // Only if creating new, not editing
+    if (locationState?.catalog_item_id && !id) {
       setLoading(true);
       const fetchCatalogItem = async () => {
         try {
           const item = await getCatalogItemById(locationState.catalog_item_id!);
           setCatalogItemDetails(item);
-          // Set prefill data from catalog item or location state
           setPrefillData({
             catalog_item_id: item.id,
             title: locationState.prefill_title || item.name,
@@ -84,34 +83,31 @@ function NewServiceRequestPage() {
         } catch (catErr) {
           console.error('Error fetching catalog item details:', catErr);
           setError(parseError(catErr));
-          // Still use any prefill data passed directly in state
-           setPrefillData({
+          setPrefillData({
             catalog_item_id: locationState.catalog_item_id,
             title: locationState.prefill_title,
             description: locationState.prefill_description,
           });
-        } finally {
-          // setLoading(false) will be handled by the main data fetching useEffect
         }
       };
       fetchCatalogItem();
     }
   }, [location.state, id, parseError]);
 
-
-  // Effect to fetch initial data for editing OR set prefill for new from catalog
   useEffect(() => {
     const fetchInitialOrSetPrefill = async () => {
-      if (id) { // Editing existing SR
+      if (id) {
         setLoading(true);
         setError(null);
         try {
           const requestData = await getServiceRequestById(authenticatedFetch, id);
           setInitialFormData(requestData);
           // If editing, also fetch its catalog item if linked, for display consistency
-          if (requestData.catalog_item) {
-             const item = await getCatalogItemById(requestData.catalog_item as number); // Assuming catalog_item is ID
-             setCatalogItemDetails(item);
+          // Use catalog_item_id instead of catalog_item
+          const reqWithCatalogId = requestData as ServiceRequest & { catalog_item_id?: number };
+          if (reqWithCatalogId.catalog_item_id) {
+            const item = await getCatalogItemById(reqWithCatalogId.catalog_item_id);
+            setCatalogItemDetails(item);
           }
         } catch (err) {
           console.error('Error fetching service request data for edit:', err);
@@ -119,33 +115,27 @@ function NewServiceRequestPage() {
         } finally {
           setLoading(false);
         }
-      } else if (prefillData.catalog_item_id) { // New SR, with prefill data ready
+      } else if (prefillData.catalog_item_id) {
         setInitialFormData({
           title: prefillData.title || '',
           description: prefillData.description || '',
-          catalog_item: prefillData.catalog_item_id, // Pass catalog_item ID
-          // Set other defaults if needed
+          catalog_item_id: prefillData.catalog_item_id, // Use catalog_item_id for prefill
         });
         setLoading(false);
-      } else { // New SR, no prefill
+      } else {
         setLoading(false);
         setInitialFormData(undefined);
       }
     };
 
-    // Only run if not editing, OR if prefillData is ready (after catalog item fetch)
     if (id || Object.keys(prefillData).length > 0 || !(location.state as LocationState)?.catalog_item_id) {
-        fetchInitialOrSetPrefill();
+      fetchInitialOrSetPrefill();
     }
   }, [id, authenticatedFetch, parseError, prefillData, location.state]);
 
   const pageTitle = id
     ? `Edit Service Request: ${id}`
     : 'Create New Service Request';
-
-  // const handleBack = () => { // No longer used
-  //   navigate('/service-requests');
-  // };
 
   if (loading) {
     return (
@@ -191,14 +181,9 @@ function NewServiceRequestPage() {
           {pageTitle}
         </Typography>
       </Box>
-      {/*
-        Pass initialFormData to ServiceRequestForm only after it's loaded.
-        For new requests (id is undefined), initialFormData will be undefined,
-        and ServiceRequestForm will correctly initialize as a new request form.
-      */}
       <ServiceRequestForm
         initialData={initialFormData}
-        catalogItemName={catalogItemDetails?.name} // Pass catalog item name for display
+        catalogItemName={catalogItemDetails?.name}
       />
     </Box>
   );

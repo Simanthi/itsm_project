@@ -1,15 +1,12 @@
-import React, { useEffect, useState, useCallback, useRef } from 'react'; // Added useRef
-// import ReactDOM from 'react-dom'; // Removed ReactDOM
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print'; // Added useReactToPrint
+import { useReactToPrint } from 'react-to-print';
 import {
   Typography,
   Box,
   CircularProgress,
   Alert,
   Button,
-  // AppBar, // Removed AppBar
-  // Toolbar, // Removed Toolbar
 } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
@@ -23,11 +20,12 @@ interface LocationState {
   selectedRequestIds: string[];
   autoPrint?: boolean;
 }
-const SIDEBAR_WIDTH = 240; // Assuming a common sidebar width in pixels
+const SIDEBAR_WIDTH = 240;
+
 const ServiceRequestPrintView: React.FC = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { authenticatedFetch } = useAuth(); // Removed token
+  const { authenticatedFetch } = useAuth();
   const theme = useTheme();
   const { selectedRequestIds, autoPrint } =
     (location.state as LocationState) || {
@@ -38,35 +36,15 @@ const ServiceRequestPrintView: React.FC = () => {
   const [serviceRequests, setServiceRequests] = useState<ServiceRequest[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Removed state
-  const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
+  const componentRef = useRef<HTMLDivElement>(null);
 
+  // FIX: Only use valid props for useReactToPrint
   const handlePrint = useReactToPrint({
-    content: () => componentRef.current,
-    removeAfterPrint: true,
-    // documentTitle can be set here, e.g., `Service Request - ${serviceRequests[0]?.request_id}`
-    // onAfterPrint: () => { /* any cleanup or navigation */ }
+    contentRef: componentRef,
   });
-
-  // Removed useEffect that initializes printRootElement
-  // useEffect(() => {
-  //   const element = document.getElementById('print-root');
-  //   if (element) {
-  //     setPrintRootElement(element);
-  //   } else {
-  //     console.error(
-  //       'Print root element #print-root not found in index.html. Print functionality may not work.',
-  //     );
-  //     setError(
-  //       'Print functionality not initialized. Missing #print-root element in your public/index.html.',
-  //     );
-  //     setLoading(false);
-  //   }
-  // }, []);
 
   const fetchRequestsForPrint = useCallback(async () => {
     if (!authenticatedFetch) {
-      // Check for authenticatedFetch
       setError('Authentication context not available. Please log in.');
       setLoading(false);
       return;
@@ -86,7 +64,7 @@ const ServiceRequestPrintView: React.FC = () => {
           const request = await getServiceRequestById(
             authenticatedFetch,
             reqId,
-          ); // Pass authenticatedFetch
+          );
           fetchedRequests.push(request);
         } catch (singleFetchError) {
           console.error(`Failed to fetch request ${reqId}:`, singleFetchError);
@@ -106,7 +84,7 @@ const ServiceRequestPrintView: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [selectedRequestIds, authenticatedFetch]); // Added authenticatedFetch to dependencies
+  }, [selectedRequestIds, authenticatedFetch]);
 
   useEffect(() => {
     fetchRequestsForPrint();
@@ -118,25 +96,24 @@ const ServiceRequestPrintView: React.FC = () => {
       !loading &&
       !error &&
       serviceRequests.length > 0 &&
-      componentRef.current // Check if componentRef is populated
+      componentRef.current
     ) {
-      handlePrint(); // Call the new print handler
-      // Reset autoPrint state in navigation to prevent re-print on refresh/back
+      handlePrint();
       navigate(location.pathname, {
         replace: true,
-        state: { ...location.state, autoPrint: false }, // Preserve other state if any
+        state: { ...location.state, autoPrint: false },
       });
     }
   }, [
     autoPrint,
     loading,
     error,
-    serviceRequests, // Full serviceRequests array as dependency
+    serviceRequests,
     handlePrint,
     navigate,
     location.pathname,
-    location.state, // Added location.state
-    selectedRequestIds, // Retained as it's used in the navigate state
+    location.state,
+    selectedRequestIds,
   ]);
 
   const BackButton: React.FC<ButtonProps> = (props) => (
@@ -188,36 +165,27 @@ const ServiceRequestPrintView: React.FC = () => {
 
   const printContent = (
     <>
-      {/* Fixed Container for both "Back" and "Print" buttons.
-          This Box is fixed to the viewport, but its 'width', 'left', and 'transform'
-          properties are set to make it appear horizontally centered and aligned with
-          the main content container's 80% max-width. */}
       {!autoPrint && (
         <Box
-          className="no-print" // Added no-print class
+          className="no-print"
           sx={{
             position: 'fixed',
-            top: 80, // Positioned 80px from the top of the viewport.
-            left: SIDEBAR_WIDTH, // Starts from where the sidebar ends.
-            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`, // Spans the remaining viewport width.
+            top: 80,
+            left: SIDEBAR_WIDTH,
+            width: `calc(100vw - ${SIDEBAR_WIDTH}px)`,
             display: 'flex',
-            justifyContent: 'space-between', // Distributes items to ends of the flex container.
-            zIndex: theme.zIndex.drawer + 1, // Ensures buttons are on top of other content.
-            padding: '0 20px', // Horizontal padding within the fixed container.
-            boxSizing: 'border-box', // Crucial: padding is included in the element's total width.
-            //backgroundColor: theme.palette.background.paper, // Use theme background for integration.
-            //boxShadow: theme.shadows[1], // Add shadow for visual separation.
-            //borderRadius: theme.shape.borderRadius || 4, // Match other elements' rounded corners.
+            justifyContent: 'space-between',
+            zIndex: theme.zIndex.drawer + 1,
+            padding: '0 20px',
+            boxSizing: 'border-box',
           }}
         >
-          {/* Back Button */}
           <BackButton />
 
-          {/* Print Button */}
           <Button
             variant="contained"
             color="primary"
-            onClick={handlePrint} // Changed to call handlePrint directly
+            onClick={handlePrint}
             startIcon={<PrintIcon />}
           >
             Print
@@ -225,15 +193,12 @@ const ServiceRequestPrintView: React.FC = () => {
         </Box>
       )}
 
-      {/* Main content container for service request details. */}
       <Box
-        ref={componentRef} // Added ref
-        className="print-container printable-content" // Added printable-content class
+        ref={componentRef}
+        className="print-container printable-content"
         sx={{
           maxWidth: '80%',
-          // Adjust margin-top to account for the fixed button box's height and desired spacing.
-          // Roughly: fixed_box_top (80px) + fixed_box_height (~40-50px) + desired_spacing (e.g., 20px) = ~140-150px
-          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
+          marginTop: '64px',
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -380,10 +345,7 @@ const ServiceRequestPrintView: React.FC = () => {
     </>
   );
 
-  // return autoPrint && printRootElement // Removed portal logic
-  //   ? ReactDOM.createPortal(printContent, printRootElement)
-  //   : printContent;
-  return printContent; // Return content directly
+  return printContent;
 };
 
 export default ServiceRequestPrintView;

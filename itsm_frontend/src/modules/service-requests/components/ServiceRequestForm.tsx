@@ -18,11 +18,9 @@ import {
   type ServiceRequestStatus,
 } from '../types/ServiceRequestTypes';
 import { getUserList } from '../../../api/authApi';
-// 👇 CHANGE 1: We no longer need the direct API call for creation here
 import { updateServiceRequest } from '../../../api/serviceRequestApi';
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
-// 👇 CHANGE 2: Import the hook to access the service request context
 import { useServiceRequests } from '../hooks/useServiceRequests';
 
 interface User {
@@ -65,7 +63,7 @@ interface ServiceRequestFormState {
 }
 
 interface ServiceRequestFormProps {
-  initialData?: Partial<ServiceRequest>; // Allow partial for prefill from catalog
+  initialData?: Partial<ServiceRequest> & { catalog_item_id?: number }; // Allow partial for prefill from catalog
   catalogItemName?: string; // For display
 }
 
@@ -75,9 +73,8 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
 }) => {
   const { id } = useParams<{ id?: string }>();
   const navigate = useNavigate();
-  const { user, loading: authLoading, authenticatedFetch } = useAuth(); // Removed token
+  const { user, loading: authLoading, authenticatedFetch } = useAuth();
   const { showSnackbar } = useUI();
-  // 👇 CHANGE 3: Get the addServiceRequest function from the context
   const { addServiceRequest } = useServiceRequests();
 
   const [formData, setFormData] = useState<ServiceRequestFormState>({
@@ -89,7 +86,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     requested_by_id: null,
     assigned_to_id: null,
     request_id_display: undefined,
-    catalog_item_id: undefined, // Initialize catalog_item_id
+    catalog_item_id: undefined,
   });
 
   const [loadingUsers, setLoadingUsers] = useState<boolean>(true);
@@ -125,14 +122,13 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
   const fetchUsers = useCallback(async () => {
     setLoadingUsers(true);
     if (!authenticatedFetch) {
-      // Check for authenticatedFetch
       setUsers([]);
       setError('Authentication context not available. Cannot fetch users.');
       setLoadingUsers(false);
       return;
     }
     try {
-      const usersData = await getUserList(authenticatedFetch); // Pass authenticatedFetch
+      const usersData = await getUserList(authenticatedFetch);
       setUsers(usersData);
       setError(null);
     } catch (err) {
@@ -145,14 +141,14 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     } finally {
       setLoadingUsers(false);
     }
-  }, [authenticatedFetch, parseError]); // Added authenticatedFetch to dependencies
+  }, [authenticatedFetch, parseError]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
 
   useEffect(() => {
-    if (id && initialData && Object.keys(initialData).length > 0) { // Editing existing SR
+    if (id && initialData && Object.keys(initialData).length > 0) {
       setFormData({
         title: initialData.title || '',
         description: initialData.description || '',
@@ -162,21 +158,24 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
         requested_by_id: initialData.requested_by_id || null,
         assigned_to_id: initialData.assigned_to_id || null,
         request_id_display: initialData.request_id,
-        catalog_item_id: (initialData.catalog_item as number | undefined) || undefined,
+        catalog_item_id: (initialData.catalog_item_id !== undefined
+          ? initialData.catalog_item_id
+          : undefined),
       });
-    } else if (!id) { // Creating new SR
+    } else if (!id) {
       const prefillTitle = initialData?.title || '';
       const prefillDescription = initialData?.description || '';
-      const prefillCatalogItemId = (initialData?.catalog_item as number | undefined) || undefined;
+      const prefillCatalogItemId = (initialData?.catalog_item_id !== undefined
+        ? initialData.catalog_item_id
+        : undefined);
 
       if (!authLoading && user && user.id && user.id !== 0) {
         setFormData((prev) => ({
           ...prev,
-          title: prefillTitle || prev.title, // Use prefill if available
-          description: prefillDescription || prev.description, // Use prefill
-          catalog_item_id: prefillCatalogItemId || prev.catalog_item_id, // Use prefill
-          requested_by_id: user.id, // Current user is requester
-          // Reset other fields to default for a new form based on catalog item
+          title: prefillTitle || prev.title,
+          description: prefillDescription || prev.description,
+          catalog_item_id: prefillCatalogItemId || prev.catalog_item_id,
+          requested_by_id: user.id,
           category: CATEGORY_OPTIONS[0],
           status: STATUS_OPTIONS[0],
           priority: PRIORITY_OPTIONS[1],
@@ -185,19 +184,18 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
         }));
         setError(null);
       } else if (!authLoading && (!user || user.id === 0)) {
-         setFormData((prev) => ({ // Still apply prefills if user is not logged in yet
+        setFormData((prev) => ({
           ...prev,
           title: prefillTitle || prev.title,
           description: prefillDescription || prev.description,
           catalog_item_id: prefillCatalogItemId || prev.catalog_item_id,
-          requested_by_id: null, // No user to assign
+          requested_by_id: null,
         }));
         setError(
           'Logged-in user not found. Please log in to be set as the requester.',
         );
       } else if (authLoading) {
-        // If auth is loading, we might want to wait or set default values that don't depend on user
-         setFormData((prev) => ({
+        setFormData((prev) => ({
           ...prev,
           title: prefillTitle || prev.title,
           description: prefillDescription || prev.description,
@@ -205,7 +203,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
         }));
       }
     }
-  }, [id, initialData, user, authLoading]); // Rerun when initialData (from catalog or edit) or user changes
+  }, [id, initialData, user, authLoading]);
 
   useEffect(() => {
     if (
@@ -257,10 +255,7 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
     setSubmitting(true);
     setError(null);
 
-    // The token check is removed here as authenticatedFetch handles auth concerns.
-    // If authenticatedFetch is undefined, it implies user is not properly authenticated or context is missing.
     if (!authenticatedFetch && id) {
-      // Only critical if trying to update directly using updateServiceRequest
       setError('Authentication context not available. Please log in.');
       showSnackbar(
         'Authentication context not available. Please log in.',
@@ -269,7 +264,6 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
       setSubmitting(false);
       return;
     }
-    // For creating new requests, addServiceRequest from context will handle its own auth checks internally.
 
     if (
       !id &&
@@ -313,13 +307,13 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
           assigned_to_id: formData.assigned_to_id,
         };
         await updateServiceRequest(
-          authenticatedFetch, // Pass authenticatedFetch
+          authenticatedFetch,
           formData.request_id_display,
           updatePayload,
         );
         showSnackbar('Service Request updated successfully!', 'success');
       } else {
-        // 👇 CHANGE 4: Use the context function `addServiceRequest`
+        // Only include catalog_item_id if it is defined
         const createPayload: NewServiceRequestData = {
           title: formData.title,
           description: formData.description,
@@ -327,9 +321,9 @@ const ServiceRequestForm: React.FC<ServiceRequestFormProps> = ({
           priority: formData.priority,
           requested_by_id: formData.requested_by_id!,
           assigned_to_id: formData.assigned_to_id,
-          catalog_item: formData.catalog_item_id || undefined, // Add catalog_item_id
+          ...(formData.catalog_item_id !== undefined && { catalog_item_id: formData.catalog_item_id }),
         };
-        await addServiceRequest(createPayload); // Use the context function here
+        await addServiceRequest(createPayload);
         showSnackbar('Service Request created successfully!', 'success');
       }
       navigate('/service-requests');

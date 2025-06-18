@@ -1,4 +1,4 @@
-import React, { Suspense, lazy } from 'react'; // Added Suspense, lazy
+import { Suspense, lazy } from 'react'; // Added Suspense, lazy
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { CssBaseline, CircularProgress, Box } from '@mui/material'; // Added CircularProgress, Box
 import { AuthProvider } from './context/auth/AuthContext';
@@ -161,7 +161,7 @@ function AppContent() {
               <Route path="service-catalog" element={<CatalogPage />} />
               <Route path="changes" element={<ChangeManagementPage />} />
               <Route path="configs" element={<ConfigurationManagementPage />} />
-              {/* <Route path="workflows" element={<ApprovalWorkflowPage />} /> Placeholder for general workflow admin */}
+              <Route path="workflows" element={<ApprovalWorkflowPage />} /> 
               <Route path="my-approvals" element={<MyApprovalsPage />} /> {/* Added MyApprovalsPage Route */}
               <Route path="reports" element={<ReportsAnalyticsPage />} />
             </Route>

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react'; // Add useRef
-// import ReactDOM from 'react-dom'; // Remove ReactDOM
+import React, { useEffect, useState, useCallback, useMemo, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print'; // Add useReactToPrint
+import { useReactToPrint } from 'react-to-print';
 import {
   Typography,
   Box,
@@ -16,13 +15,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import { getAssetById } from '../../../api/assetApi'; // Updated API call
+import { getAssetById } from '../../../api/assetApi';
 import { useAuth } from '../../../context/auth/useAuth';
-// Updated type imports for Asset and related entities
 import type { Asset } from '../types';
 import { type ButtonProps } from '@mui/material/Button';
 
-// Helper to format date strings (can be shared or defined locally)
 const formatDateString = (isoString: string | null | undefined): string => {
   if (!isoString) return 'N/A';
   if (isoString.length === 10 && isoString.includes('-')) {
@@ -31,11 +28,8 @@ const formatDateString = (isoString: string | null | undefined): string => {
   return new Date(isoString).toLocaleString();
 };
 
-// Status chip color logic for Asset
-// TODO: Define actual asset statuses and corresponding colors
 const getAssetStatusChipColor = (status?: string) => {
   if (!status) return 'default';
-  // Example status mapping - replace with actual statuses and desired colors
   const mapping: Record<
     string,
     | 'default'
@@ -56,8 +50,8 @@ const getAssetStatusChipColor = (status?: string) => {
 };
 
 interface LocationState {
-  selectedAssetIds?: number[]; // Array of Asset IDs
-  assetId?: number; // Single Asset ID
+  selectedAssetIds?: number[];
+  assetId?: number;
   autoPrint?: boolean;
 }
 
@@ -85,24 +79,12 @@ const AssetPrintView: React.FC = () => {
   const [assetsToPrint, setAssetsToPrint] = useState<Asset[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Remove printRootElement state
-  const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
+  const componentRef = useRef<HTMLDivElement>(null);
 
+  // FIX: Only use valid props for useReactToPrint
   const handleAssetPrintTrigger = useReactToPrint({
-    content: () => componentRef.current,
-    removeAfterPrint: true,
-    // documentTitle: `Asset - ${assetsToPrint[0]?.asset_tag}`, // Example, needs assetsToPrint to be ready
+    contentRef: componentRef,
   });
-
-  // useEffect(() => { // Remove useEffect for print-root
-  //   const element = document.getElementById('print-root');
-  //   if (element) setPrintRootElement(element);
-  //   else {
-  //     console.error('Print root element #print-root not found.');
-  //     setError('Print functionality not initialized.');
-  //     setLoading(false);
-  //   }
-  // }, []);
 
   const fetchAssetsForPrint = useCallback(async () => {
     if (!authenticatedFetch) {
@@ -144,7 +126,7 @@ const AssetPrintView: React.FC = () => {
       setError('No Asset IDs specified.');
       setLoading(false);
     }
-  }, [fetchAssetsForPrint, assetIdsToFetch]); // Added assetIdsToFetch
+  }, [fetchAssetsForPrint, assetIdsToFetch]);
 
   useEffect(() => {
     if (
@@ -152,13 +134,12 @@ const AssetPrintView: React.FC = () => {
       !error &&
       assetsToPrint.length > 0 &&
       autoPrint &&
-      componentRef.current // Check if componentRef is populated
+      componentRef.current
     ) {
-      handleAssetPrintTrigger(); // Call the new print handler
-      // Reset autoPrint state in navigation to prevent re-print on refresh/back
+      handleAssetPrintTrigger();
       navigate(location.pathname, {
         replace: true,
-        state: { ...state, autoPrint: false }, // Preserve other state
+        state: { ...state, autoPrint: false },
       });
     }
   }, [
@@ -176,7 +157,7 @@ const AssetPrintView: React.FC = () => {
     <Button
       variant="contained"
       color="primary"
-      onClick={() => navigate('/assets')} // Adjusted back path
+      onClick={() => navigate('/assets')}
       startIcon={<ArrowBackIcon />}
       {...props}
     >
@@ -223,7 +204,7 @@ const AssetPrintView: React.FC = () => {
     <>
       {!autoPrint && (
         <Box
-          className="no-print" // Added no-print class
+          className="no-print"
           sx={{
             position: 'fixed',
             top: 80,
@@ -240,7 +221,7 @@ const AssetPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={handleAssetPrintTrigger} // Changed to call new print handler
+            onClick={handleAssetPrintTrigger}
             startIcon={<PrintIcon />}
           >
             Print
@@ -248,11 +229,11 @@ const AssetPrintView: React.FC = () => {
         </Box>
       )}
       <Box
-        ref={componentRef} // Added ref
-        className="print-container printable-content" // Added printable-content class
+        ref={componentRef}
+        className="print-container printable-content"
         sx={{
           maxWidth: '80%',
-          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
+          marginTop: '64px',
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -375,10 +356,7 @@ const AssetPrintView: React.FC = () => {
     </>
   );
 
-  // return autoPrint && printRootElement // Removed portal logic
-  //   ? ReactDOM.createPortal(printContent, printRootElement)
-  //   : printContent;
-  return printContent; // Return content directly
+  return printContent;
 };
 
 export default AssetPrintView;

@@ -1,7 +1,6 @@
-import React, { useEffect, useState, useRef } from 'react'; // Added useRef
-// import ReactDOM from 'react-dom'; // Removed ReactDOM
+import React, { useEffect, useState, useRef } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useReactToPrint } from 'react-to-print'; // Added useReactToPrint
+import { useReactToPrint } from 'react-to-print';
 import {
   Typography,
   Box,
@@ -37,22 +36,12 @@ const VendorPrintView: React.FC = () => {
   const [vendorsToPrint, setVendorsToPrint] = useState<Vendor[]>([]);
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  // const [printRootElement, setPrintRootElement] = useState<HTMLElement | null>(null); // Removed state
-  const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
+  const componentRef = useRef<HTMLDivElement>(null);
 
-  const handleVendorPrint = useReactToPrint({ // Renamed for clarity
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+  // FIX: Use correct prop name 'contentRef' instead of 'content'
+  const handleVendorPrint = useReactToPrint({
+    contentRef: componentRef,
   });
-
-  // useEffect(() => { // Removed useEffect for print-root
-  //   const element = document.getElementById('print-root');
-  //   if (element) setPrintRootElement(element);
-  //   else {
-  //     console.error('Print root element #print-root not found.');
-  //     setError('Print functionality not initialized.');
-  //   }
-  // }, []);
 
   useEffect(() => {
     let dataToSet: Vendor[] = [];
@@ -76,10 +65,9 @@ const VendorPrintView: React.FC = () => {
       !error &&
       vendorsToPrint.length > 0 &&
       autoPrint &&
-      componentRef.current // Check if componentRef is populated
+      componentRef.current
     ) {
-      handleVendorPrint(); // Call the new print handler
-      // Reset autoPrint state in navigation
+      handleVendorPrint();
       navigate(location.pathname, {
         replace: true,
         state: { ...state, autoPrint: false },
@@ -90,7 +78,7 @@ const VendorPrintView: React.FC = () => {
     loading,
     error,
     vendorsToPrint,
-    handleVendorPrint, // Added new handler
+    handleVendorPrint,
     navigate,
     location.pathname,
     state,
@@ -100,7 +88,7 @@ const VendorPrintView: React.FC = () => {
     <Button
       variant="contained"
       color="primary"
-      onClick={() => navigate('/assets', { state: { initialTab: 3 } })} // Navigate to AssetsPage, assume Vendors is tab 3
+      onClick={() => navigate('/assets', { state: { initialTab: 3 } })}
       startIcon={<ArrowBackIcon />}
       {...props}
     >
@@ -147,7 +135,7 @@ const VendorPrintView: React.FC = () => {
     <>
       {!autoPrint && (
         <Box
-          className="no-print" // Added no-print class
+          className="no-print"
           sx={{
             position: 'fixed',
             top: 80,
@@ -164,7 +152,7 @@ const VendorPrintView: React.FC = () => {
           <Button
             variant="contained"
             color="primary"
-            onClick={handleVendorPrint} // Use new print handler
+            onClick={handleVendorPrint}
             startIcon={<PrintIcon />}
           >
             Print
@@ -172,11 +160,11 @@ const VendorPrintView: React.FC = () => {
         </Box>
       )}
       <Box
-        ref={componentRef} // Added ref
-        className="print-container printable-content" // Added printable-content class
+        ref={componentRef}
+        className="print-container printable-content"
         sx={{
           maxWidth: '80%',
-          marginTop: '64px', // autoPrint ? '0' : '64px', // Default margin for preview
+          marginTop: '64px',
           marginBottom: '30px',
           marginLeft: 'auto',
           marginRight: 'auto',
@@ -260,10 +248,7 @@ const VendorPrintView: React.FC = () => {
     </>
   );
 
-  // return autoPrint && printRootElement // Removed portal logic
-  //   ? ReactDOM.createPortal(printContent, printRootElement)
-  //   : printContent;
-  return printContent; // Return content directly
+  return printContent;
 };
 
 export default VendorPrintView;

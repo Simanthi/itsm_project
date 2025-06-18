@@ -1,5 +1,4 @@
 // itsm_frontend/src/pages/ConfigurationManagementPage.tsx
-import React from 'react';
 import { Box, Typography } from '@mui/material';
 
 function ConfigurationManagementPage() {

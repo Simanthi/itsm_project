@@ -1,28 +1,25 @@
-import React, { useState, useEffect } from 'react'; // Removed useCallback
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
-  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip,
-  Box, Divider, Paper, Typography // Added these
+  Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import { formatISO } from 'date-fns'; // To format dates to ISO string for backend
+import { formatISO } from 'date-fns';
 
 import type {
     ChangeRequest, NewChangeRequestData, ChangeType, ChangeStatus, ChangeImpact
 } from '../types';
 import {
     ChangeTypeOptions, ChangeStatusOptions, ChangeImpactOptions
-} from '../types'; // Values/Constants
+} from '../types';
 import type { ConfigurationItem } from '../../configs/types';
-import { getConfigItems } from '../../configs/api'; // To fetch CIs
+import { getConfigItems } from '../../configs/api';
 import { getUserList } from '../../../api/authApi';
-import type { User } from '../../../types/UserTypes'; // Corrected User type import
+import type { User } from '../../../types/UserTypes';
 import { useAuth } from '../../../context/auth/useAuth';
-import type { ApprovalRequest } from '../../workflows/types'; // Import workflow types
-import { getApprovalRequests } from '../../workflows/api'; // Import workflow API
 
 interface ChangeRequestFormProps {
   open: boolean;
@@ -37,7 +34,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   onSubmit,
   initialData,
 }) => {
-  const { authenticatedFetch } = useAuth(); // Removed user: currentUser
+  const { authenticatedFetch } = useAuth();
 
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -47,17 +44,14 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
   const [justification, setJustification] = useState('');
   const [plannedStartDate, setPlannedStartDate] = useState<Date | null>(null);
   const [plannedEndDate, setPlannedEndDate] = useState<Date | null>(null);
-  const [assignedTo, setAssignedTo] = useState<User | null>(null); // Changed UserLite to User
+  const [assignedTo, setAssignedTo] = useState<User | null>(null);
   const [affectedCIs, setAffectedCIs] = useState<ConfigurationItem[]>([]);
   const [rollbackPlan, setRollbackPlan] = useState('');
 
-  const [availableUsers, setAvailableUsers] = useState<User[]>([]); // Changed UserLite to User
+  const [availableUsers, setAvailableUsers] = useState<User[]>([]);
   const [loadingUsers, setLoadingUsers] = useState<boolean>(false);
   const [availableCIs, setAvailableCIs] = useState<ConfigurationItem[]>([]);
   const [loadingCIs, setLoadingCIs] = useState<boolean>(false);
-
-  // const [approvalRequest, setApprovalRequest] = useState<ApprovalRequest | null>(null); // Removed
-  // const [loadingApproval, setLoadingApproval] = useState<boolean>(false); // Removed
 
   useEffect(() => {
     if (open) {
@@ -67,7 +61,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setLoadingCIs(true);
         try {
           const [usersData, cisData] = await Promise.all([
-            getUserList(authenticatedFetch), // Changed getUsersLite to getUserList
+            getUserList(authenticatedFetch),
             getConfigItems(),
           ]);
           setAvailableUsers(usersData);
@@ -106,13 +100,7 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         setAffectedCIs([]);
       }
       setRollbackPlan(initialData.rollback_plan || '');
-
-      // Removed fetchApprovalData logic block
-      // if (initialData.id && (initialData.status === 'pending_approval' || initialData.status === 'approved' || initialData.status === 'rejected')) {
-      //   // ...
-      // }
     } else {
-      // Defaults for new Change Request
       setTitle('');
       setDescription('');
       setChangeType(ChangeTypeOptions[0]);
@@ -154,7 +142,6 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
         <DialogTitle>{initialData ? 'Edit Change Request' : 'Create New Change Request'}</DialogTitle>
         <DialogContent>
           <Grid container spacing={2} sx={{ mt: 1 }}>
-            {/* Form fields remain largely the same, ensure Autocomplete for assignedTo uses User type */}
             <Grid item xs={12}>
               <TextField label="Title" value={title} onChange={(e) => setTitle(e.target.value)} fullWidth required margin="dense" />
             </Grid>
@@ -245,38 +232,6 @@ const ChangeRequestForm: React.FC<ChangeRequestFormProps> = ({
             <Grid item xs={12}>
               <TextField label="Rollback Plan" value={rollbackPlan} onChange={(e) => setRollbackPlan(e.target.value)} fullWidth multiline rows={3} margin="dense" />
             </Grid>
-
-            {/* Commented out approval status display section:
-            {initialData && initialData.id && (initialData.status === 'pending_approval' || initialData.status === 'approved' || initialData.status === 'rejected') && (
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-                <Typography variant="h6" gutterBottom>Approval Status</Typography>
-                {loadingApproval ? <CircularProgress size={24} /> :
-                  approvalRequest ? (
-                  <Box>
-                    <Typography><strong>Overall Status:</strong> {approvalRequest.current_status}</Typography>
-                    {approvalRequest.steps && approvalRequest.steps.length > 0 && (
-                      <Box sx={{mt: 1}}>
-                        <Typography variant="subtitle1">Steps:</Typography>
-                        {approvalRequest.steps.map(step => (
-                          <Paper key={step.id} variant="outlined" sx={{p:1, mt:1}}>
-                            <Typography variant="body2">Step {step.step_order}: {step.status}</Typography>
-                            <Typography variant="caption">Approver: {step.approver_username || `User ID ${step.approver}`}</Typography>
-                            {step.comments && <Typography variant="caption" display="block">Comments: {step.comments}</Typography>}
-                            {step.approved_at && <Typography variant="caption" display="block">Action At: {new Date(step.approved_at).toLocaleString()}</Typography>}
-                          </Paper>
-                        ))}
-                      </Box>
-                    )}
-                  </Box>
-                ) : (
-                  <Typography variant="body2" color="text.secondary">
-                    Approval details not loaded or not yet requested for status: {initialData.status}.
-                  </Typography>
-                )}
-              </Grid>
-            )}
-            */}
           </Grid>
         </DialogContent>
         <DialogActions>

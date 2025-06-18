@@ -14,15 +14,20 @@ interface ThemeContextProviderProps {
   children: ReactNode;
 }
 
-const defaultThemeName = 'light'; // Or Object.keys(themes)[0] if 'light' might not exist
+// --- Fix: Add ThemeName union type for all theme keys ---
+type ThemeName = keyof typeof themes;
+
+const defaultThemeName: ThemeName = 'light'; // Or Object.keys(themes)[0] if 'light' might not exist
 
 export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
-  const [currentThemeName, setCurrentThemeName] = useState<string>(() => {
+  const [currentThemeName, setCurrentThemeName] = useState<ThemeName>(() => {
     try {
       const storedThemeName = localStorage.getItem('themeName');
-      return storedThemeName && themes[storedThemeName]
-        ? storedThemeName
-        : defaultThemeName;
+      // Only allow valid theme names
+      if (storedThemeName && storedThemeName in themes) {
+        return storedThemeName as ThemeName;
+      }
+      return defaultThemeName;
     } catch (error) {
       console.error('Error reading themeName from localStorage', error);
       return defaultThemeName;
@@ -38,8 +43,8 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
   }, [currentThemeName]);
 
   const setCurrentTheme = useCallback((themeName: string) => {
-    if (themes[themeName]) {
-      setCurrentThemeName(themeName);
+    if (themeName in themes) {
+      setCurrentThemeName(themeName as ThemeName);
     } else {
       console.warn(
         `Theme "${themeName}" not found. Defaulting to "${defaultThemeName}".`,
@@ -53,7 +58,7 @@ export function ThemeContextProvider({ children }: ThemeContextProviderProps) {
     return themes[currentThemeName] || themes[defaultThemeName];
   }, [currentThemeName]);
 
-  const availableThemes = useMemo(() => Object.keys(themes), []);
+  const availableThemes = useMemo(() => Object.keys(themes) as ThemeName[], []);
 
   const contextValue = useMemo(
     () => ({

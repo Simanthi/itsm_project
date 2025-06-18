@@ -46,8 +46,7 @@ const CategoryPrintView: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
 
   const handleCategoryPrint = useReactToPrint({ // Renamed for clarity
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+    contentRef: componentRef,
   });
 
   // useEffect(() => { // Removed useEffect for print-root

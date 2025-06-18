@@ -108,8 +108,7 @@ const PurchaseOrderPrintView: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
 
   const handlePOPrintTrigger = useReactToPrint({
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+contentRef: componentRef,
     // documentTitle: `PO - ${purchaseOrdersToPrint[0]?.po_number}`, // Example
   });
 

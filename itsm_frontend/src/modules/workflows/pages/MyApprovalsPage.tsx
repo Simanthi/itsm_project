@@ -1,15 +1,13 @@
 import React, { useEffect, useState, useCallback } from 'react';
 import {
-  Box, Typography, Button, CircularProgress, Alert, Paper, Grid,
-  Dialog, DialogTitle, DialogContent, TextField, DialogActions, Chip
+  Box, Typography, Button, CircularProgress, Alert, Dialog, DialogTitle, DialogContent, TextField, DialogActions, Chip
 } from '@mui/material';
-import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import { DataGrid, type GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
-import { ApprovalStep, ApprovalActionPayload } from '../types';
+import { type ApprovalStep, type ApprovalActionPayload } from '../types';
 import { getMyApprovalSteps, approveStep, rejectStep, getApprovalRequestById } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
-import { Link as RouterLink } from 'react-router-dom'; // For linking to content object
 
 const MyApprovalsPage: React.FC = () => {
   const { showSnackbar } = useUI();
@@ -26,7 +24,6 @@ const MyApprovalsPage: React.FC = () => {
   // State to store fetched ApprovalRequest titles/details
   const [requestDetails, setRequestDetails] = useState<Record<number, { title: string, contentDisplay?: string }>>({});
 
-
   const fetchMyPendingSteps = useCallback(async () => {
     setLoading(true);
     try {
@@ -42,8 +39,8 @@ const MyApprovalsPage: React.FC = () => {
       const detailsMap: Record<number, { title: string, contentDisplay?: string }> = {};
       fetchedRequests.forEach(req => {
         detailsMap[req.id] = {
-            title: req.title,
-            contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
+          title: req.title,
+          contentDisplay: req.content_object_display?.display || req.content_object_display?.title || `Item ID: ${req.object_id} (Type: ${req.content_object_display?.type})`
         };
       });
       setRequestDetails(detailsMap);
@@ -102,6 +99,7 @@ const MyApprovalsPage: React.FC = () => {
     return new Date(dateString).toLocaleString();
   };
 
+
   const columns: GridColDef<ApprovalStep>[] = [
     {
       field: 'approval_request_title',
@@ -115,12 +113,10 @@ const MyApprovalsPage: React.FC = () => {
       width: 300,
       renderCell: (params) => {
         const detail = requestDetails[params.row.approval_request];
-        // Basic link example - ideally, construct URL based on type
-        // For now, just display text. A real link would need more context/logic or a get_absolute_url from backend.
         return (
-            <Typography variant="body2">
-                {detail?.contentDisplay || 'N/A'}
-            </Typography>
+          <Typography variant="body2">
+            {detail?.contentDisplay || 'N/A'}
+          </Typography>
         );
       }
     },
@@ -131,16 +127,10 @@ const MyApprovalsPage: React.FC = () => {
       headerName: 'Request Created',
       width: 180,
       valueGetter: (_value, row) => {
-        // This requires fetching the parent ApprovalRequest or ensuring this data is nested
-        // For now, this column might be empty or you'd adapt the data structure.
-        // Placeholder:
         const reqDetail = requestDetails[row.approval_request];
-        // This assumes ApprovalRequest itself has created_at, which it does.
-        // To show this, ensure your API for steps nests ApprovalRequest details or fetch separately.
-        // My current fetchMyPendingSteps is fetching ApprovalRequest details.
-        return reqDetail && (myPendingSteps.find(s => s.approval_request === row.approval_request) as any)?.approval_request_details?.created_at
-            ? formatDate((myPendingSteps.find(s => s.approval_request === row.approval_request) as any).approval_request_details.created_at)
-            : 'Loading...';
+        return reqDetail && (myPendingSteps.find(s => s.approval_request === row.approval_request) as ApprovalStep & { approval_request_details?: { created_at?: string } })?.approval_request_details?.created_at
+          ? formatDate((myPendingSteps.find(s => s.approval_request === row.approval_request) as ApprovalStep & { approval_request_details?: { created_at?: string } }).approval_request_details?.created_at)
+          : 'Loading...';
       }
     },
     {
@@ -150,18 +140,16 @@ const MyApprovalsPage: React.FC = () => {
       width: 150,
       getActions: ({ row }) => [
         <GridActionsCellItem
-          icon={<CheckCircleOutlineIcon />}
+          icon={<CheckCircleOutlineIcon color="success" />}
           label="Approve"
           onClick={() => handleOpenActionDialog(row, 'approve')}
           key={`approve-${row.id}`}
-          color="success"
         />,
         <GridActionsCellItem
-          icon={<HighlightOffIcon />}
+          icon={<HighlightOffIcon color="error" />}
           label="Reject"
           onClick={() => handleOpenActionDialog(row, 'reject')}
           key={`reject-${row.id}`}
-          color="error"
         />,
       ],
     },
@@ -197,7 +185,7 @@ const MyApprovalsPage: React.FC = () => {
           <Typography variant="subtitle1">
             Item: {currentStep && requestDetails[currentStep.approval_request]?.title}
           </Typography>
-           <Typography variant="body2" gutterBottom>
+          <Typography variant="body2" gutterBottom>
             Details: {currentStep && requestDetails[currentStep.approval_request]?.contentDisplay}
           </Typography>
           <TextField

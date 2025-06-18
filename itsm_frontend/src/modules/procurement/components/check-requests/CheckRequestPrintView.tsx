@@ -112,8 +112,7 @@ const CheckRequestPrintView: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
 
   const handleCheckRequestPrint = useReactToPrint({ // Renamed for clarity
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+    contentRef: componentRef,
   });
 
   // useEffect(() => { // Remove useEffect for print-root

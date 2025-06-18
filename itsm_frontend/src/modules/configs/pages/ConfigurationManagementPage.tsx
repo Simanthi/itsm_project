@@ -1,18 +1,16 @@
 import React, { useEffect, useState, useCallback } from 'react';
-import { Box, Typography, Button, CircularProgress, Alert, IconButton } from '@mui/material';
-import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
+import { Box, Typography, Button, CircularProgress, Alert } from '@mui/material';
+import { DataGrid, type GridColDef, GridActionsCellItem } from '@mui/x-data-grid';
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { ConfigurationItem, NewConfigurationItemData } from '../types';
+import { type ConfigurationItem, type NewConfigurationItemData } from '../types';
 import { getConfigItems, deleteConfigItem, createConfigItem, updateConfigItem } from '../api';
 import { useUI } from '../../../context/UIContext/useUI';
 import ConfigurationItemForm from '../components/ConfigurationItemForm';
-import { useAuth } from '../../../context/auth/useAuth'; // For authenticated API calls
 
 const ConfigurationManagementPage: React.FC = () => {
   const { showSnackbar, showConfirmDialog } = useUI();
-  const { authenticatedFetch } = useAuth(); // Needed if API calls use it directly (apiClient might handle it)
 
   const [configItems, setConfigItems] = useState<ConfigurationItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -23,8 +21,6 @@ const ConfigurationManagementPage: React.FC = () => {
   const fetchCIs = useCallback(async () => {
     setLoading(true);
     try {
-      // Pass authenticatedFetch if your API functions require it explicitly
-      // For apiClient, it's often configured globally
       const items = await getConfigItems();
       setConfigItems(items);
       setError(null);
@@ -36,7 +32,7 @@ const ConfigurationManagementPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  }, [showSnackbar]); // Add authenticatedFetch if directly passed to API calls
+  }, [showSnackbar]);
 
   useEffect(() => {
     fetchCIs();
@@ -67,14 +63,12 @@ const ConfigurationManagementPage: React.FC = () => {
         await createConfigItem(data);
         showSnackbar('Configuration Item created successfully!', 'success');
       }
-      await fetchCIs(); // Refresh list
+      await fetchCIs();
       handleCloseForm();
     } catch (err) {
       const errorMsg = err instanceof Error ? err.message : 'Failed to save Configuration Item';
       showSnackbar(errorMsg, 'error');
-      setError(errorMsg); // Keep error for potential display on page if needed
-    } finally {
-      // setLoading(false); // setLoading is handled by fetchCIs
+      setError(errorMsg);
     }
   };
 
@@ -87,13 +81,11 @@ const ConfigurationManagementPage: React.FC = () => {
         try {
           await deleteConfigItem(id);
           showSnackbar('Configuration Item deleted successfully!', 'success');
-          await fetchCIs(); // Refresh list
+          await fetchCIs();
         } catch (err) {
           const errorMsg = err instanceof Error ? err.message : 'Failed to delete Configuration Item';
           showSnackbar(errorMsg, 'error');
           setError(errorMsg);
-        } finally {
-          // setLoading(false); // setLoading is handled by fetchCIs
         }
       }
     );
@@ -108,7 +100,10 @@ const ConfigurationManagementPage: React.FC = () => {
       field: 'linked_asset_details',
       headerName: 'Linked Asset',
       width: 200,
-      valueGetter: (value, row) => row.linked_asset_details ? `${row.linked_asset_details.asset_tag} - ${row.linked_asset_details.name}` : 'N/A',
+      valueGetter: (params: { row: ConfigurationItem }) =>
+        params.row.linked_asset_details
+          ? `${params.row.linked_asset_details.asset_tag} - ${params.row.linked_asset_details.name}`
+          : 'N/A',
     },
     { field: 'criticality', headerName: 'Criticality', width: 120 },
     { field: 'version', headerName: 'Version', width: 100 },
@@ -118,7 +113,7 @@ const ConfigurationManagementPage: React.FC = () => {
       headerName: 'Actions',
       width: 100,
       cellClassName: 'actions',
-      getActions: ({ row }) => [
+      getActions: ({ row }: { row: ConfigurationItem }) => [
         <GridActionsCellItem
           icon={<EditIcon />}
           label="Edit"
@@ -126,11 +121,10 @@ const ConfigurationManagementPage: React.FC = () => {
           key={`edit-${row.id}`}
         />,
         <GridActionsCellItem
-          icon={<DeleteIcon />}
+          icon={<DeleteIcon sx={{ color: 'error.main' }} />}
           label="Delete"
           onClick={() => handleDeleteCI(row.id)}
           key={`delete-${row.id}`}
-          sx={{ color: 'error.main' }}
         />,
       ],
     },
@@ -139,7 +133,6 @@ const ConfigurationManagementPage: React.FC = () => {
   if (loading && configItems.length === 0) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
-  // Display error prominently if initial fetch fails completely
   if (error && configItems.length === 0) {
     return <Alert severity="error" sx={{ m: 2 }}>{error}</Alert>;
   }
@@ -152,7 +145,6 @@ const ConfigurationManagementPage: React.FC = () => {
           New CI
         </Button>
       </Box>
-      {/* Display non-critical error (e.g., if a delete fails but list is still there) */}
       {error && configItems.length > 0 && <Alert severity="warning" sx={{ mb: 2 }}>{`Last operation error: ${error}`}</Alert>}
       <Box sx={{ height: 600, width: '100%' }}>
         <DataGrid

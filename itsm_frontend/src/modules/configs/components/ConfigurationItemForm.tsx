@@ -1,11 +1,11 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Dialog, DialogTitle, DialogContent, DialogActions, TextField, Button,
   Select, MenuItem, FormControl, InputLabel, Grid, Autocomplete, CircularProgress, Chip
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { ConfigurationItem, NewConfigurationItemData, CIType, CIStatus, CICriticality, CITypeOptions, CIStatusOptions, CICriticalityOptions } from '../types';
-import { AssetLite, getAssetsLite } from '../../../api/assetApi'; // Assuming assetApi is one level up from modules
+import { type ConfigurationItem,type  NewConfigurationItemData,type  CIType,type  CIStatus,type  CICriticality, CITypeOptions, CIStatusOptions, CICriticalityOptions } from '../types';
+import { type AssetLite, getAssetsLite } from '../../../api/assetApi'; // Assuming assetApi is one level up from modules
 import { getConfigItems } from '../api'; // To fetch other CIs for linking
 import { useAuth } from '../../../context/auth/useAuth';
 

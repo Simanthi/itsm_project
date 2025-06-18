@@ -151,12 +151,12 @@ function LoginPage() {
                 '&:-webkit-autofill': {
                   WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
                   WebkitTextFillColor: theme.palette.text.primary,
-                  transition: 'background-color 5000s ease-in-out 0s',
+                  transition: 'backgroundColor 5000s ease-in-out 0s',
                 },
                 '&:-internal-autofill-selected': {
                   WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
                   WebkitTextFillColor: theme.palette.text.primary,
-                  transition: 'background-color 5000s ease-in-out 0s',
+                  transition: 'backgroundColor 5000s ease-in-out 0s',
                 },
               },
               '& .MuiInputLabel-root': {
@@ -208,12 +208,12 @@ function LoginPage() {
                 '&:-webkit-autofill': {
                   WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
                   WebkitTextFillColor: theme.palette.text.primary,
-                  transition: 'background-color 5000s ease-in-out 0s',
+                  transition: 'backgroundColor 5000s ease-in-out 0s',
                 },
                 '&:-internal-autofill-selected': {
                   WebkitBoxShadow: '0 0 0 1000px transparent inset !important',
                   WebkitTextFillColor: theme.palette.text.primary,
-                  transition: 'background-color 5000s ease-in-out 0s',
+                  transition: 'backgroundColor 5000s ease-in-out 0s',
                 },
               },
               '& .MuiInputLabel-root': {

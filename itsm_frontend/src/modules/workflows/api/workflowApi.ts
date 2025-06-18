@@ -1,49 +1,86 @@
-import apiClient from '../../../api/apiClient'; // Adjust path as necessary
-import { ApprovalRequest, ApprovalStep, ApprovalActionPayload } from '../types';
+import { apiClient } from '../../../api/apiClient';
+import { type ApprovalRequest, type ApprovalStep, type ApprovalActionPayload } from '../types';
 
-const processListResponse = <T>(response: any): T[] => {
-    // Check if response.data itself is the array (direct list)
-    if (Array.isArray(response.data)) {
-        return response.data as T[];
+// Define a type for paginated or direct list responses
+type ListResponse<T> = { data: T[] } | { data: { results: T[] } };
+
+// Helper for list responses
+const processListResponse = <T>(response: ListResponse<T>): T[] => {
+    if ('data' in response && Array.isArray((response as { data: T[] }).data)) {
+        return (response as { data: T[] }).data;
     }
-    // Check for DRF's default paginated structure
-    if (response.data && Array.isArray(response.data.results)) {
-        return response.data.results;
+    if (
+        'data' in response &&
+        (response as { data: { results: T[] } }).data &&
+        Array.isArray((response as { data: { results: T[] } }).data.results)
+    ) {
+        return (response as { data: { results: T[] } }).data.results;
     }
     console.warn("Unexpected API response structure for list:", response);
     return [];
 };
 
 // Approval Requests
-export const getApprovalRequests = async (filters?: Record<string, any>): Promise<ApprovalRequest[]> => {
-    const response = await apiClient.get('/api/workflows/requests/', { params: filters });
+export const getApprovalRequests = async (filters?: Record<string, unknown>): Promise<ApprovalRequest[]> => {
+    const params = filters ? `?${new URLSearchParams(filters as Record<string, string>).toString()}` : '';
+    const response = await apiClient<ListResponse<ApprovalRequest>>(
+        `/api/workflows/requests/${params}`,
+        '',
+        { method: 'GET' }
+    );
     return processListResponse<ApprovalRequest>(response);
 };
 
 export const getApprovalRequestById = async (id: number): Promise<ApprovalRequest> => {
-    const response = await apiClient.get<ApprovalRequest>(`/api/workflows/requests/${id}/`);
+    const response = await apiClient<{ data: ApprovalRequest }>(
+        `/api/workflows/requests/${id}/`,
+        '',
+        { method: 'GET' }
+    );
     return response.data;
 };
 
 // Approval Steps
 export const getMyApprovalSteps = async (status: string = 'pending'): Promise<ApprovalStep[]> => {
-    // The backend ViewSet is already filtered by user for non-staff.
-    // We can still pass status if the backend supports filtering by it for the current user.
-    const response = await apiClient.get('/api/workflows/steps/', { params: { status } });
+    const response = await apiClient<ListResponse<ApprovalStep>>(
+        `/api/workflows/steps/?status=${encodeURIComponent(status)}`,
+        '',
+        { method: 'GET' }
+    );
     return processListResponse<ApprovalStep>(response);
 };
 
 export const getApprovalStepsForRequest = async (requestId: number): Promise<ApprovalStep[]> => {
-    const response = await apiClient.get('/api/workflows/steps/', { params: { approval_request: requestId } });
+    const response = await apiClient<ListResponse<ApprovalStep>>(
+        `/api/workflows/steps/?approval_request=${requestId}`,
+        '',
+        { method: 'GET' }
+    );
     return processListResponse<ApprovalStep>(response);
 };
 
 export const approveStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
-    const response = await apiClient.post<ApprovalStep>(`/api/workflows/steps/${stepId}/approve/`, payload);
+    const response = await apiClient<{ data: ApprovalStep }>(
+        `/api/workflows/steps/${stepId}/approve/`,
+        '',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload ?? {}),
+        }
+    );
     return response.data;
 };
 
 export const rejectStep = async (stepId: number, payload?: ApprovalActionPayload): Promise<ApprovalStep> => {
-    const response = await apiClient.post<ApprovalStep>(`/api/workflows/steps/${stepId}/reject/`, payload);
+    const response = await apiClient<{ data: ApprovalStep }>(
+        `/api/workflows/steps/${stepId}/reject/`,
+        '',
+        {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload ?? {}),
+        }
+    );
     return response.data;
 };

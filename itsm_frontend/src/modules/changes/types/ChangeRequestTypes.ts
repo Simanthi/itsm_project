@@ -1,5 +1,5 @@
 // itsm_frontend/src/modules/changes/types/ChangeRequestTypes.ts
-import { ConfigurationItem } from '../../configs/types'; // Assuming CI types are here
+import { type ConfigurationItem } from '../../configs/types'; // Assuming CI types are here
 // import { Incident } from '../../incidents/types'; // If incidents are linked
 
 export type ChangeType = 'standard' | 'normal' | 'emergency';

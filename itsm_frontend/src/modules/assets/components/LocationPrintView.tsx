@@ -41,8 +41,7 @@ const LocationPrintView: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Added componentRef
 
   const handleLocationPrint = useReactToPrint({ // Renamed for clarity
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+    contentRef: componentRef,
   });
 
   // useEffect(() => { // Removed useEffect for print-root

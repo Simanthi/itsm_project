@@ -1,5 +1,4 @@
 // itsm_frontend/src/pages/ChangeManagementPage.tsx
-import React from 'react';
 import { Box, Typography } from '@mui/material';
 
 function ChangeManagementPage() {

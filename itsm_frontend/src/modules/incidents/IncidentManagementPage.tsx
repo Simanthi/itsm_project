@@ -1,11 +1,11 @@
 // itsm_frontend/src/modules/incidents/IncidentManagementPage.tsx
 import React, { useEffect, useState } from 'react';
-import { Box, Typography, Button, CircularProgress, Alert, IconButton, Chip } from '@mui/material'; // Added IconButton and Chip
-import { DataGrid, GridColDef, GridActionsCellItem } from '@mui/x-data-grid'; // Added GridActionsCellItem
+import { Box, Typography, Button, CircularProgress, Alert, Chip } from '@mui/material'; // Added IconButton and Chip
+import { DataGrid,type  GridColDef, GridActionsCellItem } from '@mui/x-data-grid'; // Added GridActionsCellItem
 import AddIcon from '@mui/icons-material/Add';
 import EditIcon from '@mui/icons-material/Edit'; // Added EditIcon
 // import { useNavigate } from 'react-router-dom';
-import { Incident, NewIncidentData } from './types'; // Added NewIncidentData
+import {type  Incident,type  NewIncidentData } from './types'; // Added NewIncidentData
 // import apiClient from '../../api/apiClient'; // Placeholder
 import { useUI } from '../../context/UIContext/useUI'; // For snackbar
 import IncidentForm from './components/IncidentForm'; // Import the form

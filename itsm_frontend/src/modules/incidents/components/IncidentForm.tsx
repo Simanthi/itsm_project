@@ -16,7 +16,7 @@ import {
   Box,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { Incident, NewIncidentData, ImpactLevel, UrgencyLevel, IncidentStatus, PriorityLevel } from '../types';
+import { type Incident, type NewIncidentData, type ImpactLevel, type UrgencyLevel, type IncidentStatus, type PriorityLevel } from '../types';
 
 interface IncidentFormProps {
   open: boolean;
@@ -28,9 +28,6 @@ interface IncidentFormProps {
 const impactLevels: ImpactLevel[] = ['low', 'medium', 'high'];
 const urgencyLevels: UrgencyLevel[] = ['low', 'medium', 'high'];
 const statusOptions: IncidentStatus[] = ['new', 'in_progress', 'on_hold', 'resolved', 'closed', 'cancelled'];
-// Priority is calculated, so not directly selectable if we strictly follow the new logic
-// const priorityLevels: PriorityLevel[] = ['low', 'medium', 'high', 'critical'];
-
 
 const IncidentForm: React.FC<IncidentFormProps> = ({
   open,
@@ -43,10 +40,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
   const [status, setStatus] = useState<IncidentStatus>('new');
   const [impact, setImpact] = useState<ImpactLevel>('medium');
   const [urgency, setUrgency] = useState<UrgencyLevel>('medium');
-  // const [assignedToId, setAssignedToId] = useState<number | null>(null); // Placeholder
-
-  // For displaying calculated priority, not for setting
-  const [currentCalculatedPriority, setCurrentCalculatedPriority] = useState<PriorityLevel | null>(null);
+  // Removed unused currentCalculatedPriority
 
   useEffect(() => {
     if (initialData) {
@@ -56,7 +50,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
       setImpact(initialData.impact);
       setUrgency(initialData.urgency);
       // setAssignedToId(initialData.assigned_to_id || null); // If available
-      setCurrentCalculatedPriority(initialData.calculated_priority);
+      // Removed setCurrentCalculatedPriority
     } else {
       // Defaults for new incident
       setTitle('');
@@ -65,7 +59,7 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
       setImpact('medium');
       setUrgency('medium');
       // setAssignedToId(null);
-      setCurrentCalculatedPriority(null);
+      // Removed setCurrentCalculatedPriority
     }
   }, [initialData, open]); // Re-initialize when initialData changes or form opens
 
@@ -92,7 +86,6 @@ const IncidentForm: React.FC<IncidentFormProps> = ({
     if (currentImpact === 'low' && currentUrgency === 'low') return 'low';
     return 'medium'; // Default
   };
-
 
   return (
     <Dialog open={open} onClose={onClose} maxWidth="md" fullWidth>

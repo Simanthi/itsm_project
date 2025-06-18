@@ -92,8 +92,7 @@ const PurchaseRequestMemoPrintView: React.FC = () => {
   const componentRef = useRef<HTMLDivElement>(null); // Add componentRef
 
   const handleMemoPrint = useReactToPrint({ // Renamed for clarity
-    content: () => componentRef.current,
-    removeAfterPrint: true,
+    contentRef: componentRef,
   });
 
   // useEffect(() => { // Remove useEffect for print-root
