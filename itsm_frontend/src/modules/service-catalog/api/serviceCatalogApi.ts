@@ -12,10 +12,8 @@ function processListResponse<T>(response: { data: { results: T[] } | T[] }): T[]
 
 export const getCatalogCategories = async (token: string): Promise<CatalogCategory[]> => {
     const response = await apiClient<{ data: { results: CatalogCategory[] } | CatalogCategory[] }>(
-
-        '/service-catalog/categories/',
+        '/api/service-catalog/categories/',
         token, // Use the passed token
-
         { method: 'GET' }
     );
     return processListResponse<CatalogCategory>(response);
@@ -24,10 +22,8 @@ export const getCatalogCategories = async (token: string): Promise<CatalogCatego
 export const getCatalogItems = async (token: string, categoryId?: number | string): Promise<CatalogItem[]> => {
     const params = categoryId ? `?category=${categoryId}` : '';
     const response = await apiClient<{ data: { results: CatalogItem[] } | CatalogItem[] }>(
-
-        `/service-catalog/items/${params}`,
+        `/api/service-catalog/items/${params}`,
         token, // Use the passed token
-
         { method: 'GET' }
     );
     return processListResponse<CatalogItem>(response);
@@ -35,10 +31,8 @@ export const getCatalogItems = async (token: string, categoryId?: number | strin
 
 export const getCatalogItemById = async (token: string, itemId: number | string): Promise<CatalogItem> => {
     const response = await apiClient<{ data: CatalogItem }>(
-
-        `/service-catalog/items/${itemId}/`,
+        `/api/service-catalog/items/${itemId}/`,
         token, // Use the passed token
-
         { method: 'GET' }
     );
     return response.data;
