@@ -38,13 +38,13 @@ const initialFormData: PurchaseRequestMemoData = {
   quantity: 1,
   reason: '',
   estimated_cost: null,
-  // New fields for initial form data
+  // New fields for initial form data (from PurchaseRequestMemoData)
   department: null,
   project: null,
-  priority: 'medium', // Default priority
+  priority: 'medium',
   required_delivery_date: null,
   suggested_vendor: null,
-  attachments: null,
+  attachments: null, // This is File | null for *Data types
 };
 
 // Mock data for dropdowns - replace with API calls in a real app
