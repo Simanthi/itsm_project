@@ -53,13 +53,13 @@ export const getPurchaseRequestMemos = async (
 
 export const createPurchaseRequestMemo = async (
   authenticatedFetch: AuthenticatedFetch,
-  data: PurchaseRequestMemoData,
+  data: FormData, // Changed from PurchaseRequestMemoData
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/`;
   return (await authenticatedFetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as PurchaseRequestMemo;
 };
 
@@ -76,13 +76,13 @@ export const getPurchaseRequestMemoById = async (
 export const updatePurchaseRequestMemo = async (
   authenticatedFetch: AuthenticatedFetch,
   id: number,
-  data: Partial<PurchaseRequestMemoUpdateData>,
+  data: FormData, // Changed from Partial<PurchaseRequestMemoUpdateData>
 ): Promise<PurchaseRequestMemo> => {
   const endpoint = `${API_PROCUREMENT_PATH}/memos/${id}/`;
   return (await authenticatedFetch(endpoint, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    method: 'PATCH', // Or PUT, depending on backend. PATCH is typical for FormData updates if partial.
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as PurchaseRequestMemo;
 };
 
@@ -139,13 +139,13 @@ export const getPurchaseOrders = async (
 
 export const createPurchaseOrder = async (
   authenticatedFetch: AuthenticatedFetch,
-  data: PurchaseOrderData,
+  data: FormData, // Changed from PurchaseOrderData
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/`;
   return (await authenticatedFetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as PurchaseOrder;
 };
 
@@ -162,13 +162,13 @@ export const getPurchaseOrderById = async (
 export const updatePurchaseOrder = async (
   authenticatedFetch: AuthenticatedFetch,
   id: number,
-  data: Partial<PurchaseOrderData>,
+  data: FormData, // Changed from Partial<PurchaseOrderData>
 ): Promise<PurchaseOrder> => {
   const endpoint = `${API_PROCUREMENT_PATH}/purchase-orders/${id}/`;
   return (await authenticatedFetch(endpoint, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    method: 'PATCH', // Or PUT
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as PurchaseOrder;
 };
 
@@ -210,13 +210,13 @@ export const getCheckRequests = async (
 
 export const createCheckRequest = async (
   authenticatedFetch: AuthenticatedFetch,
-  data: CheckRequestData,
+  data: FormData, // Changed from CheckRequestData
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/`;
   return (await authenticatedFetch(endpoint, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as CheckRequest;
 };
 
@@ -233,13 +233,13 @@ export const getCheckRequestById = async (
 export const updateCheckRequest = async (
   authenticatedFetch: AuthenticatedFetch,
   id: number,
-  data: Partial<CheckRequestUpdateData>,
+  data: FormData, // Changed from Partial<CheckRequestUpdateData>
 ): Promise<CheckRequest> => {
   const endpoint = `${API_PROCUREMENT_PATH}/check-requests/${id}/`;
   return (await authenticatedFetch(endpoint, {
-    method: 'PATCH',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(data),
+    method: 'PATCH', // Or PUT
+    // headers: { 'Content-Type': 'application/json' }, // Remove for FormData
+    body: data, // Pass FormData directly
   })) as CheckRequest;
 };
 

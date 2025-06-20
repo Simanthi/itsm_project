@@ -403,11 +403,11 @@ const CheckRequestForm: React.FC = () => {
         await updateCheckRequest(
           authenticatedFetch,
           formData.id,
-          submissionPayload as FormData,
+          submissionPayload, // No longer need 'as FormData'
         );
         showSnackbar('Check Request updated successfully!', 'success');
       } else {
-        await createCheckRequest(authenticatedFetch, submissionPayload as FormData);
+        await createCheckRequest(authenticatedFetch, submissionPayload); // No longer need 'as FormData'
         showSnackbar('Check Request created successfully!', 'success');
       }
       navigate('/procurement/check-requests');

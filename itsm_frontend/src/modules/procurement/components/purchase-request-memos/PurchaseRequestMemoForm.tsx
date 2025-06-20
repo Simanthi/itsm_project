@@ -244,13 +244,13 @@ const PurchaseRequestMemoForm: React.FC = () => {
         await updatePurchaseRequestMemo(
           authenticatedFetch,
           parseInt(memoId, 10),
-          submissionPayload as FormData,
+          submissionPayload, // No longer need 'as FormData'
         );
         showSnackbar('Purchase request updated successfully!', 'success');
       } else {
         await createPurchaseRequestMemo(
           authenticatedFetch,
-          submissionPayload as FormData,
+          submissionPayload, // No longer need 'as FormData'
         );
         showSnackbar('Purchase request created successfully!', 'success');
       }
