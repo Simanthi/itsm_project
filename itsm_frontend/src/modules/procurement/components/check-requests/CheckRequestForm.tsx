@@ -273,8 +273,7 @@ const CheckRequestForm: React.FC = () => {
     setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value as string | number | null }));
   };
 
-
-  // State for payment details UI, separate from main formData for CheckRequestData - REMOVED as unused (TS6133)
+// Removed unused state and handlers for paymentUIDetails as they were not part of active form submission logic.
   // const [paymentUIDetails, setPaymentUIDetails] = useState<{
   //   payment_method?: PaymentMethod;
   //   payment_date: string | null;
@@ -632,7 +631,7 @@ const CheckRequestForm: React.FC = () => {
                 name="expense_category"
                 value={formData.expense_category || ''}
                 label="Expense Category"
-                onChange={(e) => handleSelectChange(e as SelectChangeEvent<any>, 'expense_category')}
+                onChange={(e) => handleSelectChange(e as SelectChangeEvent<string | number>, 'expense_category')}
               >
                 <MenuItem value=""><em>None</em></MenuItem>
                 {mockExpenseCategories.map(cat => (

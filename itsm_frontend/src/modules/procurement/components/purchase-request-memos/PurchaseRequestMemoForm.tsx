@@ -168,18 +168,11 @@ const PurchaseRequestMemoForm: React.FC = () => {
   };
 
   const handleSelectChange = (event: SelectChangeEvent<string | number | ''>, fieldName: keyof PurchaseRequestMemoData) => {
-    setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value === '' ? null : event.target.value }));
+    setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value === '' ? null : event.target.value as string | number }));
   };
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const files = event.target.files;
-    if (files && files.length > 0) {
-      setFormData((prev) => ({ ...prev, attachments: files[0] }));
-    } else {
-      setFormData((prev) => ({ ...prev, attachments: null }));
-    }
-  };
-
+  // The main `handleChange` already handles file inputs if `name="attachments"` is set on the input.
+  // The separate `handleFileChange` was indeed redundant.
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();

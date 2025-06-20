@@ -843,7 +843,8 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string | number>)} displayEmpty>
+                        <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
+                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string | number | ''>)} displayEmpty>
                                 <MenuItem value=""><em>None</em></MenuItem>
                                 {mockGLAccounts.map(acc => <MenuItem key={acc.id} value={acc.id}>{acc.code}</MenuItem>)}
                             </Select>
@@ -854,7 +855,7 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="line_item_status" value={item.line_item_status || 'pending'} onChange={(e) => handleItemChange(index, e as any)} >
+                            <Select name="line_item_status" value={item.line_item_status || 'pending'} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string>)} >
                                 <MenuItem value="pending">Pending</MenuItem>
                                 <MenuItem value="partially_received">Partially Received</MenuItem>
                                 <MenuItem value="fully_received">Fully Received</MenuItem>
@@ -868,7 +869,7 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="discount_type" value={item.discount_type || 'fixed'} onChange={(e) => handleItemChange(index, e as any)}>
+                            <Select name="discount_type" value={item.discount_type || 'fixed'} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string>)}>
                                 <MenuItem value="fixed">Fixed</MenuItem>
                                 <MenuItem value="percentage">Percentage</MenuItem>
                             </Select>
