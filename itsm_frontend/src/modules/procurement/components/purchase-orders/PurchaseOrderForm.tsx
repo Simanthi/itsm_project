@@ -302,11 +302,15 @@ const PurchaseOrderForm: React.FC = () => {
 
   const handleItemChange = (
     index: number,
-    event: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }
-    >,
+    // Updated event type to include SelectChangeEvent
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement> | SelectChangeEvent<string | number | ''>,
   ) => {
-    const { name, value } = event.target;
+    // For Select, event.target.name might not be directly available in the same way,
+    // so we might need to pass the field name explicitly if 'name' attribute isn't working as expected with Select's event.
+    // However, MUI's Select usually does pass event.target.name if the 'name' prop is set on the Select component.
+    const name = (event.target as HTMLInputElement | HTMLSelectElement).name; // Type assertion to access name
+    const value = (event.target as HTMLInputElement | HTMLSelectElement).value;
+
     const items = [...orderItems];
     const currentItem = { ...items[index] };
 
@@ -843,8 +847,8 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                        <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string | number | ''>)} displayEmpty>
+                            {/* Removed duplicate FormControl wrapper here */}
+                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e)} displayEmpty>
                                 <MenuItem value=""><em>None</em></MenuItem>
                                 {mockGLAccounts.map(acc => <MenuItem key={acc.id} value={acc.id}>{acc.code}</MenuItem>)}
                             </Select>
@@ -855,7 +859,7 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="line_item_status" value={item.line_item_status || 'pending'} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string>)} >
+                            <Select name="line_item_status" value={item.line_item_status || 'pending'} onChange={(e) => handleItemChange(index, e)} >
                                 <MenuItem value="pending">Pending</MenuItem>
                                 <MenuItem value="partially_received">Partially Received</MenuItem>
                                 <MenuItem value="fully_received">Fully Received</MenuItem>
@@ -869,7 +873,7 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="discount_type" value={item.discount_type || 'fixed'} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string>)}>
+                            <Select name="discount_type" value={item.discount_type || 'fixed'} onChange={(e) => handleItemChange(index, e)}>
                                 <MenuItem value="fixed">Fixed</MenuItem>
                                 <MenuItem value="percentage">Percentage</MenuItem>
                             </Select>
