@@ -7,7 +7,7 @@ import {
   CircularProgress,
   Alert,
   Button,
-  Paper,
+  // Paper, // Removed Paper
   Select,
   MenuItem,
   FormControl,
@@ -18,7 +18,7 @@ import {
   IconButton,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Print as PrintIcon } from '@mui/icons-material';
-import { useAuth } from '../../../context/auth/AuthContext';
+import { useAuth } from '../../../context/auth/useAuth'; // Corrected import path
 import { getServiceRequestById } from '../../../api/serviceRequestApi';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import {
@@ -116,29 +116,29 @@ const PrintPreviewPage: React.FC = () => {
     }
   };
 
-  const renderTemplate = () => {
-    if (requestsData.length === 0) return <Typography>No request data to display.</Typography>;
+  // const renderTemplate = () => { // Unused function removed
+  //   if (requestsData.length === 0) return <Typography>No request data to display.</Typography>;
 
-    // For now, previewing the first selected request.
-    // When printing, all requestsData will be iterated over in the print handler or template.
-    const requestToPreview = requestsData[0];
+  //   // For now, previewing the first selected request.
+  //   // When printing, all requestsData will be iterated over in the print handler or template.
+  //   const requestToPreview = requestsData[0];
 
-    // This will be replaced by actual template components in the next step
-    switch (selectedTemplate) {
-      case 'template1':
-        return <Template1Standard request={requestToPreview} companyDetails={mockCompanyDetails} />;
-      case 'template2':
-        return <Template2Compact request={requestToPreview} companyDetails={mockCompanyDetails} />;
-      case 'template3':
-        return <Template3UserSlip request={requestToPreview} companyDetails={mockCompanyDetails} />;
-      case 'template4':
-        return <Template4Technical request={requestToPreview} companyDetails={mockCompanyDetails} />;
-      case 'template5':
-        return <Template5Modern request={requestToPreview} companyDetails={mockCompanyDetails} />;
-      default:
-        return <Typography>Select a template to see the preview.</Typography>;
-    }
-  };
+  //   // This will be replaced by actual template components in the next step
+  //   switch (selectedTemplate) {
+  //     case 'template1':
+  //       return <Template1Standard request={requestToPreview} companyDetails={mockCompanyDetails} />;
+  //     case 'template2':
+  //       return <Template2Compact request={requestToPreview} companyDetails={mockCompanyDetails} />;
+  //     case 'template3':
+  //       return <Template3UserSlip request={requestToPreview} companyDetails={mockCompanyDetails} />;
+  //     case 'template4':
+  //       return <Template4Technical request={requestToPreview} companyDetails={mockCompanyDetails} />;
+  //     case 'template5':
+  //       return <Template5Modern request={requestToPreview} companyDetails={mockCompanyDetails} />;
+  //     default:
+  //       return <Typography>Select a template to see the preview.</Typography>;
+  //   }
+  // };
 
   const renderTemplateForRequest = (request: ServiceRequest) => {
     switch (selectedTemplate) {
