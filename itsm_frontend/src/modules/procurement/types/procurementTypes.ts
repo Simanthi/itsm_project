@@ -29,7 +29,6 @@ export interface UserSummary {
 
 export interface PurchaseRequestMemo {
   id: number;
-  iom_id: string; // Added
   item_description: string;
   quantity: number;
   reason: string;
@@ -114,7 +113,7 @@ export interface VendorSummary {
 
 export interface PurchaseOrder {
   id: number;
-  po_number: string; // This will hold the new unique ID like PO-AA-0001
+  po_number: string;
   internal_office_memo?: number | null; // ID of the PurchaseRequestMemo
   // internal_office_memo_details?: PurchaseRequestMemo; // Optional: if deep nesting is configured
   vendor: number; // ID of the Vendor
@@ -183,7 +182,6 @@ export type PaymentMethod =
 
 export interface CheckRequest {
   id: number;
-  cr_id: string; // Added
   purchase_order?: number | null; // ID
   purchase_order_number?: string | null;
   invoice_number?: string | null;

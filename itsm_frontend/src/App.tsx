@@ -14,7 +14,9 @@ const DashboardPage = lazy(() => import('./modules/dashboard/DashboardPage'));
 
 const ServiceRequestsPage = lazy(() => import('./modules/service-requests/pages').then(module => ({ default: module.ServiceRequestsPage })));
 const NewServiceRequestPage = lazy(() => import('./modules/service-requests/pages').then(module => ({ default: module.NewServiceRequestPage })));
-const ServiceRequestPrintView = lazy(() => import('./modules/service-requests/components').then(module => ({ default: module.ServiceRequestPrintView })));
+const ServiceRequestDetailPage = lazy(() => import('./modules/service-requests/pages').then(module => ({ default: module.ServiceRequestDetailPage })));
+const PrintPreviewPage = lazy(() => import('./modules/service-requests/pages').then(module => ({ default: module.PrintPreviewPage }))); // New Print Preview Page
+// const ServiceRequestPrintView = lazy(() => import('./modules/service-requests/components').then(module => ({ default: module.ServiceRequestPrintView }))); // Commented out old one
 
 const AssetsPage = lazy(() => import('./modules/assets/pages').then(module => ({ default: module.AssetsPage })));
 const AssetForm = lazy(() => import('./modules/assets/components').then(module => ({ default: module.AssetForm })));
@@ -73,8 +75,12 @@ function AppContent() {
                 element={<NewServiceRequestPage />}
               />
               <Route
+                path="service-requests/view/:requestId" // Changed :id to :requestId to match page
+                element={<ServiceRequestDetailPage />}
+              />
+              <Route
                 path="service-requests/print-preview"
-                element={<ServiceRequestPrintView />}
+                element={<PrintPreviewPage />} // Changed to new PrintPreviewPage
               />
               <Route path="assets" element={<AssetsPage />} />
               <Route path="assets/new" element={<AssetForm />} />

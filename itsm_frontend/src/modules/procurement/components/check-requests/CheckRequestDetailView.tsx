@@ -209,7 +209,7 @@ const CheckRequestDetailView: React.FC = () => {
             Request Information
           </Typography>
           <Typography>
-            <strong>CR ID:</strong> {checkRequest.cr_id}
+            <strong>CR ID:</strong> CR-{checkRequest.id}
           </Typography>
           <Typography>
             <strong>Status:</strong>{' '}

@@ -14,12 +14,12 @@ class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseRequestMemo
         fields = [
-            'id', 'iom_id', 'item_description', 'quantity', 'reason', 'estimated_cost',
+            'id', 'item_description', 'quantity', 'reason', 'estimated_cost',
             'requested_by', 'requested_by_username', 'request_date', 'status',
             'approver', 'approver_username', 'decision_date', 'approver_comments'
         ]
         read_only_fields = [
-            'iom_id', 'request_date',
+            'request_date',
             'status',
             'approver',
             'approver_username',
@@ -43,8 +43,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     class Meta:
         model = PurchaseOrder
         fields = [
-            'id',
-            'po_number', # This is now the generated PO-AA-NNNN ID
+            'id', 'po_number',
             'internal_office_memo',
             'vendor',
             'vendor_details',
@@ -57,7 +56,6 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'order_items'
         ]
         read_only_fields = [
-            'po_number', # Added po_number as it's system-generated
             'total_amount',
             'created_by',
             'created_by_username',
@@ -105,7 +103,7 @@ class CheckRequestSerializer(serializers.ModelSerializer):
     class Meta:
         model = CheckRequest
         fields = [
-            'id', 'cr_id', 'purchase_order', 'purchase_order_number', 'invoice_number', 'invoice_date',
+            'id', 'purchase_order', 'purchase_order_number', 'invoice_number', 'invoice_date',
             'amount', 'payee_name', 'payee_address', 'reason_for_payment',
             'requested_by', 'requested_by_username', 'request_date', 'status',
             'approved_by_accounts', 'approved_by_accounts_username',
@@ -113,7 +111,7 @@ class CheckRequestSerializer(serializers.ModelSerializer):
             'payment_method', 'payment_date', 'transaction_id', 'payment_notes'
         ]
         read_only_fields = [
-            'cr_id', 'request_date',
+            'request_date',
             'status',  # Initial status set in perform_create, then by actions
             'requested_by_username',  # Derived
             'approved_by_accounts',  # Set by action

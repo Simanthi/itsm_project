@@ -171,14 +171,11 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Main Details Section */}
-        <Grid item xs={12} md={6}>
+        <Grid item xs={12}>
           <Typography variant="h6" gutterBottom>
             Memo Details
           </Typography>
           <Typography variant="body1">
-            <strong>IOM ID:</strong> {memo.iom_id}
-          </Typography>
-          <Typography variant="body1" sx={{mt: 1}}>
             <strong>Item Description:</strong>
           </Typography>
           <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
