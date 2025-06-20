@@ -27,7 +27,7 @@ import {
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
 import UploadFileIcon from '@mui/icons-material/UploadFile'; // For file input
-import type { SelectChangeEvent } from '@mui/material/Select';
+import type { SelectChangeEvent } from '@mui/material/Select'; // Keep this import
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI';
@@ -44,11 +44,9 @@ import type {
   PurchaseOrder,
   PurchaseOrderData,
   OrderItemData,
-  PurchaseRequestMemo, // For IOM selection
-  // Vendor, // Removed from here
+  OrderItem, // Import OrderItem for mapping fetched PO items
+  PurchaseRequestMemo,
   PurchaseOrderStatus,
-  // PaginatedResponse, // Removed as it's not directly used for annotations in this file
-  // VendorSummary, // Removed as it's only used as a nested type within PurchaseOrder
 } from '../../types';
 
 // PO Status choices for the dropdown

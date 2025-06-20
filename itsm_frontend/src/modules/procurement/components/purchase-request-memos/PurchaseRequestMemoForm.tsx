@@ -10,14 +10,15 @@ import {
   Grid,
   Paper,
   InputAdornment,
-  MenuItem, // For Select dropdown
-  FormControl, // For Select
-  InputLabel, // For Select
-  Select, // For Select
-  FormHelperText, // For file input
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText,
 } from '@mui/material';
+import type { SelectChangeEvent } from '@mui/material/Select'; // Import SelectChangeEvent
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import UploadFileIcon from '@mui/icons-material/UploadFile'; // For file input
+import UploadFileIcon from '@mui/icons-material/UploadFile';
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI';
