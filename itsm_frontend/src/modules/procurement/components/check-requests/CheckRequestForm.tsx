@@ -83,7 +83,7 @@ const initialFormData: CheckRequestFormState = {
   is_urgent: false,
   recurring_payment: null,
   attachments: null,
-  currency: 'USD',
+  currency: 'INR', // Changed Default currency to INR
   // UI-specific helper fields
   purchase_order_obj: null,
 };
@@ -270,7 +270,7 @@ const CheckRequestForm: React.FC = () => {
   };
 
   const handleSelectChange = (event: SelectChangeEvent<any>, fieldName: keyof CheckRequestData) => {
-    setFormData(prev => ({ ...prev, [fieldName]: event.target.value || null }));
+    setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value as string | number | null }));
   };
 
 
@@ -558,8 +558,9 @@ const CheckRequestForm: React.FC = () => {
               InputProps={{
                 inputProps: { min: 0.01, step: 0.01 },
                 startAdornment: (
-                  // Currency symbol should ideally come from formData.currency
-                  <InputAdornment position="start">{formData.currency === 'KES' ? 'KES' : '$'}</InputAdornment>
+                  <InputAdornment position="start">
+                    {formData.currency === 'KES' ? 'KES' : formData.currency === 'INR' ? '₹' : '$'}
+                  </InputAdornment>
                 ),
               }}
               disabled={viewOnly}
@@ -571,9 +572,9 @@ const CheckRequestForm: React.FC = () => {
                 <Select
                     labelId="currency-cr-select-label"
                     name="currency"
-                    value={formData.currency || 'USD'}
+                    value={formData.currency || 'INR'}
                     label="Currency"
-                    onChange={(e) => handleSelectChange(e as SelectChangeEvent<any>, 'currency')}
+                    onChange={(e) => handleSelectChange(e as SelectChangeEvent<string | number>, 'currency')}
                 >
                     {mockCurrencies.map((currency) => (
                     <MenuItem key={currency.value} value={currency.value}>

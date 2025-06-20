@@ -154,9 +154,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
   }, [memoId, fetchMemoForViewOrEdit]);
 
   const handleChange = (
-    event: React.ChangeEvent<
-      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown } // For Select
-    >,
+    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, // Standard input/textarea
   ) => {
     const { name, value } = event.target;
     if (name === 'quantity' || name === 'estimated_cost') {
@@ -164,16 +162,24 @@ const PurchaseRequestMemoForm: React.FC = () => {
         ...prev,
         [name]: value === '' ? null : Number(value),
       }));
-    } else if (name === 'attachments') {
-      const files = (event.target as HTMLInputElement).files;
-      setFormData((prev) => ({
-        ...prev,
-        attachments: files && files.length > 0 ? files[0] : null,
-      }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name as string]: value }));
+    } else { // For text fields like item_description, reason
+      setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
+
+  const handleSelectChange = (event: SelectChangeEvent<string | number | ''>, fieldName: keyof PurchaseRequestMemoData) => {
+    setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value === '' ? null : event.target.value }));
+  };
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (files && files.length > 0) {
+      setFormData((prev) => ({ ...prev, attachments: files[0] }));
+    } else {
+      setFormData((prev) => ({ ...prev, attachments: null }));
+    }
+  };
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -391,7 +397,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 name="priority"
                 value={formData.priority || 'medium'}
                 label="Priority"
-                onChange={handleChange}
+                onChange={(e) => handleSelectChange(e, 'priority')}
               >
                 <MenuItem value="low">Low</MenuItem>
                 <MenuItem value="medium">Medium</MenuItem>
@@ -422,7 +428,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 name="suggested_vendor"
                 value={formData.suggested_vendor || ''}
                 label="Suggested Vendor (Optional)"
-                onChange={handleChange}
+                onChange={(e) => handleSelectChange(e, 'suggested_vendor')}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -460,7 +466,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 name="department"
                 value={formData.department || ''}
                 label="Department (Optional)"
-                onChange={handleChange}
+                onChange={(e) => handleSelectChange(e, 'department')}
               >
                 <MenuItem value="">
                   <em>None</em>
@@ -483,7 +489,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 name="project"
                 value={formData.project || ''}
                 label="Project (Optional)"
-                onChange={handleChange}
+                onChange={(e) => handleSelectChange(e, 'project')}
               >
                 <MenuItem value="">
                   <em>None</em>
