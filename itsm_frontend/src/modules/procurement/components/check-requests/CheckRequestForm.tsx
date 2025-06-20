@@ -38,11 +38,8 @@ import type {
   CheckRequestStatus,
   PurchaseOrder,
 } from '../../types';
-
+import { formatDateString, formatCurrency } from '../../../../utils/formatters';
 import type { SelectChangeEvent } from '@mui/material/Select'; // Import SelectChangeEvent
-
-
-import { formatDate, formatCurrency } from '../../../../utils/formatters'; // Corrected to formatDate
 
 
 // Constants
@@ -63,17 +60,18 @@ const CHECK_REQUEST_STATUS_DISPLAY: Record<CheckRequestStatus, string> = {
   cancelled: 'Cancelled',
 };
 
-// Define a more specific type for the form's state
-type CheckRequestFormState = Partial<
-  CheckRequestData & { // All fields from CheckRequestData are optional for the form state
+// Define a more specific type for the form's state, ensuring all fields from CheckRequestData are included as optional
+// and add any UI-specific helper fields.
+type CheckRequestFormState = Partial<CheckRequestData> & {
     id?: number; // For edit mode
     purchase_order_obj?: PurchaseOrder | null; // For Autocomplete object
-    // `amount` is already string in CheckRequestData, so no need for Omit/&
-  }
->;
+    // Ensure all fields from CheckRequestData are potentially part of this state
+    // (they are already optional due to Partial<CheckRequestData>)
+};
 
 
 const initialFormData: CheckRequestFormState = {
+  // Fields from CheckRequestData (all optional here due to Partial)
   purchase_order: undefined,
   invoice_number: '',
   invoice_date: '',
@@ -81,13 +79,13 @@ const initialFormData: CheckRequestFormState = {
   payee_name: '',
   payee_address: '',
   reason_for_payment: '',
-  purchase_order_obj: null,
-  // New fields from CheckRequestData (all optional in form state initially)
   expense_category: null,
   is_urgent: false,
   recurring_payment: null,
   attachments: null,
   currency: 'USD',
+  // UI-specific helper fields
+  purchase_order_obj: null,
 };
 
 // Mock data for dropdowns - replace with API calls
@@ -171,7 +169,7 @@ const CheckRequestForm: React.FC = () => {
           purchase_order: data.purchase_order || undefined,
           invoice_number: data.invoice_number || '',
           invoice_date: data.invoice_date
-            ? formatDate(data.invoice_date, 'YYYY-MM-DD')
+            ? formatDateString(data.invoice_date, 'YYYY-MM-DD')
             : '',
           amount: data.amount || '0.00', // amount is string in CheckRequest
           payee_name: data.payee_name || '',
@@ -711,7 +709,7 @@ const CheckRequestForm: React.FC = () => {
               <Grid item xs={12} md={3}>
                 <Typography variant="caption" display="block" color="textSecondary">Request Date</Typography>
                 <Typography>
-                  {formatDate(currentCheckRequest.request_date)}
+                  {formatDateString(currentCheckRequest.request_date)}
                 </Typography>
               </Grid>
                <Grid item xs={12} md={3}>
@@ -745,7 +743,7 @@ const CheckRequestForm: React.FC = () => {
                   <Grid item xs={12} md={6}>
                     <Typography variant="caption" display="block" color="textSecondary" sx={{mt:1}}>Approval Date</Typography>
                     <Typography>
-                      {formatDate(
+                      {formatDateString(
                         currentCheckRequest.accounts_approval_date,
                       )}
                     </Typography>
@@ -792,7 +790,7 @@ const CheckRequestForm: React.FC = () => {
                     type="date"
                     value={
                       currentCheckRequest.payment_date
-                        ? formatDate(
+                        ? formatDateString(
                             currentCheckRequest.payment_date,
                             'YYYY-MM-DD',
                           )

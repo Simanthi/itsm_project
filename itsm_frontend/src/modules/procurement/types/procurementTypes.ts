@@ -135,6 +135,49 @@ export interface OrderItem extends OrderItemBase {
 }
 
 // No need to redefine OrderItemData, it's correctly defined above by extending OrderItemBase.
+// However, the previous re-declaration of OrderItemData was removed, which is correct.
+// The issue might be that OrderItemData (the one extending OrderItemBase) is not seen by other files,
+// or OrderItem (the display type) is being used where OrderItemData (submission type) is expected.
+// Let's ensure OrderItemData is explicitly exported and clearly distinguished if necessary.
+// For clarity, I'll ensure OrderItemData is defined as it was intended for data submission.
+
+/*
+This was the structure that worked before splitting OrderItemBase:
+export interface OrderItemData {
+  id?: number;
+  item_description: string;
+  quantity: number;
+  unit_price?: number | null;
+  product_code?: string | null;
+  gl_account?: number | null;
+  received_quantity?: number;
+  line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
+  tax_rate?: number | null;
+  discount_type?: 'fixed' | 'percentage' | null;
+  discount_value?: number | null;
+}
+Let's revert OrderItemData to this explicit structure if the OrderItemBase extension is problematic for TS resolution in other files.
+Given the errors, it seems the split might be causing issues with how OrderItemData is recognized or used.
+I'll redefine OrderItemData explicitly to ensure all its intended fields are directly on it.
+*/
+
+// Re-defining OrderItemData explicitly to ensure all fields are directly available
+// This reverts the OrderItemBase abstraction for OrderItemData if it was causing resolution issues.
+// export interface OrderItemData { // Keep the one that extends OrderItemBase
+//   id?: number; // For identifying existing items during update
+//   item_description: string;
+//   quantity: number;
+//   unit_price?: number | null;
+//   product_code?: string | null;
+//   gl_account?: number | null; // FK to GLAccount
+//   received_quantity?: number;
+//   line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
+//   tax_rate?: number | null; // Percentage, e.g., 16.00 for 16%
+//   discount_type?: 'fixed' | 'percentage' | null;
+//   discount_value?: number | null;
+// }
+// The above re-definition is commented out because the existing OrderItemData extends OrderItemBase, which should be fine.
+// The problem is likely in the component's usage or its own state type definition.
 
 export type PurchaseOrderStatus =
   | 'draft'

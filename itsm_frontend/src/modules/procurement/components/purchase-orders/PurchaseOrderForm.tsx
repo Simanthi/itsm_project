@@ -106,19 +106,19 @@ const mockGLAccounts = [ // Example GL Accounts
 ];
 // End mock data
 
-
+// InitialOrderItemData should fully conform to OrderItemData type
 const initialOrderItemData: OrderItemData = {
   item_description: '',
   quantity: 1,
   unit_price: 0,
-  // New fields for initial order item data
   product_code: '',
   gl_account: null,
   received_quantity: 0,
   line_item_status: 'pending',
   tax_rate: null,
-  discount_type: 'fixed', // Default discount type
+  discount_type: 'fixed',
   discount_value: null,
+  // id is optional for new items
 };
 
 const PurchaseOrderForm: React.FC = () => {

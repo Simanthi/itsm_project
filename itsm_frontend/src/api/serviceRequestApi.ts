@@ -1,23 +1,29 @@
 // itsm_frontend/src/api/serviceRequestApi.ts
 
 import type {
-  ServiceRequest, // ENSURE THIS IS THE LATEST VERSION
+  ServiceRequest,
   NewServiceRequestData,
   ServiceRequestStatus,
-  RawServiceRequestResponse, // ENSURE THIS IS THE LATEST VERSION
+  // Added Raw types here
+  RawServiceRequestResponse,
   PaginatedServiceRequestsResponse,
 } from '../modules/service-requests/types/ServiceRequestTypes';
 
+// Define the type for the authenticatedFetch function
 type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
-) => Promise<unknown>;
+) => Promise<unknown>; // Changed Promise<any> to Promise<unknown>
 
-const SERVICE_REQUESTS_ENDPOINT = '/service-requests';
+const SERVICE_REQUESTS_ENDPOINT = '/service-requests'; // Removed trailing slash
+
+// Interface definitions moved to ServiceRequestTypes.ts
+
+// transformServiceRequestResponse remains the same
 
 const transformServiceRequestResponse = (
-  rawRequest: RawServiceRequestResponse, // Parameter uses LATEST RawServiceRequestResponse
-): ServiceRequest => { // Return type uses LATEST ServiceRequest
+  rawRequest: RawServiceRequestResponse,
+): ServiceRequest => {
   return {
     id: rawRequest.id,
     request_id: rawRequest.request_id,
@@ -34,8 +40,8 @@ const transformServiceRequestResponse = (
     requested_by_id: rawRequest.requested_by.id,
     assigned_to_username: rawRequest.assigned_to?.username || null,
     assigned_to_id: rawRequest.assigned_to?.id || null,
-    catalog_item_id: rawRequest.catalog_item, // This should now be correct
-    catalog_item_name: rawRequest.catalog_item_name || null, // This should now be correct
+    catalog_item_id: rawRequest.catalog_item, // Map from rawRequest.catalog_item (ID)
+    catalog_item_name: rawRequest.catalog_item_name || null, // Map from rawRequest.catalog_item_name
   };
 };
 
@@ -87,7 +93,7 @@ export const updateServiceRequest = async (
 ): Promise<ServiceRequest> => {
   const endpoint = `${SERVICE_REQUESTS_ENDPOINT}/requests/${id}/`;
   const rawResponse = (await authenticatedFetch(endpoint, {
-    method: 'PATCH',
+    method: 'PATCH', // Assuming PATCH is preferred for partial updates
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(updatedData),
   })) as RawServiceRequestResponse;
