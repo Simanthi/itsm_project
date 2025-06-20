@@ -1,6 +1,7 @@
 // itsm_frontend/src/theme/theme.ts
 import { createTheme, alpha, lighten, darken } from '@mui/material/styles';
 import type { Theme, ThemeOptions } from '@mui/material/styles'; // Added Theme
+import '@mui/x-data-grid/themeAugmentation';
 
 // Define common typography settings
 const baseTypography = {
@@ -36,6 +37,20 @@ const baseTypography = {
 
 // For new LIGHT mode themes
 const commonLightModeComponents: ThemeOptions['components'] = {
+  MuiDataGrid: {
+    styleOverrides: {
+      columnHeaders: ({ theme }) => ({
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        fontWeight: 'bold',
+        fontSize: theme.typography.body1.fontSize,
+      }),
+      columnHeaderTitle: ({ theme }) => ({
+        color: theme.palette.primary.contrastText,
+        fontWeight: 'bold',
+      }),
+    },
+  },
   MuiTableCell: {
     styleOverrides: {
       root: { fontSize: baseTypography.body2.fontSize },
@@ -44,7 +59,8 @@ const commonLightModeComponents: ThemeOptions['components'] = {
         fontSize: baseTypography.th1.fontSize,
         fontWeight: 'bold',
         color: theme.palette.primary.main,
-        backgroundColor: alpha(theme.palette.primary.main, 0.08), // Adjusted alpha for light themes
+        backgroundColor: theme.palette.primary.main,
+        //alpha(theme.palette.primary.main, 0.08), // Adjusted alpha for light themes
       }),
     },
   },
@@ -68,10 +84,25 @@ const commonLightModeComponents: ThemeOptions['components'] = {
       },
     },
   },
+  
 };
 
 // For new DARK mode themes (reusing structure from darkTheme with generic palette access)
 const commonDarkModeComponents: ThemeOptions['components'] = {
+  MuiDataGrid: {
+    styleOverrides: {
+      columnHeaders: ({ theme }) => ({
+        backgroundColor: theme.palette.primary.main,
+        color: theme.palette.primary.contrastText,
+        fontWeight: 'bold',
+        fontSize: theme.typography.body1.fontSize,
+      }),
+      columnHeaderTitle: ({ theme }) => ({
+        color: theme.palette.primary.contrastText,
+        fontWeight: 'bold',
+      }),
+    },
+  },
   MuiTableCell: {
     styleOverrides: {
       root: {
@@ -106,6 +137,7 @@ const commonDarkModeComponents: ThemeOptions['components'] = {
       },
     },
   },
+  
 };
 
 // --- Light Theme Definition ---
@@ -150,7 +182,7 @@ export const lightTheme = createTheme({
           color: 'primary.main', // Example: Use your primary theme color for headers
 
           // You can also adjust padding, background, etc.
-          backgroundColor: 'rgb(25, 118, 210)', // Example: a light primary background
+          backgroundColor: 'primary.main', // Example: a light primary background
         },
       },
     },
