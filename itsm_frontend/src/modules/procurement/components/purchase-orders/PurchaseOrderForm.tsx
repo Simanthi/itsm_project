@@ -78,7 +78,7 @@ const initialFormData: Partial<PurchaseOrderData> = {
   po_type: null,
   related_contract: null,
   attachments: null,
-  currency: 'USD', // Default currency
+  currency: 'INR', // Changed Default currency to INR
   // revision_number is usually backend managed on update
 };
 
@@ -94,6 +94,7 @@ const mockContracts = [ // Example contracts
     { id: 2, title: "Software License - Tech Corp" },
 ];
 const mockCurrencies = [
+    { value: 'INR', label: 'INR - Indian Rupee' },
     { value: 'USD', label: 'USD - US Dollar' },
     { value: 'EUR', label: 'EUR - Euro' },
     { value: 'KES', label: 'KES - Kenyan Shilling' },
@@ -279,8 +280,8 @@ const PurchaseOrderForm: React.FC = () => {
     }));
   };
 
-  const handleSelectChange = (event: SelectChangeEvent<any>, fieldName: keyof PurchaseOrderData) => {
-    setFormData((prev) => ({ ...prev, [fieldName]: event.target.value || null }));
+  const handleSelectChange = (event: SelectChangeEvent<string | number>, fieldName: keyof PurchaseOrderData) => {
+    setFormData((prev) => ({ ...prev, [fieldName as string]: event.target.value || null }));
   };
 
 
@@ -838,11 +839,11 @@ const PurchaseOrderForm: React.FC = () => {
                       <TextField type="number" name="quantity" value={item.quantity} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { min: 1 } }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell>
-                      <TextField type="number" name="unit_price" value={item.unit_price || ''} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly, startAdornment: (<InputAdornment position="start">{formData.currency === 'KES' ? 'KES' : '$'}</InputAdornment>), inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
+                      <TextField type="number" name="unit_price" value={item.unit_price || ''} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly, startAdornment: (<InputAdornment position="start">{formData.currency === 'KES' ? 'KES' : formData.currency === 'INR' ? '₹' : '$'}</InputAdornment>), inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as any)} displayEmpty>
+                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as SelectChangeEvent<string | number>)} displayEmpty>
                                 <MenuItem value=""><em>None</em></MenuItem>
                                 {mockGLAccounts.map(acc => <MenuItem key={acc.id} value={acc.id}>{acc.code}</MenuItem>)}
                             </Select>
