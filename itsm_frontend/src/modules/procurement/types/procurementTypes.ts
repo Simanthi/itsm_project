@@ -109,47 +109,32 @@ export interface GetPurchaseRequestMemosParams {
 
 // --- Purchase Order & OrderItem Types ---
 
-export interface OrderItemData {
-  // For creating/updating items within a PO
-  id?: number; // For identifying existing items during update
+// Base OrderItem fields used for both display (OrderItem) and data submission (OrderItemData)
+interface OrderItemBase {
   item_description: string;
   quantity: number;
   unit_price?: number | null;
-}
-
-export interface OrderItem extends OrderItemData {
-  id: number; // Always present for existing items
-  total_price: number; // Read-only from backend
-
-  // New fields for OrderItem
   product_code?: string | null;
   gl_account?: number | null; // FK to GLAccount
-  gl_account_code?: string | null; // Read-only (e.g., "6001 - Office Supplies")
   received_quantity?: number;
   line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
   tax_rate?: number | null; // Percentage, e.g., 16.00 for 16%
-  // discount_percentage_or_amount?: number | null; // Removed
   discount_type?: 'fixed' | 'percentage' | null;
   discount_value?: number | null;
 }
 
-// Updated OrderItemData for creation/update to include new fields
-export interface OrderItemData {
-  id?: number;
-  item_description: string;
-  quantity: number;
-  unit_price?: number | null;
-  // New fields
-  product_code?: string | null;
-  gl_account?: number | null;
-  received_quantity?: number;
-  line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
-  tax_rate?: number | null;
-  // discount_percentage_or_amount?: number | null; // Removed
-  discount_type?: 'fixed' | 'percentage' | null;
-  discount_value?: number | null;
+export interface OrderItemData extends OrderItemBase {
+  // For creating/updating items within a PO
+  id?: number; // For identifying existing items during update
 }
 
+export interface OrderItem extends OrderItemBase {
+  id: number; // Always present for existing items
+  total_price: number; // Read-only from backend
+  gl_account_code?: string | null; // Read-only (e.g., "6001 - Office Supplies")
+}
+
+// No need to redefine OrderItemData, it's correctly defined above by extending OrderItemBase.
 
 export type PurchaseOrderStatus =
   | 'draft'

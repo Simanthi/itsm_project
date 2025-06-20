@@ -10,6 +10,7 @@ from .models import (
     Department, Project, Vendor, Contract, GLAccount, ExpenseCategory, RecurringPayment
 )
 from assets.models import Vendor as AssetVendor # Since common_models.py for Contract refers to assets.Vendor
+from .sequence_models import ProcurementIDSequence # Import the sequence model
 from .serializers import (
     PurchaseRequestMemoSerializer, PurchaseOrderSerializer, OrderItemSerializer, CheckRequestSerializer
 )
