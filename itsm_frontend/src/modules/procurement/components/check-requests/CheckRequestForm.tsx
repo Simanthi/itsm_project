@@ -37,7 +37,7 @@ import type {
   // PaymentMethod, // Unused TS6196
   // PurchaseOrderStatus, // Unused TS6196
 } from '../../types';
-import { formatDateString, formatCurrency } from '../../../../utils/formatters'; // TS2307 (should be fixed now)
+import { formatDate, formatCurrency } from '../../../../utils/formatters'; // Corrected to formatDate
 
 // Constants
 // const PAYMENT_METHOD_CHOICES: { value: PaymentMethod; label: string }[] = [ // Unused TS6133
@@ -152,7 +152,7 @@ const CheckRequestForm: React.FC = () => {
           purchase_order: data.purchase_order || undefined,
           invoice_number: data.invoice_number || '',
           invoice_date: data.invoice_date
-            ? formatDateString(data.invoice_date, 'YYYY-MM-DD')
+            ? formatDate(data.invoice_date, 'YYYY-MM-DD')
             : '',
           amount: data.amount || '0.00', // amount is string in CheckRequest
           payee_name: data.payee_name || '',
@@ -577,7 +577,7 @@ const CheckRequestForm: React.FC = () => {
                   Request Date
                 </Typography>
                 <Typography>
-                  {formatDateString(currentCheckRequest.request_date)}
+                  {formatDate(currentCheckRequest.request_date)}
                 </Typography>
               </Grid>
 
@@ -596,7 +596,7 @@ const CheckRequestForm: React.FC = () => {
                       Approval Date
                     </Typography>
                     <Typography>
-                      {formatDateString(
+                      {formatDate(
                         currentCheckRequest.accounts_approval_date,
                       )}
                     </Typography>
@@ -646,7 +646,7 @@ const CheckRequestForm: React.FC = () => {
                     type="date"
                     value={
                       currentCheckRequest.payment_date
-                        ? formatDateString(
+                        ? formatDate(
                             currentCheckRequest.payment_date,
                             'YYYY-MM-DD',
                           )
