@@ -13,6 +13,7 @@ import {
   Edit as EditIcon,
   Print as PrintIcon,
   Delete as DeleteIcon, // Import DeleteIcon
+  Visibility as ViewIcon, // Import ViewIcon for the view action
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import {
@@ -21,6 +22,7 @@ import {
   type GridRowId,
   type GridRowSelectionModel,
   type GridPaginationModel,
+  GridActionsCellItem,
 } from '@mui/x-data-grid';
 import { useServiceRequests } from '../hooks/useServiceRequests';
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
@@ -67,6 +69,61 @@ const ServiceRequestsPage: React.FC = () => {
       type: 'include',
       ids: new Set<GridRowId>(),
     });
+
+  // --- Action Handlers for DataGrid Rows ---
+  const handleViewRow = (id: GridRowId) => {
+    // Assuming id is the human-readable request_id from the row
+    const selectedRequest = serviceRequests.find((req) => req.request_id === id);
+    if (selectedRequest) {
+      navigate(`/service-requests/view/${selectedRequest.request_id}`);
+    } else {
+      showSnackbar('Request not found.', 'error');
+    }
+  };
+
+  const handleEditRow = (id: GridRowId) => {
+    // Assuming id is the human-readable request_id from the row
+    const selectedRequest = serviceRequests.find((req) => req.request_id === id);
+    if (selectedRequest) {
+      navigate(`/service-requests/edit/${selectedRequest.request_id}`);
+    } else {
+      showSnackbar('Request not found.', 'error');
+    }
+  };
+
+  const handleDeleteRow = (id: GridRowId) => {
+    const requestToDelete = serviceRequests.find((req) => req.request_id === id);
+    if (!requestToDelete) {
+      showSnackbar('Request not found for deletion.', 'error');
+      return;
+    }
+
+    const confirmMessage = `Are you sure you want to delete service request ${requestToDelete.request_id}? This action cannot be undone.`;
+    showConfirmDialog(
+      'Confirm Deletion',
+      confirmMessage,
+      async () => {
+        try {
+          await deleteServiceRequest(requestToDelete.request_id); // Uses the string request_id
+          showSnackbar(
+            `Service request ${requestToDelete.request_id} deleted successfully.`,
+            'success',
+          );
+          // Data refresh is handled by useServiceRequests hook
+        } catch (err) {
+          console.error('Error deleting service request:', err);
+          showSnackbar(
+            `Failed to delete request: ${err instanceof Error ? err.message : String(err)}`,
+            'error',
+          );
+        }
+      },
+      () => {
+        showSnackbar('Deletion cancelled.', 'info');
+      },
+    );
+  };
+  // --- End Action Handlers ---
 
   useEffect(() => {
     console.log('ServiceRequestsPage: Component rendered.');
@@ -214,7 +271,52 @@ const ServiceRequestsPage: React.FC = () => {
     { field: 'title', headerName: 'Title', width: 250 },
     { field: 'description', headerName: 'Description', flex: 1, minWidth: 200 },
     { field: 'category', headerName: 'Category', width: 150 },
-    { field: 'status', headerName: 'Status', width: 120 },
+    {
+      field: 'status',
+      headerName: 'Status',
+      width: 130,
+      renderCell: (params) => {
+        const status = params.value as ServiceRequest['status'];
+        let color = 'default';
+        switch (status) {
+          case 'new':
+            color = 'primary';
+            break;
+          case 'in_progress':
+            color = 'warning';
+            break;
+          case 'resolved':
+            color = 'success';
+            break;
+          case 'closed':
+            color = 'info';
+            break;
+          case 'cancelled':
+            color = 'error';
+            break;
+          default:
+            color = 'default';
+        }
+        return (
+          <Box
+            component="span"
+            sx={{
+              color: `${color}.main`,
+              bgcolor: `${color}.lightest`, // Assuming you have theme variations like 'lightest' or use alpha
+              px: 1,
+              py: 0.5,
+              borderRadius: '4px',
+              fontWeight: 'medium',
+              border: `1px solid ${color}.main`,
+            }}
+          >
+            {status
+              .replace(/_/g, ' ')
+              .replace(/\b\w/g, (l) => l.toUpperCase())}
+          </Box>
+        );
+      },
+    },
     { field: 'priority', headerName: 'Priority', width: 120 },
     { field: 'requested_by_username', headerName: 'Requested By', width: 150 },
     {
@@ -261,6 +363,40 @@ const ServiceRequestsPage: React.FC = () => {
           return 'N/A';
         }
         return formatDate(params.value);
+      },
+    },
+    {
+      field: 'actions',
+      type: 'actions',
+      headerName: 'Actions',
+      width: 120,
+      cellClassName: 'actions',
+      getActions: ({ row }: { row: ServiceRequest }) => {
+        // Use row.request_id for actions, as this is the identifier used in navigation/API calls
+        // The DataGrid's internal `id` is still row.id (numeric), but actions should use the human-readable ID.
+        return [
+          <GridActionsCellItem
+            key={`view-${row.request_id}`}
+            icon={<ViewIcon />}
+            label="View"
+            onClick={() => handleViewRow(row.request_id)}
+            color="primary"
+          />,
+          <GridActionsCellItem
+            key={`edit-${row.request_id}`}
+            icon={<EditIcon />}
+            label="Edit"
+            onClick={() => handleEditRow(row.request_id)}
+            color="inherit"
+          />,
+          <GridActionsCellItem
+            key={`delete-${row.request_id}`}
+            icon={<DeleteIcon />}
+            label="Delete"
+            onClick={() => handleDeleteRow(row.request_id)}
+            color="error"
+          />,
+        ];
       },
     },
   ];
