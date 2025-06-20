@@ -1,6 +1,6 @@
 // itsm_frontend/src/modules/service-requests/components/print-templates/Template3UserSlip.tsx
 import React from 'react';
-import { Box, Typography, Grid, Paper, Divider, Avatar } from '@mui/material';
+import { Box, Typography, Grid, Paper, Divider } from '@mui/material'; // Removed Avatar
 import { type ServiceRequest } from '../../types/ServiceRequestTypes';
 import { formatDate } from '../../../../utils/formatters';
 

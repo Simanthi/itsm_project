@@ -1,6 +1,6 @@
 // itsm_frontend/src/modules/service-requests/components/print-templates/Template4Technical.tsx
 import React from 'react';
-import { Box, Typography, Grid, Paper, Divider, Avatar } from '@mui/material';
+import { Box, Typography, Grid, Paper } from '@mui/material'; // Removed Divider, Avatar
 import { type ServiceRequest } from '../../types/ServiceRequestTypes';
 import { formatDate } from '../../../../utils/formatters'; // Ensure this path is correct
 
@@ -78,7 +78,7 @@ const Template4Technical: React.FC<TemplateProps> = ({ request, companyDetails }
         <Grid item xs={6}><Typography><span className="field-label">Status:</span> <span className="field-value">{statusDisplay}</span></Typography></Grid>
         <Grid item xs={6}><Typography><span className="field-label">Priority:</span> <span className="field-value">{request.priority?.toUpperCase()}</span></Typography></Grid>
         <Grid item xs={6}><Typography><span className="field-label">Category:</span> <span className="field-value">{request.category?.replace(/\b\w/g, (l) => l.toUpperCase())}</span></Typography></Grid>
-        <Grid item xs={6}><Typography><span className="field-label">Catalog Item ID:</span> <span className="field-value">{request.catalog_item || 'N/A'}</span></Typography></Grid>
+        <Grid item xs={6}><Typography><span className="field-label">Catalog Item ID:</span> <span className="field-value">{request.catalog_item_id || 'N/A'}</span></Typography></Grid>
         <Grid item xs={12}><Typography><span className="field-label">Catalog Item Name:</span> <span className="field-value">{request.catalog_item_name || 'N/A'}</span></Typography></Grid>
       </Grid>
 

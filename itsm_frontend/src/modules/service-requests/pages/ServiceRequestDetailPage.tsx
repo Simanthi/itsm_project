@@ -15,14 +15,14 @@ import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Print as PrintIcon } from
 import { useServiceRequests } from '../hooks/useServiceRequests'; // To potentially get a single request if already loaded
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Direct API call
-import { useAuth } from '../../../context/auth/AuthContext'; // For authenticatedFetch
+import { useAuth } from '../../../context/auth/useAuth'; // For authenticatedFetch
 import { formatDate } from '../../../utils/formatters'; // Assuming a shared formatter
 
 const ServiceRequestDetailPage: React.FC = () => {
   const { requestId } = useParams<{ requestId: string }>();
   const navigate = useNavigate();
   const { authenticatedFetch } = useAuth();
-  const { getRequestById: getRequestFromContext } = useServiceRequests(); // Context hook
+  // const { getRequestById: getRequestFromContext } = useServiceRequests(); // Context hook - Removed
 
   const [request, setRequest] = useState<ServiceRequest | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
@@ -42,16 +42,7 @@ const ServiceRequestDetailPage: React.FC = () => {
       }
 
       setLoading(true);
-      // Attempt to get from context first (if available and up-to-date)
-      const contextRequest = getRequestFromContext(requestId);
-      if (contextRequest) {
-        setRequest(contextRequest);
-        setLoading(false);
-        setError(null);
-        return;
-      }
-
-      // If not in context or potentially stale, fetch from API
+      // Fetch directly from API
       try {
         const data = await getServiceRequestById(authenticatedFetch, requestId);
         setRequest(data);
@@ -67,7 +58,7 @@ const ServiceRequestDetailPage: React.FC = () => {
     };
 
     fetchRequestDetails();
-  }, [requestId, authenticatedFetch, getRequestFromContext]);
+  }, [requestId, authenticatedFetch]);
 
   const getStatusColor = (status: ServiceRequest['status'] | undefined) => {
     if (!status) return 'default';

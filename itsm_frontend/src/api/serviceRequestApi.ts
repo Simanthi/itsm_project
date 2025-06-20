@@ -40,6 +40,8 @@ const transformServiceRequestResponse = (
     requested_by_id: rawRequest.requested_by.id,
     assigned_to_username: rawRequest.assigned_to?.username || null,
     assigned_to_id: rawRequest.assigned_to?.id || null,
+    catalog_item_id: rawRequest.catalog_item, // Map from rawRequest.catalog_item (ID)
+    catalog_item_name: rawRequest.catalog_item_name || null, // Map from rawRequest.catalog_item_name
   };
 };
 

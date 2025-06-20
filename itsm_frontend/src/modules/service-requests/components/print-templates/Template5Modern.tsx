@@ -1,9 +1,9 @@
 // itsm_frontend/src/modules/service-requests/components/print-templates/Template5Modern.tsx
 import React from 'react';
-import { Box, Typography, Grid, Paper, Divider, Chip, Avatar } from '@mui/material';
+import { Box, Typography, Grid, Paper, Divider, Chip } from '@mui/material'; // Removed Avatar
 import { type ServiceRequest } from '../../types/ServiceRequestTypes';
 import { formatDate } from '../../../../utils/formatters';
-import { CheckCircleOutline, RadioButtonUncheckedOutlined, ErrorOutline, HourglassEmptyOutlined, CancelOutlined } from '@mui/icons-material'; // Icons for status
+import { CheckCircleOutline, RadioButtonUncheckedOutlined, HourglassEmptyOutlined, CancelOutlined } from '@mui/icons-material'; // Icons for status, removed ErrorOutline
 
 interface CompanyDetails {
   name: string;

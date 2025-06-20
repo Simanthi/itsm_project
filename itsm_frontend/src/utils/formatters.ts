@@ -1,7 +1,7 @@
 // Basic formatter functions
 // It's good practice to make these more robust or use a library like date-fns or moment.js for dates
 
-export const formatDateString = (
+export const formatDate = (
   dateStr: string | null | undefined,
   format?: string,
 ): string => {

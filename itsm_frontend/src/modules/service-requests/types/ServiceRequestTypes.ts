@@ -37,6 +37,8 @@ export interface ServiceRequest {
   requested_by_id: number; // The ID of the user who requested it (needed for form population)
   assigned_to_username: string | null; // Username of the user it's assigned to
   assigned_to_id: number | null; // The ID of the user it's assigned to (for API submission)
+  catalog_item_id?: number | null; // Optional ID of the linked catalog item
+  catalog_item_name?: string | null; // Optional name of the linked catalog item
 }
 
 // Interface for creating a new service request (payload for POST)
@@ -48,6 +50,7 @@ export interface NewServiceRequestData {
   priority: ServiceRequestPriority;
   requested_by_id: number; // Expects ID for the backend
   assigned_to_id: number | null; // Expects ID for the backend, can be null
+  catalog_item_id?: number | null; // Allow associating on create
 }
 
 // Interface for updating an existing service request (payload for PATCH/PUT)
@@ -81,6 +84,8 @@ export interface RawServiceRequestResponse {
   created_at: string;
   updated_at: string;
   resolved_at?: string | null;
+  catalog_item: number | null; // This will be the ID from the backend
+  catalog_item_name?: string | null; // This will be the name, potentially from a related field
 }
 
 export interface PaginatedServiceRequestsResponse {
