@@ -477,11 +477,11 @@ const PurchaseOrderForm: React.FC = () => {
         await updatePurchaseOrder(
           authenticatedFetch,
           parseInt(poId, 10),
-          submissionPayload as FormData,
+          submissionPayload, // No longer need 'as FormData'
         );
         showSnackbar('Purchase Order updated successfully!', 'success');
       } else {
-        await createPurchaseOrder(authenticatedFetch, submissionPayload as FormData);
+        await createPurchaseOrder(authenticatedFetch, submissionPayload); // No longer need 'as FormData'
         showSnackbar('Purchase Order created successfully!', 'success');
       }
       navigate('/procurement/purchase-orders'); // Adjust navigation path
