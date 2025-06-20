@@ -1,131 +1,187 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
-from .models import PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest  # Added CheckRequest
-from assets.serializers import VendorSerializer  # Corrected import path
+from .models import (
+    PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest,
+    Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment # Import common models
+)
+from assets.serializers import VendorSerializer
+# It's good practice to also have serializers for the common models if they are to be represented in detail
+# For now, we'll use PrimaryKeyRelatedField for FKs or simple string representations.
 
 User = get_user_model()
+
+# Serializers for Common Models (basic, can be expanded)
+class DepartmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Department
+        fields = '__all__'
+
+class ProjectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Project
+        fields = '__all__'
+
+class ContractSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Contract
+        fields = '__all__'
+
+class GLAccountSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GLAccount
+        fields = '__all__'
+
+class ExpenseCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = ExpenseCategory
+        fields = '__all__'
+
+class RecurringPaymentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RecurringPayment
+        fields = '__all__'
 
 
 class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
     requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
     approver_username = serializers.CharField(source='approver.username', read_only=True, allow_null=True)
-    requested_by = serializers.PrimaryKeyRelatedField(read_only=True)
+    # For FKs to common models, using PrimaryKeyRelatedField for write, StringRelatedField for read.
+    # This provides flexibility. Alternatively, use nested serializers if detailed info is needed.
+    department_name = serializers.StringRelatedField(source='department', read_only=True)
+    project_name = serializers.StringRelatedField(source='project', read_only=True)
+    suggested_vendor_name = serializers.StringRelatedField(source='suggested_vendor', read_only=True)
 
     class Meta:
         model = PurchaseRequestMemo
         fields = [
-            'id', 'item_description', 'quantity', 'reason', 'estimated_cost',
+            'id', 'iom_id', 'item_description', 'quantity', 'reason', 'estimated_cost',
             'requested_by', 'requested_by_username', 'request_date', 'status',
-            'approver', 'approver_username', 'decision_date', 'approver_comments'
+            'approver', 'approver_username', 'decision_date', 'approver_comments',
+            'department', 'department_name', 'project', 'project_name', 'priority',
+            'required_delivery_date', 'suggested_vendor', 'suggested_vendor_name', 'attachments'
         ]
         read_only_fields = [
-            'request_date',
-            'status',
-            'approver',
-            'approver_username',
-            'decision_date',
-            'approver_comments'
+            'iom_id', # Assuming this is system-generated or handled by model logic
+            'request_date', 'status', 'approver', 'approver_username',
+            'decision_date', 'approver_comments', 'department_name', 'project_name',
+            'suggested_vendor_name'
         ]
-
+        # `requested_by` is typically set in the view using `perform_create`.
 
 class OrderItemSerializer(serializers.ModelSerializer):
+    gl_account_code = serializers.StringRelatedField(source='gl_account', read_only=True)
+
     class Meta:
         model = OrderItem
-        fields = ['id', 'item_description', 'quantity', 'unit_price', 'total_price']
-        read_only_fields = ['total_price']  # total_price is a @property on the model
+        fields = [
+            'id', 'item_description', 'quantity', 'unit_price', 'total_price',
+            'product_code', 'gl_account', 'gl_account_code', 'received_quantity',
+            'line_item_status', 'tax_rate',
+            'discount_type', 'discount_value' # Replaced discount_percentage_or_amount
+        ]
+        read_only_fields = ['total_price', 'gl_account_code'] # total_price is a @property
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True)
-    vendor_details = VendorSerializer(source='vendor', read_only=True)
+    vendor_details = VendorSerializer(source='vendor', read_only=True) # Assuming VendorSerializer exists and is suitable
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
+    internal_office_memo_details = PurchaseRequestMemoSerializer(source='internal_office_memo', read_only=True)
+    related_contract_details = serializers.StringRelatedField(source='related_contract', read_only=True)
+
 
     class Meta:
         model = PurchaseOrder
         fields = [
             'id', 'po_number',
-            'internal_office_memo',
-            'vendor',
-            'vendor_details',
+            'internal_office_memo', 'internal_office_memo_details',
+            'vendor', 'vendor_details',
             'order_date', 'expected_delivery_date',
             'total_amount', 'status',
-            'created_by',
-            'created_by_username',
+            'created_by', 'created_by_username',
             'created_at', 'updated_at',
             'shipping_address', 'notes',
+            'payment_terms', 'shipping_method', 'billing_address', 'po_type',
+            'related_contract', 'related_contract_details', 'attachments', 'revision_number', 'currency',
             'order_items'
         ]
         read_only_fields = [
-            'total_amount',
-            'created_by',
-            'created_by_username',
-            'created_at',
-            'updated_at'
+            'po_number', # Assuming system-generated
+            'total_amount', # Calculated
+            'created_by_username', 'created_at', 'updated_at',
+            'vendor_details', 'internal_office_memo_details', 'related_contract_details'
         ]
+        # `created_by` is typically set in the view.
 
     def create(self, validated_data):
-        order_items_data = validated_data.pop('order_items')
+        order_items_data = validated_data.pop('order_items', [])
         po = PurchaseOrder.objects.create(**validated_data)
         current_total_amount = 0
         for item_data in order_items_data:
             item = OrderItem.objects.create(purchase_order=po, **item_data)
-            if item.unit_price is not None:
-                current_total_amount += item.total_price
+            current_total_amount += item.total_price # Uses the @property from model
         po.total_amount = current_total_amount
         po.save(update_fields=['total_amount'])
         return po
 
     def update(self, instance, validated_data):
         order_items_data = validated_data.pop('order_items', None)
+        # Handle FK updates for related_contract if provided as ID
+        # related_contract_id = validated_data.pop('related_contract', None)
+        # if related_contract_id:
+        #     instance.related_contract_id = related_contract_id
+
         instance = super().update(instance, validated_data)
+
         if order_items_data is not None:
+            # Simple approach: delete existing and create new ones.
+            # More complex logic might be needed for partial updates of line items.
             instance.order_items.all().delete()
             current_total_amount = 0
             for item_data in order_items_data:
                 item = OrderItem.objects.create(purchase_order=instance, **item_data)
-                if item.unit_price is not None:
-                    current_total_amount += item.total_price
+                current_total_amount += item.total_price
             instance.total_amount = current_total_amount
             instance.save(update_fields=['total_amount'])
+        else:
+            # Recalculate total amount if order items were not part of the update
+            # but other fields might have changed that affect it (though less likely for PO total)
+            current_total_amount = sum(item.total_price for item in instance.order_items.all())
+            if instance.total_amount != current_total_amount:
+                 instance.total_amount = current_total_amount
+                 instance.save(update_fields=['total_amount'])
         return instance
 
 
 class CheckRequestSerializer(serializers.ModelSerializer):
-    requested_by_username = serializers.CharField(source='requested_by.username', read_only=True)
+    requested_by_username = serializers.CharField(source='requested_by.username', read_only=True, allow_null=True)
     approved_by_accounts_username = serializers.CharField(source='approved_by_accounts.username', read_only=True, allow_null=True)
-    purchase_order_number = serializers.CharField(source='purchase_order.po_number', read_only=True, allow_null=True)
+    purchase_order_details = PurchaseOrderSerializer(source='purchase_order', read_only=True) # Nested PO details
+    expense_category_name = serializers.StringRelatedField(source='expense_category', read_only=True)
+    recurring_payment_details = serializers.StringRelatedField(source='recurring_payment', read_only=True)
 
-    # requested_by will be set by the view.
-    requested_by = serializers.PrimaryKeyRelatedField(read_only=True)
-    # purchase_order is a FK, will be writable by ID.
-    # Other fields like approver, payment details are typically set by actions or specific user roles.
 
     class Meta:
         model = CheckRequest
         fields = [
-            'id', 'purchase_order', 'purchase_order_number', 'invoice_number', 'invoice_date',
+            'id', 'cr_id', 'purchase_order', 'purchase_order_details', 'invoice_number', 'invoice_date',
             'amount', 'payee_name', 'payee_address', 'reason_for_payment',
             'requested_by', 'requested_by_username', 'request_date', 'status',
             'approved_by_accounts', 'approved_by_accounts_username',
             'accounts_approval_date', 'accounts_comments',
-            'payment_method', 'payment_date', 'transaction_id', 'payment_notes'
+            'payment_method', 'payment_date', 'transaction_id', 'payment_notes',
+            'expense_category', 'expense_category_name', 'is_urgent',
+            'recurring_payment', 'recurring_payment_details', 'attachments', 'currency'
         ]
         read_only_fields = [
-            'request_date',
-            'status',  # Initial status set in perform_create, then by actions
-            'requested_by_username',  # Derived
-            'approved_by_accounts',  # Set by action
-            'approved_by_accounts_username',  # Derived
-            'accounts_approval_date',  # Set by action
-            'accounts_comments',  # Set by action
-            'purchase_order_number',  # Derived
-            'payment_method',  # Set by action
-            'payment_date',  # Set by action
-            'transaction_id',  # Set by action
-            'payment_notes'  # Set by action
+            'cr_id', # Assuming system-generated
+            'request_date', 'status',
+            'requested_by_username',
+            'approved_by_accounts', 'approved_by_accounts_username',
+            'accounts_approval_date', 'accounts_comments',
+            'purchase_order_details', 'expense_category_name', 'recurring_payment_details',
+            # Payment fields are typically set by specific actions/roles
+            'payment_method', 'payment_date', 'transaction_id', 'payment_notes'
         ]
-        # Fields for creation by user:
-        # purchase_order (optional ID), invoice_number, invoice_date, amount,
-        # payee_name, payee_address, reason_for_payment.
-        # `requested_by` set by view. `status` defaults in view.
-        # Other fields are for subsequent workflow steps.
+        # `requested_by` set by view. `status` defaults.
+        # `purchase_order`, `expense_category`, `recurring_payment` are writable by ID.

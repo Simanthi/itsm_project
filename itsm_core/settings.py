@@ -89,24 +89,41 @@ WSGI_APPLICATION = "itsm_core.wsgi.application"
 
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': os.environ.get('DB_NAME', 'itsm_db'),
-        'USER': os.environ.get('DB_USER', 'postgres'),
-        'PASSWORD': os.environ.get('DB_PASSWORD', 'postgres'), # Changed default for clarity
-        'HOST': os.environ.get('DB_HOST', 'localhost'),
-        'PORT': os.environ.get('DB_PORT', '5432'),
+
+# Check if PostgreSQL environment variables are set
+DB_NAME = os.environ.get('DB_NAME')
+DB_USER = os.environ.get('DB_USER')
+DB_PASSWORD = os.environ.get('DB_PASSWORD')
+DB_HOST = os.environ.get('DB_HOST')
+DB_PORT = os.environ.get('DB_PORT')
+
+if all([DB_NAME, DB_USER, DB_PASSWORD, DB_HOST, DB_PORT]):
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': DB_NAME,
+            'USER': DB_USER,
+            'PASSWORD': DB_PASSWORD,
+            'HOST': DB_HOST,
+            'PORT': DB_PORT,
+        }
     }
-}
-# Add checks for production database settings
-if not DEBUG:
-    if DATABASES['default']['NAME'] == 'itsm_db' or \
-       DATABASES['default']['USER'] == 'postgres' or \
-       DATABASES['default']['PASSWORD'] == 'postgres':
-        # This is a simple check. You might want to ensure these are *not* the defaults,
-        # or that specific production env vars are present.
-        print("WARNING: Default database credentials might be in use for production. Ensure DB_NAME, DB_USER, DB_PASSWORD are set via environment variables.")
+    # Add checks for production database settings
+    if not DEBUG:
+        if DATABASES['default']['NAME'] == 'itsm_db' or \
+           DATABASES['default']['USER'] == 'postgres' or \
+           DATABASES['default']['PASSWORD'] == 'postgres': # Default values used in dev
+            # This is a simple check. You might want to ensure these are *not* the defaults,
+            # or that specific production env vars are present.
+            print("WARNING: Default PostgreSQL credentials might be in use for production if you intended to use PostgreSQL. Ensure DB_NAME, DB_USER, DB_PASSWORD are set via environment variables for production PostgreSQL.")
+else:
+    print("PostgreSQL environment variables not fully set. Falling back to SQLite.")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Email Configuration
 EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend') # Default to console for dev
