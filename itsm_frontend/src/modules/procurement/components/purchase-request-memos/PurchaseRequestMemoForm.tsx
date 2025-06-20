@@ -10,8 +10,14 @@ import {
   Grid,
   Paper,
   InputAdornment,
+  MenuItem, // For Select dropdown
+  FormControl, // For Select
+  InputLabel, // For Select
+  Select, // For Select
+  FormHelperText, // For file input
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import UploadFileIcon from '@mui/icons-material/UploadFile'; // For file input
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { useUI } from '../../../../context/UIContext/useUI';
@@ -31,7 +37,36 @@ const initialFormData: PurchaseRequestMemoData = {
   quantity: 1,
   reason: '',
   estimated_cost: null,
+  // New fields for initial form data
+  department: null,
+  project: null,
+  priority: 'medium', // Default priority
+  required_delivery_date: null,
+  suggested_vendor: null,
+  attachments: null,
 };
+
+// Mock data for dropdowns - replace with API calls in a real app
+// These would ideally be fetched from a central store or context if used across multiple forms
+const mockDepartments = [
+  { id: 1, name: 'Finance' },
+  { id: 2, name: 'Human Resources' },
+  { id: 3, name: 'IT Department' },
+  { id: 4, name: 'Operations' },
+];
+
+const mockProjects = [
+  { id: 1, name: 'Project Alpha' },
+  { id: 2, name: 'Project Beta' },
+  { id: 3, name: 'Project Gamma' },
+];
+
+const mockVendors = [
+  { id: 1, name: 'Vendor A Supplies' },
+  { id: 2, name: 'Vendor B Services' },
+  { id: 3, name: 'Vendor C Tech' },
+];
+// End mock data
 
 const PurchaseRequestMemoForm: React.FC = () => {
   const { memoId } = useParams<{ memoId?: string }>();
@@ -62,14 +97,20 @@ const PurchaseRequestMemoForm: React.FC = () => {
         parseInt(memoId, 10),
       );
       setFormData({
-        // Only set editable fields for the form
         item_description: memo.item_description,
         quantity: memo.quantity,
         reason: memo.reason,
         estimated_cost: memo.estimated_cost || null,
+        // Set new editable fields
+        department: memo.department || null,
+        project: memo.project || null,
+        priority: memo.priority || 'medium',
+        required_delivery_date: memo.required_delivery_date || null,
+        suggested_vendor: memo.suggested_vendor || null,
+        // attachments: memo.attachments, // File handling is tricky; display existing, allow new upload
       });
+      // Store all data for display purposes, including new fields
       setDisplayData({
-        // Store all data for display purposes
         requested_by_username: memo.requested_by_username,
         request_date: new Date(memo.request_date).toLocaleDateString(),
         status: memo.status,
@@ -78,6 +119,16 @@ const PurchaseRequestMemoForm: React.FC = () => {
           ? new Date(memo.decision_date).toLocaleDateString()
           : undefined,
         approver_comments: memo.approver_comments,
+        // Display new fields
+        iom_id: memo.iom_id,
+        department_name: memo.department_name,
+        project_name: memo.project_name,
+        priority: memo.priority,
+        required_delivery_date: memo.required_delivery_date
+          ? new Date(memo.required_delivery_date).toLocaleDateString()
+          : undefined,
+        suggested_vendor_name: memo.suggested_vendor_name,
+        attachments: memo.attachments, // Store URL of existing attachment if available
       });
       setIsEditMode(true);
       if (memo.status !== 'pending' || memo.requested_by !== user?.id) {
@@ -102,7 +153,9 @@ const PurchaseRequestMemoForm: React.FC = () => {
   }, [memoId, fetchMemoForViewOrEdit]);
 
   const handleChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown } // For Select
+    >,
   ) => {
     const { name, value } = event.target;
     if (name === 'quantity' || name === 'estimated_cost') {
@@ -110,8 +163,14 @@ const PurchaseRequestMemoForm: React.FC = () => {
         ...prev,
         [name]: value === '' ? null : Number(value),
       }));
+    } else if (name === 'attachments') {
+      const files = (event.target as HTMLInputElement).files;
+      setFormData((prev) => ({
+        ...prev,
+        attachments: files && files.length > 0 ? files[0] : null,
+      }));
     } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
+      setFormData((prev) => ({ ...prev, [name as string]: value }));
     }
   };
 
@@ -146,45 +205,70 @@ const PurchaseRequestMemoForm: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
 
-    const payload = { ...formData };
-    // Ensure quantity is a number
-    payload.quantity = Number(payload.quantity);
-    if (isNaN(payload.quantity) || payload.quantity <= 0) {
-      setError('Quantity must be a positive number.');
-      showSnackbar('Quantity must be a positive number.', 'warning');
-      setIsSubmitting(false);
-      return;
+    // Create a FormData object for multipart/form-data for file uploads
+    const submissionPayload = new FormData();
+    Object.entries(formData).forEach(([key, value]) => {
+      if (value instanceof File) {
+        submissionPayload.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        submissionPayload.append(key, String(value));
+      }
+    });
+    // Ensure quantity is a number string
+    if (formData.quantity != null) {
+        submissionPayload.set('quantity', String(Number(formData.quantity)));
     }
-    // Ensure estimated_cost is a number or null
-    if (
-      payload.estimated_cost != null &&
-      typeof payload.estimated_cost === 'string'
-    ) {
-      payload.estimated_cost = parseFloat(payload.estimated_cost);
+    // Ensure estimated_cost is a number string or not present if null
+    if (formData.estimated_cost != null) {
+        submissionPayload.set('estimated_cost', String(Number(formData.estimated_cost)));
+    } else {
+        submissionPayload.delete('estimated_cost');
     }
-    if (payload.estimated_cost != null && isNaN(payload.estimated_cost)) {
-      payload.estimated_cost = null; // Or show error
-    }
+    // Ensure FKs are numbers or not present if null
+    ['department', 'project', 'suggested_vendor'].forEach(fkKey => {
+        const fkValue = formData[fkKey as keyof typeof formData];
+        if (fkValue != null) {
+            submissionPayload.set(fkKey, String(Number(fkValue)));
+        } else {
+            submissionPayload.delete(fkKey);
+        }
+    });
+
 
     try {
       if (isEditMode && memoId) {
+        // Update might need to handle file differently or use PATCH with JSON for non-file fields
+        // For simplicity, if attachments is a File, it's a new upload.
+        // If it's a string (URL), we might not want to resend it unless it's cleared.
+        // This example assumes updatePurchaseRequestMemo can handle FormData.
         await updatePurchaseRequestMemo(
           authenticatedFetch,
           parseInt(memoId, 10),
-          payload as Partial<PurchaseRequestMemoUpdateData>,
+          submissionPayload as any, // Type assertion needed due to FormData vs JSON
         );
         showSnackbar('Purchase request updated successfully!', 'success');
       } else {
         await createPurchaseRequestMemo(
           authenticatedFetch,
-          payload as PurchaseRequestMemoData,
+          submissionPayload as any, // Type assertion
         );
         showSnackbar('Purchase request created successfully!', 'success');
       }
       navigate('/procurement/iom');
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(`Failed to save purchase request: ${message}`);
+      // Attempt to parse backend error if it's a JSON response
+      // This is a common pattern but might need adjustment based on your API
+      try {
+        const errorResponse = JSON.parse(message);
+        let detailedError = 'Failed to save: ';
+        for (const key in errorResponse) {
+          detailedError += `${key}: ${errorResponse[key].join(', ')}; `;
+        }
+        setError(detailedError);
+      } catch (parseError) {
+        setError(`Failed to save purchase request: ${message}`);
+      }
       showSnackbar(`Error: ${message}`, 'error');
     } finally {
       setIsSubmitting(false);
@@ -279,7 +363,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
               disabled={readOnlyMode}
             />
           </Grid>
-          <Grid item xs={12} sm={6}>
+          <Grid item xs={12} sm={4}>
             <TextField
               name="estimated_cost"
               label="Estimated Cost (Optional)"
@@ -297,6 +381,59 @@ const PurchaseRequestMemoForm: React.FC = () => {
               disabled={readOnlyMode}
             />
           </Grid>
+          <Grid item xs={12} sm={4}>
+            <FormControl fullWidth disabled={readOnlyMode}>
+              <InputLabel id="priority-select-label">Priority</InputLabel>
+              <Select
+                labelId="priority-select-label"
+                id="priority-select"
+                name="priority"
+                value={formData.priority || 'medium'}
+                label="Priority"
+                onChange={handleChange}
+              >
+                <MenuItem value="low">Low</MenuItem>
+                <MenuItem value="medium">Medium</MenuItem>
+                <MenuItem value="high">High</MenuItem>
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <TextField
+              name="required_delivery_date"
+              label="Required Delivery Date (Optional)"
+              type="date"
+              value={formData.required_delivery_date || ''}
+              onChange={handleChange}
+              fullWidth
+              InputLabelProps={{ shrink: true }}
+              InputProps={{ readOnly: readOnlyMode }}
+              disabled={readOnlyMode}
+            />
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth disabled={readOnlyMode}>
+              <InputLabel id="suggested-vendor-label">
+                Suggested Vendor (Optional)
+              </InputLabel>
+              <Select
+                labelId="suggested-vendor-label"
+                name="suggested_vendor"
+                value={formData.suggested_vendor || ''}
+                label="Suggested Vendor (Optional)"
+                onChange={handleChange}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {mockVendors.map((vendor) => (
+                  <MenuItem key={vendor.id} value={vendor.id}>
+                    {vendor.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
           <Grid item xs={12}>
             <TextField
               name="reason"
@@ -311,9 +448,95 @@ const PurchaseRequestMemoForm: React.FC = () => {
               disabled={readOnlyMode}
             />
           </Grid>
+          {/* Department and Project Selects */}
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth disabled={readOnlyMode}>
+              <InputLabel id="department-select-label">
+                Department (Optional)
+              </InputLabel>
+              <Select
+                labelId="department-select-label"
+                name="department"
+                value={formData.department || ''}
+                label="Department (Optional)"
+                onChange={handleChange}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {mockDepartments.map((dept) => (
+                  <MenuItem key={dept.id} value={dept.id}>
+                    {dept.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} sm={6}>
+            <FormControl fullWidth disabled={readOnlyMode}>
+              <InputLabel id="project-select-label">
+                Project (Optional)
+              </InputLabel>
+              <Select
+                labelId="project-select-label"
+                name="project"
+                value={formData.project || ''}
+                label="Project (Optional)"
+                onChange={handleChange}
+              >
+                <MenuItem value="">
+                  <em>None</em>
+                </MenuItem>
+                {mockProjects.map((proj) => (
+                  <MenuItem key={proj.id} value={proj.id}>
+                    {proj.name}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+
+          {/* Attachments Input */}
+          <Grid item xs={12}>
+            <Button
+              variant="outlined"
+              component="label"
+              startIcon={<UploadFileIcon />}
+              disabled={readOnlyMode}
+              fullWidth
+            >
+              Upload Attachment
+              <input
+                type="file"
+                hidden
+                name="attachments"
+                onChange={handleChange}
+              />
+            </Button>
+            {formData.attachments && (
+              <FormHelperText>
+                Selected: {(formData.attachments as File).name}
+              </FormHelperText>
+            )}
+            {isEditMode && displayData.attachments && typeof displayData.attachments === 'string' && (
+              <Typography variant="body2" sx={{ mt: 1 }}>
+                Current attachment: <a href={displayData.attachments as string} target="_blank" rel="noopener noreferrer">View Attachment</a>
+                {' '}(Uploading a new file will replace it)
+              </Typography>
+            )}
+          </Grid>
+
 
           {isEditMode && (
             <>
+              {/* Display IOM ID if available */}
+              {displayData.iom_id && (
+                 <Grid item xs={12} sm={6}>
+                    <Typography variant="body2">
+                      <strong>IOM ID:</strong> {displayData.iom_id}
+                    </Typography>
+                  </Grid>
+              )}
               <Grid item xs={12} sm={6}>
                 <Typography variant="body2">
                   <strong>Requested By:</strong>{' '}
@@ -331,6 +554,40 @@ const PurchaseRequestMemoForm: React.FC = () => {
                   <strong>Status:</strong> {displayData.status || 'N/A'}
                 </Typography>
               </Grid>
+              {/* Display new fields in view/edit mode */}
+              {displayData.department_name && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2">
+                    <strong>Department:</strong> {displayData.department_name}
+                  </Typography>
+                </Grid>
+              )}
+              {displayData.project_name && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2">
+                    <strong>Project:</strong> {displayData.project_name}
+                  </Typography>
+                </Grid>
+              )}
+               <Grid item xs={12} sm={6}>
+                  <Typography variant="body2">
+                    <strong>Priority:</strong> {displayData.priority || 'N/A'}
+                  </Typography>
+                </Grid>
+              {displayData.required_delivery_date && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2">
+                    <strong>Required Delivery:</strong> {displayData.required_delivery_date}
+                  </Typography>
+                </Grid>
+              )}
+              {displayData.suggested_vendor_name && (
+                <Grid item xs={12} sm={6}>
+                  <Typography variant="body2">
+                    <strong>Suggested Vendor:</strong> {displayData.suggested_vendor_name}
+                  </Typography>
+                </Grid>
+              )}
               {displayData.approver_username && (
                 <Grid item xs={12} sm={6}>
                   <Typography variant="body2">

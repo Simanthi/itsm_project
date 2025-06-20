@@ -41,20 +41,48 @@ export interface PurchaseRequestMemo {
   approver_username?: string | null;
   decision_date?: string | null;
   approver_comments?: string | null;
+
+  // New fields for PurchaseRequestMemo
+  iom_id?: string | null; // Read-only, backend generated
+  department?: number | null; // FK to Department
+  department_name?: string | null; // Read-only
+  project?: number | null; // FK to Project
+  project_name?: string | null; // Read-only
+  priority?: 'low' | 'medium' | 'high';
+  required_delivery_date?: string | null; // ISO date string
+  suggested_vendor?: number | null; // FK to Vendor
+  suggested_vendor_name?: string | null; // Read-only
+  attachments?: File | string | null; // File for upload, string for URL on read
 }
 
 export interface PurchaseRequestMemoData {
+  // For POST (create)
   item_description: string;
   quantity: number;
   reason: string;
   estimated_cost?: number | null;
+  // New fields for creation
+  department?: number | null;
+  project?: number | null;
+  priority?: 'low' | 'medium' | 'high';
+  required_delivery_date?: string | null;
+  suggested_vendor?: number | null;
+  attachments?: File | null; // On create, it's a File or null
 }
 
 export interface PurchaseRequestMemoUpdateData {
+  // For PATCH (update)
   item_description?: string;
   quantity?: number;
   reason?: string;
   estimated_cost?: number | null;
+  // New fields for update
+  department?: number | null;
+  project?: number | null;
+  priority?: 'low' | 'medium' | 'high';
+  required_delivery_date?: string | null;
+  suggested_vendor?: number | null;
+  attachments?: File | null; // Can also update attachment
 }
 
 export interface PurchaseRequestDecisionData {
@@ -92,7 +120,36 @@ export interface OrderItemData {
 export interface OrderItem extends OrderItemData {
   id: number; // Always present for existing items
   total_price: number; // Read-only from backend
+
+  // New fields for OrderItem
+  product_code?: string | null;
+  gl_account?: number | null; // FK to GLAccount
+  gl_account_code?: string | null; // Read-only (e.g., "6001 - Office Supplies")
+  received_quantity?: number;
+  line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
+  tax_rate?: number | null; // Percentage, e.g., 16.00 for 16%
+  // discount_percentage_or_amount?: number | null; // Removed
+  discount_type?: 'fixed' | 'percentage' | null;
+  discount_value?: number | null;
 }
+
+// Updated OrderItemData for creation/update to include new fields
+export interface OrderItemData {
+  id?: number;
+  item_description: string;
+  quantity: number;
+  unit_price?: number | null;
+  // New fields
+  product_code?: string | null;
+  gl_account?: number | null;
+  received_quantity?: number;
+  line_item_status?: 'pending' | 'partially_received' | 'fully_received' | 'cancelled' | 'invoiced';
+  tax_rate?: number | null;
+  // discount_percentage_or_amount?: number | null; // Removed
+  discount_type?: 'fixed' | 'percentage' | null;
+  discount_value?: number | null;
+}
+
 
 export type PurchaseOrderStatus =
   | 'draft'
@@ -129,19 +186,40 @@ export interface PurchaseOrder {
   shipping_address?: string | null;
   notes?: string | null;
   order_items: OrderItem[];
+
+  // New fields for PurchaseOrder
+  payment_terms?: string | null;
+  shipping_method?: string | null;
+  billing_address?: string | null;
+  po_type?: 'goods' | 'services' | 'subscription' | 'framework_agreement' | null;
+  related_contract?: number | null; // FK to Contract
+  related_contract_details?: string | null; // Read-only, e.g., contract title or ID
+  attachments?: File | string | null; // File for upload, string for URL on read
+  revision_number?: number;
+  currency?: string; // e.g., 'USD', 'KES'
 }
 
 export interface PurchaseOrderData {
   // For POST (create) and PATCH (update)
-  po_number?: string; // Optional on create if backend generates it, required for update if not using ID in URL for PATCH
+  po_number?: string; // Optional on create if backend generates it
   internal_office_memo?: number | null;
   vendor: number; // Required FK
-  order_date?: string; // Usually defaults on backend or set by user
+  order_date?: string;
   expected_delivery_date?: string | null;
-  status?: PurchaseOrderStatus; // e.g., 'draft' or 'pending_approval' on create
+  status?: PurchaseOrderStatus;
   shipping_address?: string | null;
   notes?: string | null;
   order_items: OrderItemData[];
+
+  // New fields for PO data
+  payment_terms?: string | null;
+  shipping_method?: string | null;
+  billing_address?: string | null;
+  po_type?: 'goods' | 'services' | 'subscription' | 'framework_agreement' | null;
+  related_contract?: number | null;
+  attachments?: File | null; // On create/update, it's a File or null
+  revision_number?: number; // Likely managed by backend or specific actions
+  currency?: string;
 }
 
 // --- API Function Parameters (PO) ---
@@ -202,6 +280,16 @@ export interface CheckRequest {
   payment_date?: string | null; // ISO date string
   transaction_id?: string | null;
   payment_notes?: string | null;
+
+  // New fields for CheckRequest
+  cr_id?: string | null; // Read-only, backend generated
+  expense_category?: number | null; // FK to ExpenseCategory
+  expense_category_name?: string | null; // Read-only
+  is_urgent?: boolean;
+  recurring_payment?: number | null; // FK to RecurringPayment
+  recurring_payment_details?: string | null; // Read-only
+  attachments?: File | string | null; // File for upload, string for URL on read
+  currency?: string; // e.g., 'USD', 'KES'
 }
 
 export interface CheckRequestData {
@@ -213,6 +301,12 @@ export interface CheckRequestData {
   payee_name: string;
   payee_address?: string | null;
   reason_for_payment: string;
+  // New fields for CR creation
+  expense_category?: number | null;
+  is_urgent?: boolean;
+  recurring_payment?: number | null;
+  attachments?: File | null;
+  currency?: string;
   // requested_by and initial status set by backend
 }
 
@@ -225,6 +319,12 @@ export interface CheckRequestUpdateData {
   payee_name?: string;
   payee_address?: string | null;
   reason_for_payment?: string;
+  // New fields for CR update
+  expense_category?: number | null;
+  is_urgent?: boolean;
+  recurring_payment?: number | null;
+  attachments?: File | null;
+  currency?: string;
   // Status and approval fields are typically managed by actions
 }
 

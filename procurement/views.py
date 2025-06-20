@@ -26,11 +26,17 @@ class PurchaseRequestMemoViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
+        # Enhanced prefetching/selection for new FK fields
+        base_queryset = PurchaseRequestMemo.objects.all().select_related(
+            'requested_by', 'approver', 'department', 'project', 'suggested_vendor'
+        ).order_by('-request_date')
+
         if user.is_staff or user.is_superuser:
-            return PurchaseRequestMemo.objects.all().select_related('requested_by', 'approver').order_by('-request_date')
-        return PurchaseRequestMemo.objects.filter(requested_by=user).select_related('requested_by', 'approver').order_by('-request_date')
+            return base_queryset
+        return base_queryset.filter(requested_by=user)
 
     def perform_create(self, serializer):
+        # department, project, suggested_vendor, etc. are passed in request data and handled by serializer
         serializer.save(requested_by=self.request.user, status=PurchaseRequestMemo.STATUS_CHOICES[0][0])  # Default 'pending'
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])  # TODO: Permissions
@@ -63,20 +69,92 @@ class PurchaseRequestMemoViewSet(viewsets.ModelViewSet):
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
-    queryset = PurchaseOrder.objects.all().select_related(
-        'vendor', 'internal_office_memo', 'created_by'
-    ).prefetch_related('order_items').order_by('-order_date')
     serializer_class = PurchaseOrderSerializer
     permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        # Enhanced prefetching/selection for new FK fields
+        return PurchaseOrder.objects.all().select_related(
+            'vendor', 'internal_office_memo__department', 'internal_office_memo__project', # Example of deeper relation
+            'created_by', 'related_contract'
+        ).prefetch_related(
+            'order_items__gl_account' # Prefetch GL account for order items
+        ).order_by('-order_date')
+
+    def _parse_order_items_json(self, request_data_mutable):
+        import json
+        order_items_json_str = request_data_mutable.pop('order_items_json', [None])[0]
+        if order_items_json_str:
+            try:
+                order_items_data = json.loads(order_items_json_str)
+                request_data_mutable['order_items'] = order_items_data
+            except json.JSONDecodeError:
+                # Consider raising a ValidationError or returning a 400 response
+                # For now, we'll let it proceed and serializer might fail if order_items is missing/invalid
+                pass # Or log an error
+        return request_data_mutable
+
+    def create(self, request, *args, **kwargs):
+        mutable_data = request.data.copy() # Make data mutable
+
+        # Handle file fields manually if they are part of the mutable_data
+        # and need to be passed to the serializer correctly.
+        # For 'attachments', DRF handles it if 'attachments' is in request.FILES.
+        # If 'attachments' is also in request.data (e.g. as a string from somewhere),
+        # ensure it's handled or removed to prevent conflicts.
+
+        # If 'attachments' is part of request.data (e.g. filename string) and not a File object,
+        # it might interfere. DRF expects File objects in request.FILES.
+        # If sending filename as string in `data` and actual file in `request.FILES`
+        # ensure your serializer or model handles this. Typically, just send the file.
+
+        # If 'attachments' is expected as a file, it should be in request.FILES.
+        # The serializer will pick it up. If it's also in mutable_data as something else,
+        # it could cause issues. For now, let's assume standard DRF behavior.
+
+        processed_data = self._parse_order_items_json(mutable_data)
+
+        serializer = self.get_serializer(data=processed_data)
+        serializer.is_valid(raise_exception=True)
+        self.perform_create(serializer)
+        headers = self.get_success_headers(serializer.data)
+        return Response(serializer.data, status=http_status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         serializer.save(created_by=self.request.user)
 
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        mutable_data = request.data.copy()
+
+        processed_data = self._parse_order_items_json(mutable_data)
+
+        serializer = self.get_serializer(instance, data=processed_data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            # If 'prefetch_related' has been applied to a queryset, we need to
+            # forcibly invalidate the prefetch cache on the instance.
+            instance._prefetched_objects_cache = {}
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
 
 class OrderItemViewSet(viewsets.ModelViewSet):
-    queryset = OrderItem.objects.all()
     serializer_class = OrderItemSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated] # Permissions might need to be more granular
+
+    def get_queryset(self):
+        # Filter by PO if a purchase_order_id is provided in query_params, for example
+        queryset = OrderItem.objects.all().select_related('purchase_order', 'gl_account')
+        purchase_order_id = self.request.query_params.get('purchase_order_id')
+        if purchase_order_id:
+            queryset = queryset.filter(purchase_order_id=purchase_order_id)
+        return queryset
 
 
 class CheckRequestViewSet(viewsets.ModelViewSet):
@@ -88,15 +166,18 @@ class CheckRequestViewSet(viewsets.ModelViewSet):
         # TODO: Define specific 'account_staff' group or permission
         is_accounts_staff = user.is_staff  # Simplified: staff can see more
 
-        if is_accounts_staff or user.is_superuser:
-            return CheckRequest.objects.all().select_related(
-                'purchase_order__vendor', 'requested_by', 'approved_by_accounts'
-            ).order_by('-request_date')
-        return CheckRequest.objects.filter(requested_by=user).select_related(
-            'purchase_order__vendor', 'requested_by', 'approved_by_accounts'
+        # Enhanced prefetching/selection for new FK fields
+        base_queryset = CheckRequest.objects.all().select_related(
+            'purchase_order__vendor', 'requested_by', 'approved_by_accounts',
+            'expense_category', 'recurring_payment'
         ).order_by('-request_date')
 
+        if is_accounts_staff or user.is_superuser:
+            return base_queryset
+        return base_queryset.filter(requested_by=user)
+
     def perform_create(self, serializer):
+        # expense_category, recurring_payment, etc. are passed in request data
         po = serializer.validated_data.get('purchase_order')
         payee_name = serializer.validated_data.get('payee_name')
         payee_address = serializer.validated_data.get('payee_address')

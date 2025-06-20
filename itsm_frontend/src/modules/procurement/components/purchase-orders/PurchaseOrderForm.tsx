@@ -19,12 +19,14 @@ import {
   TableRow,
   InputAdornment,
   Autocomplete,
-  FormControl, // Added
-  InputLabel, // Added
-  Select, // Added
+  FormControl,
+  InputLabel,
+  Select,
+  FormHelperText, // For file input
 } from '@mui/material';
 import AddCircleOutlineIcon from '@mui/icons-material/AddCircleOutline';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutline';
+import UploadFileIcon from '@mui/icons-material/UploadFile'; // For file input
 import type { SelectChangeEvent } from '@mui/material/Select';
 
 import { useAuth } from '../../../../context/auth/useAuth';
@@ -71,12 +73,54 @@ const initialFormData: Partial<PurchaseOrderData> = {
   shipping_address: '',
   notes: '',
   order_items: [],
+  // New fields for initial form data
+  payment_terms: '',
+  shipping_method: '',
+  billing_address: null,
+  po_type: null,
+  related_contract: null,
+  attachments: null,
+  currency: 'USD', // Default currency
+  // revision_number is usually backend managed on update
 };
+
+// Mock data for dropdowns - replace with API calls
+const mockPoTypes = [
+    { value: 'goods', label: 'Goods' },
+    { value: 'services', label: 'Services' },
+    { value: 'subscription', label: 'Subscription' },
+    { value: 'framework_agreement', label: 'Framework Agreement' },
+];
+const mockContracts = [ // Example contracts
+    { id: 1, title: "Master Service Agreement - Vendor A" },
+    { id: 2, title: "Software License - Tech Corp" },
+];
+const mockCurrencies = [
+    { value: 'USD', label: 'USD - US Dollar' },
+    { value: 'EUR', label: 'EUR - Euro' },
+    { value: 'KES', label: 'KES - Kenyan Shilling' },
+    { value: 'GBP', label: 'GBP - British Pound' },
+];
+const mockGLAccounts = [ // Example GL Accounts
+    { id: 101, code: '6001 - Office Supplies' },
+    { id: 102, code: '6002 - Software Licenses' },
+    { id: 103, code: '7005 - IT Equipment' },
+];
+// End mock data
+
 
 const initialOrderItemData: OrderItemData = {
   item_description: '',
   quantity: 1,
   unit_price: 0,
+  // New fields for initial order item data
+  product_code: '',
+  gl_account: null,
+  received_quantity: 0,
+  line_item_status: 'pending',
+  tax_rate: null,
+  discount_type: 'fixed', // Default discount type
+  discount_value: null,
 };
 
 const PurchaseOrderForm: React.FC = () => {
@@ -153,18 +197,38 @@ const PurchaseOrderForm: React.FC = () => {
         status: po.status,
         shipping_address: po.shipping_address || '',
         notes: po.notes || '',
+        // New fields for edit mode
+        payment_terms: po.payment_terms || '',
+        shipping_method: po.shipping_method || '',
+        billing_address: po.billing_address || null,
+        po_type: po.po_type || null,
+        related_contract: po.related_contract || null,
+        currency: po.currency || 'USD',
+        // attachments: po.attachments, // Existing attachment URL
+        // revision_number: po.revision_number, // Display only
       });
       setOrderItems(
-        po.order_items.map((item: OrderItemData) => ({
+        po.order_items.map((item: OrderItem) => ({ // Use OrderItem type here for full data
           id: item.id,
           item_description: item.item_description,
           quantity: item.quantity,
           unit_price: item.unit_price,
+          // New order item fields
+          product_code: item.product_code || '',
+          gl_account: item.gl_account || null,
+          received_quantity: item.received_quantity || 0,
+          line_item_status: item.line_item_status || 'pending',
+          tax_rate: item.tax_rate || null,
+          discount_type: item.discount_type || 'fixed',
+          discount_value: item.discount_value || null,
         })),
       );
       setDisplayHeaderData({
         created_by_username: po.created_by_username,
         created_at: po.created_at,
+        po_number: po.po_number, // For display
+        revision_number: po.revision_number, // For display
+        attachments: po.attachments, // Existing attachment URL for display
       });
       setIsEditMode(true);
       // Determine if form should be view-only based on status (example)
@@ -192,22 +256,35 @@ const PurchaseOrderForm: React.FC = () => {
   }, [poId, fetchPurchaseOrderForEdit]); // Removed currentUser from dependency array (it was implicitly removed when currentUser was removed)
 
   const handleHeaderChange = (
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }
+    >,
   ) => {
-    // Removed SelectChangeEvent part
     const { name, value } = event.target;
-    setFormData((prev) => ({ ...prev, [name!]: value || null }));
+    if (name === 'attachments') {
+      const files = (event.target as HTMLInputElement).files;
+      setFormData((prev) => ({
+        ...prev,
+        attachments: files && files.length > 0 ? files[0] : null,
+      }));
+    } else {
+      setFormData((prev) => ({ ...prev, [name as string]: value || null }));
+    }
   };
 
   const handleStatusChange = (
     event: SelectChangeEvent<PurchaseOrderStatus>,
   ) => {
-    // Specific handler for status
     setFormData((prev) => ({
       ...prev,
       status: event.target.value as PurchaseOrderStatus,
     }));
   };
+
+  const handleSelectChange = (event: SelectChangeEvent<any>, fieldName: keyof PurchaseOrderData) => {
+    setFormData((prev) => ({ ...prev, [fieldName]: event.target.value || null }));
+  };
+
 
   const handleAutocompleteChange = (
     fieldName: keyof PurchaseOrderData,
@@ -226,27 +303,61 @@ const PurchaseOrderForm: React.FC = () => {
 
   const handleItemChange = (
     index: number,
-    event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+    event: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | { name?: string; value: unknown }
+    >,
   ) => {
     const { name, value } = event.target;
     const items = [...orderItems];
-    const itemToUpdate = { ...items[index] };
+    const currentItem = { ...items[index] };
 
-    if (name === 'item_description') {
-      itemToUpdate.item_description = value;
-    } else if (name === 'quantity') {
-      // Ensure quantity is not set to 0 or negative from empty string, default to 1 or existing
-      const numValue = Number(value);
-      itemToUpdate.quantity = value === '' ? 1 : numValue > 0 ? numValue : 1;
-    } else if (name === 'unit_price') {
-      itemToUpdate.unit_price = value === '' ? null : Number(value);
+    // Helper to safely convert to number or null
+    const toNumberOrNull = (val: any): number | null => {
+        const num = Number(val);
+        return isNaN(num) ? null : num;
+    };
+    const toNumberOrDefault = (val: any, defaultValue: number): number => {
+        const num = Number(val);
+        return isNaN(num) ? defaultValue : num;
+    };
+
+
+    switch (name) {
+      case 'item_description':
+      case 'product_code':
+        currentItem[name] = value as string;
+        break;
+      case 'quantity':
+        currentItem.quantity = toNumberOrDefault(value, 1);
+        if (currentItem.quantity <=0) currentItem.quantity = 1; // Ensure positive
+        break;
+      case 'unit_price':
+      case 'tax_rate':
+      case 'discount_value':
+        currentItem[name as 'unit_price' | 'tax_rate' | 'discount_value'] = toNumberOrNull(value);
+        break;
+      case 'discount_type':
+        currentItem.discount_type = value as OrderItemData['discount_type'];
+        break;
+      case 'received_quantity':
+         currentItem.received_quantity = toNumberOrDefault(value,0);
+         break;
+      case 'gl_account': // Assuming value is account ID
+        currentItem.gl_account = value ? Number(value) : null;
+        break;
+      case 'line_item_status':
+        currentItem.line_item_status = value as OrderItemData['line_item_status'];
+        break;
+      default:
+        break;
     }
-    items[index] = itemToUpdate;
+    items[index] = currentItem;
     setOrderItems(items);
   };
 
+
   const addItem = () => {
-    setOrderItems([...orderItems, { ...initialOrderItemData }]);
+    setOrderItems([...orderItems, { ...initialOrderItemData, quantity: 1, unit_price:0 }]); // Ensure new items have defaults
   };
 
   const removeItem = (index: number) => {
@@ -317,42 +428,73 @@ const PurchaseOrderForm: React.FC = () => {
     setIsSubmitting(true);
     setError(null);
 
-    const payload: PurchaseOrderData = {
-      po_number: formData.po_number,
-      vendor: Number(formData.vendor), // Ensure vendor ID is a number
-      internal_office_memo: formData.internal_office_memo
-        ? Number(formData.internal_office_memo)
-        : null,
-      order_date: formData.order_date,
-      expected_delivery_date: formData.expected_delivery_date || null,
-      status: formData.status as PurchaseOrderStatus, // Cast as it's from state
-      shipping_address: formData.shipping_address || null,
-      notes: formData.notes || null,
-      order_items: orderItems.map((item: OrderItemData) => ({
-        // Ensure items are numbers
-        item_description: item.item_description,
+    const submissionPayload = new FormData();
+
+    // Append header fields to FormData
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === 'order_items') return; // Handled separately
+      if (value instanceof File) {
+        submissionPayload.append(key, value, value.name);
+      } else if (value !== null && value !== undefined) {
+        submissionPayload.append(key, String(value));
+      }
+    });
+     // Ensure vendor ID is a number string if present
+    if (formData.vendor != null) {
+        submissionPayload.set('vendor', String(Number(formData.vendor)));
+    }
+    // Ensure IOM ID is a number string if present
+    if (formData.internal_office_memo != null) {
+        submissionPayload.set('internal_office_memo', String(Number(formData.internal_office_memo)));
+    }
+     // Ensure related_contract ID is a number string if present
+    if (formData.related_contract != null) {
+        submissionPayload.set('related_contract', String(Number(formData.related_contract)));
+    }
+
+
+    // Append order_items as JSON string - backend needs to parse this
+    // Alternatively, send items as form array data: order_items[0][field_name], order_items[1][field_name]
+    // JSON string is often simpler if backend supports it.
+    const itemsForPayload = orderItems.map(item => ({
+        ...item,
         quantity: Number(item.quantity),
         unit_price: item.unit_price != null ? Number(item.unit_price) : null,
-        ...(item.id && { id: item.id }), // Include ID for updates if present
-      })),
-    };
+        gl_account: item.gl_account != null ? Number(item.gl_account) : null,
+        tax_rate: item.tax_rate != null ? Number(item.tax_rate) : null,
+        discount_type: item.discount_type || 'fixed',
+        discount_value: item.discount_value != null ? Number(item.discount_value) : null,
+        received_quantity: Number(item.received_quantity)
+    }));
+    submissionPayload.append('order_items_json', JSON.stringify(itemsForPayload));
+
 
     try {
       if (isEditMode && poId) {
         await updatePurchaseOrder(
           authenticatedFetch,
           parseInt(poId, 10),
-          payload,
+          submissionPayload as any, // Type assertion for FormData
         );
         showSnackbar('Purchase Order updated successfully!', 'success');
       } else {
-        await createPurchaseOrder(authenticatedFetch, payload);
+        await createPurchaseOrder(authenticatedFetch, submissionPayload as any); // Type assertion
         showSnackbar('Purchase Order created successfully!', 'success');
       }
       navigate('/procurement/purchase-orders'); // Adjust navigation path
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(`Failed to save PO: ${message}`);
+      // Add more detailed error parsing if backend sends structured errors
+       try {
+        const errorResponse = JSON.parse(message); // Assuming error is JSON string
+        let detailedError = 'Failed to save PO: ';
+        for (const key in errorResponse) {
+          detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
+        }
+        setError(detailedError);
+      } catch (parseError) {
+         setError(`Failed to save PO: ${message}`);
+      }
       showSnackbar(`Error: ${message}`, 'error');
     } finally {
       setIsSubmitting(false);
@@ -477,6 +619,28 @@ const PurchaseOrderForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <TextField
+              name="payment_terms"
+              label="Payment Terms"
+              value={formData.payment_terms || ''}
+              onChange={handleHeaderChange}
+              fullWidth
+              InputProps={{ readOnly: effectiveViewOnly }}
+              disabled={effectiveViewOnly}
+            />
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <TextField
+              name="shipping_method"
+              label="Shipping Method"
+              value={formData.shipping_method || ''}
+              onChange={handleHeaderChange}
+              fullWidth
+              InputProps={{ readOnly: effectiveViewOnly }}
+              disabled={effectiveViewOnly}
+            />
+          </Grid>
+           <Grid item xs={12} md={4}>
+            <TextField
               name="expected_delivery_date"
               label="Expected Delivery Date"
               type="date"
@@ -510,11 +674,68 @@ const PurchaseOrderForm: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12}>
+           <Grid item xs={12} md={4}>
+            <FormControl fullWidth disabled={effectiveViewOnly}>
+              <InputLabel id="po-type-label">PO Type</InputLabel>
+              <Select
+                labelId="po-type-label"
+                name="po_type"
+                value={formData.po_type || ''}
+                label="PO Type"
+                onChange={(e) => handleSelectChange(e, 'po_type')}
+              >
+                <MenuItem value=""><em>None</em></MenuItem>
+                {mockPoTypes.map((type) => (
+                  <MenuItem key={type.value} value={type.value}>{type.label}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+             <FormControl fullWidth disabled={effectiveViewOnly}>
+                <InputLabel id="currency-select-label">Currency</InputLabel>
+                <Select
+                    labelId="currency-select-label"
+                    name="currency"
+                    value={formData.currency || 'USD'}
+                    label="Currency"
+                    onChange={(e) => handleSelectChange(e, 'currency')}
+                >
+                    {mockCurrencies.map((currency) => (
+                    <MenuItem key={currency.value} value={currency.value}>
+                        {currency.label}
+                    </MenuItem>
+                    ))}
+                </Select>
+            </FormControl>
+          </Grid>
+          <Grid item xs={12} md={4}>
+            <Autocomplete
+              options={mockContracts}
+              getOptionLabel={(option) => option.title || ''}
+              value={mockContracts.find(c => c.id === formData.related_contract) || null}
+              onChange={(_event, newValue) => handleAutocompleteChange('related_contract', newValue)}
+              renderInput={(params) => <TextField {...params} label="Related Contract (Optional)" />}
+              disabled={effectiveViewOnly}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
             <TextField
               name="shipping_address"
               label="Shipping Address"
               value={formData.shipping_address || ''}
+              onChange={handleHeaderChange}
+              fullWidth
+              multiline
+              rows={2}
+              disabled={effectiveViewOnly}
+            />
+          </Grid>
+          <Grid item xs={12} md={6}>
+            <TextField
+              name="billing_address"
+              label="Billing Address (Optional)"
+              value={formData.billing_address || ''}
               onChange={handleHeaderChange}
               fullWidth
               multiline
@@ -534,20 +755,47 @@ const PurchaseOrderForm: React.FC = () => {
               disabled={effectiveViewOnly}
             />
           </Grid>
+           {/* Attachments Input */}
+           <Grid item xs={12}>
+            <Button
+                variant="outlined"
+                component="label"
+                startIcon={<UploadFileIcon />}
+                disabled={effectiveViewOnly}
+                fullWidth
+            >
+                Upload PO Attachment
+                <input type="file" hidden name="attachments" onChange={handleHeaderChange} />
+            </Button>
+            {formData.attachments && (
+                <FormHelperText>Selected: {(formData.attachments as File).name}</FormHelperText>
+            )}
+            {isEditMode && displayHeaderData.attachments && typeof displayHeaderData.attachments === 'string' && (
+                <Typography variant="body2" sx={{ mt: 1 }}>
+                    Current attachment: <a href={displayHeaderData.attachments as string} target="_blank" rel="noopener noreferrer">View Attachment</a>
+                    {' '}(Uploading a new file will replace it)
+                </Typography>
+            )}
+          </Grid>
 
           {isEditMode && displayHeaderData && (
             <>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Created By: {displayHeaderData.created_by_username || 'N/A'}
                 </Typography>
               </Grid>
-              <Grid item xs={12} sm={6}>
+              <Grid item xs={12} sm={4}>
                 <Typography variant="body2" color="text.secondary">
                   Created At:{' '}
                   {displayHeaderData.created_at
                     ? new Date(displayHeaderData.created_at).toLocaleString()
                     : 'N/A'}
+                </Typography>
+              </Grid>
+              <Grid item xs={12} sm={4}>
+                <Typography variant="body2" color="text.secondary">
+                  Revision: {displayHeaderData.revision_number || 0}
                 </Typography>
               </Grid>
             </>
@@ -559,22 +807,23 @@ const PurchaseOrderForm: React.FC = () => {
               Order Items
             </Typography>
           </Grid>
-          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2 }}>
+          <TableContainer component={Paper} variant="outlined" sx={{ mb: 2, width:'100%' }}>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ width: '50%' }}>Item Description</TableCell>
-                  <TableCell align="right" sx={{ width: '15%' }}>
-                    Quantity
-                  </TableCell>
-                  <TableCell align="right" sx={{ width: '20%' }}>
-                    Unit Price
-                  </TableCell>
-                  <TableCell align="right" sx={{ width: '15%' }}>
-                    Total
-                  </TableCell>
+                  <TableCell sx={{ minWidth: 200 }}>Item Description</TableCell>
+                  <TableCell sx={{minWidth: 120}}>Product Code</TableCell>
+                  <TableCell align="right">Qty</TableCell>
+                  <TableCell align="right">Unit Price</TableCell>
+                  <TableCell sx={{minWidth: 150}}>GL Account</TableCell>
+                  <TableCell align="right">Rcvd Qty</TableCell>
+                  <TableCell sx={{minWidth: 150}}>Line Status</TableCell>
+                  <TableCell align="right">Tax (%)</TableCell>
+                   <TableCell sx={{minWidth: 100}}>Disc. Type</TableCell>
+                   <TableCell align="right">Disc. Value</TableCell>
+                  <TableCell align="right">Total</TableCell>
                   {!effectiveViewOnly && (
-                    <TableCell align="right">Actions</TableCell>
+                    <TableCell align="center">Actions</TableCell>
                   )}
                 </TableRow>
               </TableHead>
@@ -582,66 +831,61 @@ const PurchaseOrderForm: React.FC = () => {
                 {orderItems.map((item: OrderItemData, index: number) => (
                   <TableRow key={index}>
                     <TableCell>
-                      <TextField
-                        value={item.item_description}
-                        name="item_description"
-                        onChange={(e) => handleItemChange(index, e)}
-                        fullWidth
-                        required
-                        size="small"
-                        InputProps={{ readOnly: effectiveViewOnly }}
-                        disabled={effectiveViewOnly}
-                      />
+                      <TextField name="item_description" value={item.item_description} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly }} disabled={effectiveViewOnly}/>
+                    </TableCell>
+                     <TableCell>
+                      <TextField name="product_code" value={item.product_code || ''} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell>
-                      <TextField
-                        type="number"
-                        value={item.quantity}
-                        name="quantity"
-                        onChange={(e) => handleItemChange(index, e)}
-                        fullWidth
-                        required
-                        size="small"
-                        InputProps={{
-                          readOnly: effectiveViewOnly,
-                          inputProps: { min: 1 },
-                        }}
-                        disabled={effectiveViewOnly}
-                      />
+                      <TextField type="number" name="quantity" value={item.quantity} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { min: 1 } }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell>
-                      <TextField
-                        type="number"
-                        value={item.unit_price || ''}
-                        name="unit_price"
-                        onChange={(e) => handleItemChange(index, e)}
-                        fullWidth
-                        required
-                        size="small"
-                        InputProps={{
-                          readOnly: effectiveViewOnly,
-                          startAdornment: (
-                            <InputAdornment position="start">$</InputAdornment>
-                          ),
-                          inputProps: { step: '0.01', min: 0 },
-                        }}
-                        disabled={effectiveViewOnly}
-                      />
+                      <TextField type="number" name="unit_price" value={item.unit_price || ''} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly, startAdornment: (<InputAdornment position="start">{formData.currency === 'KES' ? 'KES' : '$'}</InputAdornment>), inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
+                    </TableCell>
+                    <TableCell>
+                        <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
+                            <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e as any)} displayEmpty>
+                                <MenuItem value=""><em>None</em></MenuItem>
+                                {mockGLAccounts.map(acc => <MenuItem key={acc.id} value={acc.id}>{acc.code}</MenuItem>)}
+                            </Select>
+                        </FormControl>
+                    </TableCell>
+                    <TableCell>
+                      <TextField type="number" name="received_quantity" value={item.received_quantity || 0} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { min: 0 } }} disabled={effectiveViewOnly}/>
+                    </TableCell>
+                    <TableCell>
+                        <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
+                            <Select name="line_item_status" value={item.line_item_status || 'pending'} onChange={(e) => handleItemChange(index, e as any)} >
+                                <MenuItem value="pending">Pending</MenuItem>
+                                <MenuItem value="partially_received">Partially Received</MenuItem>
+                                <MenuItem value="fully_received">Fully Received</MenuItem>
+                                <MenuItem value="cancelled">Cancelled</MenuItem>
+                                <MenuItem value="invoiced">Invoiced</MenuItem>
+                            </Select>
+                        </FormControl>
+                    </TableCell>
+                    <TableCell>
+                      <TextField type="number" name="tax_rate" value={item.tax_rate || ''} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
+                    </TableCell>
+                    <TableCell>
+                        <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
+                            <Select name="discount_type" value={item.discount_type || 'fixed'} onChange={(e) => handleItemChange(index, e as any)}>
+                                <MenuItem value="fixed">Fixed</MenuItem>
+                                <MenuItem value="percentage">Percentage</MenuItem>
+                            </Select>
+                        </FormControl>
+                     </TableCell>
+                     <TableCell>
+                       <TextField type="number" name="discount_value" value={item.discount_value || ''} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell align="right">
-                      $
-                      {((item.quantity || 0) * (item.unit_price || 0)).toFixed(
-                        2,
-                      )}
+                      {formData.currency === 'KES' ? 'KES' : '$'}
+                      {/* This total calculation needs to be more robust in OrderItem type using @property if it includes tax/discount */}
+                      {((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
                     </TableCell>
                     {!effectiveViewOnly && (
-                      <TableCell align="right">
-                        <IconButton
-                          onClick={() => removeItem(index)}
-                          color="error"
-                          size="small"
-                          disabled={orderItems.length <= 1}
-                        >
+                      <TableCell align="center">
+                        <IconButton onClick={() => removeItem(index)} color="error" size="small" disabled={orderItems.length <= 1}>
                           <DeleteOutlineIcon />
                         </IconButton>
                       </TableCell>
