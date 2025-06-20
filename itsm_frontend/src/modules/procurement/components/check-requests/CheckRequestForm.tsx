@@ -38,8 +38,11 @@ import type {
   CheckRequestStatus,
   PurchaseOrder,
 } from '../../types';
-import { formatDateString, formatCurrency } from '../../../../utils/formatters';
+
 import type { SelectChangeEvent } from '@mui/material/Select'; // Import SelectChangeEvent
+
+
+import { formatDate, formatCurrency } from '../../../../utils/formatters'; // Corrected to formatDate
 
 
 // Constants
@@ -168,7 +171,7 @@ const CheckRequestForm: React.FC = () => {
           purchase_order: data.purchase_order || undefined,
           invoice_number: data.invoice_number || '',
           invoice_date: data.invoice_date
-            ? formatDateString(data.invoice_date, 'YYYY-MM-DD')
+            ? formatDate(data.invoice_date, 'YYYY-MM-DD')
             : '',
           amount: data.amount || '0.00', // amount is string in CheckRequest
           payee_name: data.payee_name || '',
@@ -708,7 +711,7 @@ const CheckRequestForm: React.FC = () => {
               <Grid item xs={12} md={3}>
                 <Typography variant="caption" display="block" color="textSecondary">Request Date</Typography>
                 <Typography>
-                  {formatDateString(currentCheckRequest.request_date)}
+                  {formatDate(currentCheckRequest.request_date)}
                 </Typography>
               </Grid>
                <Grid item xs={12} md={3}>
@@ -742,7 +745,7 @@ const CheckRequestForm: React.FC = () => {
                   <Grid item xs={12} md={6}>
                     <Typography variant="caption" display="block" color="textSecondary" sx={{mt:1}}>Approval Date</Typography>
                     <Typography>
-                      {formatDateString(
+                      {formatDate(
                         currentCheckRequest.accounts_approval_date,
                       )}
                     </Typography>
@@ -789,7 +792,7 @@ const CheckRequestForm: React.FC = () => {
                     type="date"
                     value={
                       currentCheckRequest.payment_date
-                        ? formatDateString(
+                        ? formatDate(
                             currentCheckRequest.payment_date,
                             'YYYY-MM-DD',
                           )
