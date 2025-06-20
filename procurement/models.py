@@ -5,6 +5,7 @@ from django.utils import timezone
 from assets.models import Vendor # Assuming Vendor model is in assets app
 # Import the new common models
 from .common_models import Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment
+from .sequence_models import ProcurementIDSequence # Import the new sequence model
 
 User = get_user_model()
 
@@ -103,11 +104,7 @@ class PurchaseRequestMemo(models.Model):
     # Consider adding a pre_save signal or overriding save() to generate iom_id if it's system-generated.
     def save(self, *args, **kwargs):
         if not self.iom_id:
-            # Generate IOM ID, e.g., IM-YYMMDD-XXXX
-            today_str = timezone.now().strftime('%y%m%d')
-            # This simple count is not robust for high concurrency. Consider UUID or database sequence.
-            count = PurchaseRequestMemo.objects.filter(iom_id__startswith=f"IM-{today_str}").count() + 1
-            self.iom_id = f"IM-{today_str}-{count:04d}"
+            self.iom_id = ProcurementIDSequence.get_next_id("IM")
         super().save(*args, **kwargs)
 
 class PurchaseOrder(models.Model):
@@ -197,10 +194,7 @@ class PurchaseOrder(models.Model):
     # Consider adding a pre_save signal or overriding save() to generate po_number if it's system-generated and not user-input.
     def save(self, *args, **kwargs):
         if not self.po_number:
-            # Generate PO Number, e.g., PO-YYMMDD-XXXX
-            today_str = timezone.now().strftime('%y%m%d')
-            count = PurchaseOrder.objects.filter(po_number__startswith=f"PO-{today_str}").count() + 1
-            self.po_number = f"PO-{today_str}-{count:04d}"
+            self.po_number = ProcurementIDSequence.get_next_id("PO")
         # Ensure total_amount is calculated before saving, especially if items changed
         # This might be better handled via signals from OrderItem save/delete
         # or ensure order_items are saved before the PO if creating.
@@ -390,8 +384,5 @@ class CheckRequest(models.Model):
     # Consider adding a pre_save signal or overriding save() to generate cr_id if it's system-generated.
     def save(self, *args, **kwargs):
         if not self.cr_id:
-            # Generate CR ID, e.g., CR-YYMMDD-XXXX
-            today_str = timezone.now().strftime('%y%m%d')
-            count = CheckRequest.objects.filter(cr_id__startswith=f"CR-{today_str}").count() + 1
-            self.cr_id = f"CR-{today_str}-{count:04d}"
+            self.cr_id = ProcurementIDSequence.get_next_id("CR")
         super().save(*args, **kwargs)

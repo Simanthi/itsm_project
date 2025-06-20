@@ -1,9 +1,17 @@
 from django.contrib import admin
 from .models import (
     PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest,
-    Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment
+    Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment,
+    ProcurementIDSequence # Import the new sequence model
 )
 from simple_history.admin import SimpleHistoryAdmin
+
+# Admin configuration for ProcurementIDSequence
+@admin.register(ProcurementIDSequence)
+class ProcurementIDSequenceAdmin(admin.ModelAdmin): # Not using SimpleHistoryAdmin for this simple config model
+    list_display = ('prefix', 'current_alpha_part_char1', 'current_alpha_part_char2', 'current_numeric_part', '__str__')
+    readonly_fields = ('prefix',) # Prefix should not be changed after creation
+    # Allow editing of sequence parts for manual reset/adjustment if absolutely necessary, but with caution.
 
 # Admin configuration for PurchaseRequestMemo
 @admin.register(PurchaseRequestMemo)
