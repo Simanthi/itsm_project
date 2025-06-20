@@ -32,15 +32,15 @@ import {
   getPurchaseOrders,
 } from '../../../../api/procurementApi';
 import type {
-  // TS1484
   CheckRequest,
   CheckRequestData,
+  // CheckRequestUpdateData, // Not directly used for form state type, covered by Partial<CheckRequestData>
   CheckRequestStatus,
   PurchaseOrder,
-  // PaymentMethod, // Unused TS6196
-  // PurchaseOrderStatus, // Unused TS6196
 } from '../../types';
-import { formatDateString, formatCurrency } from '../../../../utils/formatters'; // TS2307 (should be fixed now)
+import { formatDateString, formatCurrency } from '../../../../utils/formatters';
+import type { SelectChangeEvent } from '@mui/material/Select'; // Import SelectChangeEvent
+
 
 // Constants
 // const PAYMENT_METHOD_CHOICES: { value: PaymentMethod; label: string }[] = [ // Unused TS6133
@@ -60,25 +60,26 @@ const CHECK_REQUEST_STATUS_DISPLAY: Record<CheckRequestStatus, string> = {
   cancelled: 'Cancelled',
 };
 
-// Align with CheckRequestData and remove fields not part of general create/update
-const initialFormData: Partial<
-  Omit<CheckRequestData, 'amount'> & { amount: string } & {
-    id?: number;
-    purchase_order_obj?: PurchaseOrder | null;
+// Define a more specific type for the form's state
+type CheckRequestFormState = Partial<
+  CheckRequestData & { // All fields from CheckRequestData are optional for the form state
+    id?: number; // For edit mode
+    purchase_order_obj?: PurchaseOrder | null; // For Autocomplete object
+    // `amount` is already string in CheckRequestData, so no need for Omit/&
   }
-> = {
-  // TS2345 amount type fixed
-  purchase_order: undefined, // Changed from purchase_order_id
+>;
+
+
+const initialFormData: CheckRequestFormState = {
+  purchase_order: undefined,
   invoice_number: '',
   invoice_date: '',
-  amount: '0.00', // Changed to string, as CheckRequestData expects string for amount
+  amount: '0.00',
   payee_name: '',
   payee_address: '',
   reason_for_payment: '',
-  // Removed: status, payment_method, payment_date, transaction_id, payment_notes
-  // These are typically handled by specific actions or backend logic, not direct form submission for create/update
   purchase_order_obj: null,
-  // New fields for initial form data
+  // New fields from CheckRequestData (all optional in form state initially)
   expense_category: null,
   is_urgent: false,
   recurring_payment: null,
@@ -141,21 +142,7 @@ const CheckRequestForm: React.FC = () => {
   const { authenticatedFetch, user: currentUser } = useAuth();
   const { showSnackbar } = useUI();
 
-  const [formData, setFormData] = useState<
-    Partial<
-      CheckRequestData & {
-        id?: number;
-        purchase_order_obj?: PurchaseOrder | null;
-      }
-    >
-  >(
-    initialFormData as Partial<
-      CheckRequestData & {
-        id?: number;
-        purchase_order_obj?: PurchaseOrder | null;
-      }
-    >,
-  );
+  const [formData, setFormData] = useState<CheckRequestFormState>(initialFormData);
   const [purchaseOrders, setPurchaseOrders] = useState<PurchaseOrder[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
