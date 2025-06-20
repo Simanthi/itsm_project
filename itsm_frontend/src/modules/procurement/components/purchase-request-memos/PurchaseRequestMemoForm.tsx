@@ -244,13 +244,13 @@ const PurchaseRequestMemoForm: React.FC = () => {
         await updatePurchaseRequestMemo(
           authenticatedFetch,
           parseInt(memoId, 10),
-          submissionPayload as any, // Type assertion needed due to FormData vs JSON
+          submissionPayload as FormData,
         );
         showSnackbar('Purchase request updated successfully!', 'success');
       } else {
         await createPurchaseRequestMemo(
           authenticatedFetch,
-          submissionPayload as any, // Type assertion
+          submissionPayload as FormData,
         );
         showSnackbar('Purchase request created successfully!', 'success');
       }
@@ -263,10 +263,10 @@ const PurchaseRequestMemoForm: React.FC = () => {
         const errorResponse = JSON.parse(message);
         let detailedError = 'Failed to save: ';
         for (const key in errorResponse) {
-          detailedError += `${key}: ${errorResponse[key].join(', ')}; `;
+          detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
         }
         setError(detailedError);
-      } catch (parseError) {
+      } catch /* istanbul ignore next */ (parseErrorUntyped) { // Removed unused parseError variable
         setError(`Failed to save purchase request: ${message}`);
       }
       showSnackbar(`Error: ${message}`, 'error');

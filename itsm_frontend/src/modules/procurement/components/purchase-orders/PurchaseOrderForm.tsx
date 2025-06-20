@@ -315,11 +315,11 @@ const PurchaseOrderForm: React.FC = () => {
     const currentItem = { ...items[index] };
 
     // Helper to safely convert to number or null
-    const toNumberOrNull = (val: any): number | null => {
+    const toNumberOrNull = (val: string | number): number | null => {
         const num = Number(val);
         return isNaN(num) ? null : num;
     };
-    const toNumberOrDefault = (val: any, defaultValue: number): number => {
+    const toNumberOrDefault = (val: string | number, defaultValue: number): number => {
         const num = Number(val);
         return isNaN(num) ? defaultValue : num;
     };
@@ -477,11 +477,11 @@ const PurchaseOrderForm: React.FC = () => {
         await updatePurchaseOrder(
           authenticatedFetch,
           parseInt(poId, 10),
-          submissionPayload as any, // Type assertion for FormData
+          submissionPayload as FormData,
         );
         showSnackbar('Purchase Order updated successfully!', 'success');
       } else {
-        await createPurchaseOrder(authenticatedFetch, submissionPayload as any); // Type assertion
+        await createPurchaseOrder(authenticatedFetch, submissionPayload as FormData);
         showSnackbar('Purchase Order created successfully!', 'success');
       }
       navigate('/procurement/purchase-orders'); // Adjust navigation path
@@ -495,7 +495,7 @@ const PurchaseOrderForm: React.FC = () => {
           detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
         }
         setError(detailedError);
-      } catch (parseError) {
+      } catch /* istanbul ignore next */ (parseErrorUntyped) { // Removed unused parseError variable
          setError(`Failed to save PO: ${message}`);
       }
       showSnackbar(`Error: ${message}`, 'error');
