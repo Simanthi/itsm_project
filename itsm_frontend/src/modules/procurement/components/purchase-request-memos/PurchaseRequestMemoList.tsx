@@ -263,13 +263,14 @@ const PurchaseRequestMemoList: React.FC = () => {
     padding?: 'none' | 'normal';
   }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
+    { id: 'iom_id', label: 'IOM ID', sortable: true },
     { id: 'item_description', label: 'Item Description', sortable: true },
-    { id: 'quantity', label: 'Qty', sortable: false },
+    { id: 'priority', label: 'Priority', sortable: true },
+    { id: 'department_name', label: 'Department', sortable: false }, // Not directly sortable if from related field string
     { id: 'requested_by_username', label: 'Requested By', sortable: true },
     { id: 'request_date', label: 'Request Date', sortable: true },
     { id: 'status', label: 'Status', sortable: true },
     { id: 'estimated_cost', label: 'Est. Cost', sortable: true },
-    { id: 'approver_username', label: 'Approver', sortable: true },
     { id: 'actions', label: 'Actions', sortable: false },
   ];
 
@@ -405,8 +406,9 @@ const PurchaseRequestMemoList: React.FC = () => {
                       }}
                     />
                   </TableCell>
+              <TableCell>{memo.iom_id || memo.id}</TableCell> {/* Display iom_id or fallback to id */}
                   <TableCell
-                    id={`memo-checkbox-${memo.id}`}
+                // id={`memo-checkbox-${memo.id}`} // id should be unique, iom_id is better if available
                     sx={{
                       maxWidth: 300,
                       overflow: 'hidden',
@@ -418,7 +420,12 @@ const PurchaseRequestMemoList: React.FC = () => {
                       <span>{memo.item_description}</span>
                     </Tooltip>
                   </TableCell>
-                  <TableCell>{memo.quantity}</TableCell>
+                  <TableCell>
+                    <Chip label={memo.priority?.toUpperCase()} size="small"
+                          color={memo.priority === 'high' ? 'error' : memo.priority === 'medium' ? 'warning' : 'default'}
+                    />
+                  </TableCell>
+                  <TableCell>{memo.department_name || '-'}</TableCell>
                   <TableCell>{memo.requested_by_username}</TableCell>
                   <TableCell>
                     {new Date(memo.request_date).toLocaleDateString()}
@@ -434,10 +441,10 @@ const PurchaseRequestMemoList: React.FC = () => {
                   </TableCell>
                   <TableCell>
                     {memo.estimated_cost != null
-                      ? `$${Number(memo.estimated_cost).toFixed(2)}`
+                      ? `$${Number(memo.estimated_cost).toFixed(2)}` // Consider using formatCurrency helper if it handles different currencies
                       : '-'}
                   </TableCell>
-                  <TableCell>{memo.approver_username || '-'}</TableCell>
+                  {/* Removed Approver from main list view for brevity, available in detail view */}
                   <TableCell align="right">
                     <Tooltip title="View Details">
                       <IconButton

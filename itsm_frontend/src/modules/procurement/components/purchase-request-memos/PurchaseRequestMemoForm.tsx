@@ -26,11 +26,18 @@ import {
   getPurchaseRequestMemoById,
   createPurchaseRequestMemo,
   updatePurchaseRequestMemo,
+  getDepartmentsForDropdown, // Import new API functions
+  getProjectsForDropdown,
+  // getVendorsForDropdown, // Assuming getVendors from assetApi is used
 } from '../../../../api/procurementApi';
+import { getVendors } from '../../../../api/assetApi'; // For suggested vendor
 import type {
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
-  PurchaseRequestMemoUpdateData,
+  // PurchaseRequestMemoUpdateData, // formData type will handle partial updates
+  Department, // Import types for dropdown data
+  Project,
+  Vendor, // Using Vendor from assetApi for consistency
 } from '../../types';
 
 const initialFormData: PurchaseRequestMemoData = {
@@ -75,12 +82,17 @@ const PurchaseRequestMemoForm: React.FC = () => {
   const { authenticatedFetch, user } = useAuth();
   const { showSnackbar } = useUI();
 
-  const [formData, setFormData] = useState<
-    PurchaseRequestMemoData | PurchaseRequestMemoUpdateData
-  >(initialFormData);
-  const [displayData, setDisplayData] = useState<Partial<PurchaseRequestMemo>>(
-    {},
-  ); // For read-only fields in edit/view mode
+  // State for form data
+  const [formData, setFormData] = useState<PurchaseRequestMemoData>(initialFormData);
+
+  // State for displaying read-only fields from the fetched memo (when editing/viewing)
+  const [displayData, setDisplayData] = useState<Partial<PurchaseRequestMemo>>({});
+
+  // States for dropdown options
+  const [departments, setDepartments] = useState<Department[]>([]);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [vendors, setVendors] = useState<Vendor[]>([]);
+
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -152,6 +164,28 @@ const PurchaseRequestMemoForm: React.FC = () => {
     }
     // For new forms, if user is available, it will be set by backend via perform_create
   }, [memoId, fetchMemoForViewOrEdit]);
+
+  // Fetch dropdown data on component mount
+  useEffect(() => {
+    const loadDropdownData = async () => {
+      if (!authenticatedFetch) return;
+      try {
+        const [deptRes, projRes, vendRes] = await Promise.all([
+          getDepartmentsForDropdown(authenticatedFetch),
+          getProjectsForDropdown(authenticatedFetch),
+          getVendors(authenticatedFetch, { page: 1, pageSize: 200 }), // From assetApi
+        ]);
+        setDepartments(deptRes.results);
+        setProjects(projRes.results);
+        setVendors(vendRes.results);
+      } catch (err) {
+        console.error('Failed to load dropdown data', err);
+        showSnackbar('Could not load necessary data for dropdowns.', 'error');
+      }
+    };
+    loadDropdownData();
+  }, [authenticatedFetch, showSnackbar]);
+
 
   const handleChange = (
     event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, // Standard input/textarea
@@ -426,7 +460,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {mockVendors.map((vendor) => (
+                {vendors.map((vendor) => ( // Use fetched vendors
                   <MenuItem key={vendor.id} value={vendor.id}>
                     {vendor.name}
                   </MenuItem>
@@ -464,9 +498,9 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {mockDepartments.map((dept) => (
+                {departments.map((dept) => ( // Use fetched departments
                   <MenuItem key={dept.id} value={dept.id}>
-                    {dept.name}
+                    {dept.department_code ? `${dept.department_code} - ${dept.name}` : dept.name}
                   </MenuItem>
                 ))}
               </Select>
@@ -487,9 +521,9 @@ const PurchaseRequestMemoForm: React.FC = () => {
                 <MenuItem value="">
                   <em>None</em>
                 </MenuItem>
-                {mockProjects.map((proj) => (
+                {projects.map((proj) => ( // Use fetched projects
                   <MenuItem key={proj.id} value={proj.id}>
-                    {proj.name}
+                    {proj.project_code ? `${proj.project_code} - ${proj.name}` : proj.name}
                   </MenuItem>
                 ))}
               </Select>

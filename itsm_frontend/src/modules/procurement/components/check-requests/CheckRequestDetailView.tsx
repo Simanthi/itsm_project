@@ -10,9 +10,11 @@ import {
   Button,
   Divider,
   Chip,
+  Link, // For attachment link
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachmentIcon from '@mui/icons-material/Attachment'; // For attachment icon
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { getCheckRequestById } from '../../../../api/procurementApi';
@@ -33,9 +35,17 @@ const formatDateString = (isoString: string | null | undefined): string => {
 };
 
 // Helper to format currency
-const formatCurrency = (amount: string | number | null | undefined): string => {
+const formatCurrency = (amount: string | number | null | undefined, currencyCode: string = "USD"): string => {
   if (amount == null || amount === '') return '-';
-  return `$${Number(amount).toFixed(2)}`;
+  const symbols: { [key: string]: string } = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    KES: 'KES ',
+  };
+  const symbol = symbols[currencyCode] || `${currencyCode} `;
+  return `${symbol}${Number(amount).toFixed(2)}`;
 };
 
 // Status chip color logic
@@ -206,10 +216,7 @@ const CheckRequestDetailView: React.FC = () => {
       <Grid container spacing={2}>
         <Grid item xs={12} md={6}>
           <Typography variant="h6" gutterBottom>
-            Request Information
-          </Typography>
-          <Typography>
-            <strong>CR ID:</strong> CR-{checkRequest.id}
+            Request Information {checkRequest.cr_id && `(${checkRequest.cr_id})`}
           </Typography>
           <Typography>
             <strong>Status:</strong>{' '}
@@ -226,12 +233,21 @@ const CheckRequestDetailView: React.FC = () => {
             <strong>Request Date:</strong>{' '}
             {formatDateString(checkRequest.request_date)}
           </Typography>
+           <Typography>
+            <strong>Urgent:</strong> {checkRequest.is_urgent ? <Chip label="Yes" color="error" size="small" /> : 'No'}
+          </Typography>
           <Typography>
             <strong>Reason for Payment:</strong>
           </Typography>
-          <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>
+          <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1, mb:1 }}>
             {checkRequest.reason_for_payment}
           </Typography>
+          {checkRequest.expense_category_name && (
+            <Typography><strong>Expense Category:</strong> {checkRequest.expense_category_name}</Typography>
+          )}
+          {checkRequest.recurring_payment_details && (
+            <Typography><strong>Recurring Payment:</strong> {checkRequest.recurring_payment_details}</Typography>
+          )}
         </Grid>
 
         <Grid item xs={12} md={6}>
@@ -242,7 +258,10 @@ const CheckRequestDetailView: React.FC = () => {
             <strong>Payee Name:</strong> {checkRequest.payee_name}
           </Typography>
           <Typography>
-            <strong>Amount:</strong> {formatCurrency(checkRequest.amount)}
+            <strong>Amount:</strong> {formatCurrency(checkRequest.amount, checkRequest.currency)}
+          </Typography>
+          <Typography>
+            <strong>Currency:</strong> {checkRequest.currency || 'N/A'}
           </Typography>
           {checkRequest.purchase_order_number && (
             <Typography>
@@ -262,72 +281,49 @@ const CheckRequestDetailView: React.FC = () => {
           )}
           {checkRequest.payee_address && (
             <>
-              {' '}
-              <Typography>
-                <strong>Payee Address:</strong>
-              </Typography>{' '}
+              <Typography sx={{mt:1}}><strong>Payee Address:</strong></Typography>
               <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>
                 {checkRequest.payee_address}
               </Typography>
             </>
           )}
+           {checkRequest.attachments && typeof checkRequest.attachments === 'string' && (
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              <strong>Attachment:</strong>&nbsp;
+              <Link href={checkRequest.attachments} target="_blank" rel="noopener noreferrer" sx={{display: 'inline-flex', alignItems: 'center'}}>
+                <AttachmentIcon sx={{fontSize: '1rem', mr: 0.5}} />
+                View CR Attachment
+              </Link>
+            </Typography>
+          )}
         </Grid>
 
-        {checkRequest.status !== 'pending_submission' &&
-          checkRequest.status !== 'cancelled' && (
+        {/* Approval & Processing Section - shows if not pending or cancelled */}
+        {(checkRequest.status !== 'pending_submission' && checkRequest.status !== 'cancelled') && (
             <>
+              <Grid item xs={12}><Divider sx={{ my: 2 }} /></Grid>
               <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Approval & Processing
-                </Typography>
+                <Typography variant="h6" gutterBottom>Approval & Processing</Typography>
                 <Grid container spacing={1}>
                   <Grid item xs={12} md={6}>
-                    <Typography>
-                      <strong>Approved By (Accounts):</strong>{' '}
-                      {checkRequest.approved_by_accounts_username || 'N/A'}
-                    </Typography>
-                    <Typography>
-                      <strong>Accounts Approval Date:</strong>{' '}
-                      {formatDateString(checkRequest.accounts_approval_date)}
-                    </Typography>
+                    <Typography><strong>Approved By (Accounts):</strong> {checkRequest.approved_by_accounts_username || 'N/A'}</Typography>
+                    <Typography><strong>Accounts Approval Date:</strong> {formatDateString(checkRequest.accounts_approval_date)}</Typography>
                     {checkRequest.accounts_comments && (
                       <>
-                        {' '}
-                        <Typography>
-                          <strong>Accounts Comments:</strong>
-                        </Typography>
-                        <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>
-                          {checkRequest.accounts_comments}
-                        </Typography>
+                        <Typography><strong>Accounts Comments:</strong></Typography>
+                        <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>{checkRequest.accounts_comments}</Typography>
                       </>
                     )}
                   </Grid>
-                  {(checkRequest.status === 'paid' ||
-                    checkRequest.status === 'payment_processing') && (
+                  {(checkRequest.status === 'paid' || checkRequest.status === 'payment_processing') && (
                     <Grid item xs={12} md={6}>
-                      <Typography>
-                        <strong>Payment Method:</strong>{' '}
-                        {formatPaymentMethod(checkRequest.payment_method)}
-                      </Typography>
-                      <Typography>
-                        <strong>Payment Date:</strong>{' '}
-                        {formatDateString(checkRequest.payment_date)}
-                      </Typography>
-                      <Typography>
-                        <strong>Transaction ID/Check #:</strong>{' '}
-                        {checkRequest.transaction_id || 'N/A'}
-                      </Typography>
+                      <Typography><strong>Payment Method:</strong> {formatPaymentMethod(checkRequest.payment_method)}</Typography>
+                      <Typography><strong>Payment Date:</strong> {formatDateString(checkRequest.payment_date)}</Typography>
+                      <Typography><strong>Transaction ID/Check #:</strong> {checkRequest.transaction_id || 'N/A'}</Typography>
                       {checkRequest.payment_notes && (
                         <>
-                          <Typography>
-                            <strong>Payment Notes:</strong>
-                          </Typography>
-                          <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>
-                            {checkRequest.payment_notes}
-                          </Typography>
+                          <Typography><strong>Payment Notes:</strong></Typography>
+                          <Typography sx={{ whiteSpace: 'pre-wrap', pl: 1 }}>{checkRequest.payment_notes}</Typography>
                         </>
                       )}
                     </Grid>

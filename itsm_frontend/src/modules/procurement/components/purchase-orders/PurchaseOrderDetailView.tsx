@@ -16,11 +16,11 @@ import {
   Button,
   Divider,
   Chip,
-  // IconButton, // Removed as unused
-  // Tooltip,    // Removed as unused
+  Link, // For attachment link
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachmentIcon from '@mui/icons-material/Attachment'; // For attachment icon
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { getPurchaseOrderById } from '../../../../api/procurementApi';
@@ -37,9 +37,17 @@ const formatDateString = (isoString: string | null | undefined): string => {
 };
 
 // Helper to format currency
-const formatCurrency = (amount: number | null | undefined): string => {
-  if (amount == null) return '-'; // Use '==' to catch both null and undefined
-  return `$${Number(amount).toFixed(2)}`;
+const formatCurrency = (amount: number | null | undefined, currencyCode: string = 'USD'): string => {
+  if (amount == null) return '-';
+  const symbols: { [key: string]: string } = {
+    USD: '$',
+    EUR: '€',
+    GBP: '£',
+    INR: '₹',
+    KES: 'KES ', // Adding space for KES as it's often prefixed
+  };
+  const symbol = symbols[currencyCode] || `${currencyCode} `;
+  return `${symbol}${Number(amount).toFixed(2)}`;
 };
 
 // Status chip color logic (similar to list view)
@@ -227,6 +235,12 @@ const PurchaseOrderDetailView: React.FC = () => {
             <strong>Expected Delivery:</strong>{' '}
             {formatDateString(purchaseOrder.expected_delivery_date)}
           </Typography>
+          <Typography variant="body1">
+            <strong>PO Type:</strong> {purchaseOrder.po_type?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'N/A'}
+          </Typography>
+           <Typography variant="body1">
+            <strong>Currency:</strong> {purchaseOrder.currency}
+          </Typography>
         </Grid>
         <Grid item xs={12} md={6}>
           <Typography variant="h6" gutterBottom>
@@ -244,10 +258,18 @@ const PurchaseOrderDetailView: React.FC = () => {
             <strong>Created At:</strong>{' '}
             {formatDateString(purchaseOrder.created_at)}
           </Typography>
+          <Typography variant="body1">
+            <strong>Revision:</strong> {purchaseOrder.revision_number ?? 0}
+          </Typography>
           {purchaseOrder.internal_office_memo && (
             <Typography variant="body1">
               <strong>Linked IOM ID:</strong>{' '}
-              {purchaseOrder.internal_office_memo}
+              {purchaseOrder.internal_office_memo} {/* Consider fetching IOM summary if needed */}
+            </Typography>
+          )}
+           {purchaseOrder.related_contract_details && ( // Assuming related_contract_details holds a string like title or ID
+            <Typography variant="body1">
+              <strong>Related Contract:</strong> {purchaseOrder.related_contract_details}
             </Typography>
           )}
         </Grid>
@@ -256,58 +278,76 @@ const PurchaseOrderDetailView: React.FC = () => {
           <Divider sx={{ my: 2 }} />
         </Grid>
 
-        {/* Addressing Section */}
-        {purchaseOrder.shipping_address && (
+        {/* Addressing & Shipping Section */}
+        <Grid item xs={12} md={6}>
+           {purchaseOrder.shipping_address && (
+            <>
+              <Typography variant="h6" gutterBottom>Shipping Address</Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb:1 }}>{purchaseOrder.shipping_address}</Typography>
+            </>
+          )}
+          {purchaseOrder.shipping_method && (
+            <Typography variant="body1"><strong>Shipping Method:</strong> {purchaseOrder.shipping_method}</Typography>
+          )}
+        </Grid>
+         <Grid item xs={12} md={6}>
+          {purchaseOrder.billing_address && (
+            <>
+              <Typography variant="h6" gutterBottom>Billing Address</Typography>
+              <Typography variant="body1" sx={{ whiteSpace: 'pre-line', mb:1 }}>{purchaseOrder.billing_address}</Typography>
+            </>
+          )}
+        </Grid>
+
+        {purchaseOrder.attachments && typeof purchaseOrder.attachments === 'string' && (
           <Grid item xs={12}>
-            <Typography variant="h6" gutterBottom>
-              Shipping Address
-            </Typography>
-            <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
-              {purchaseOrder.shipping_address}
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              <strong>Attachment:</strong>&nbsp;
+              <Link href={purchaseOrder.attachments} target="_blank" rel="noopener noreferrer" sx={{display: 'inline-flex', alignItems: 'center'}}>
+                <AttachmentIcon sx={{fontSize: '1rem', mr: 0.5}} />
+                View PO Attachment
+              </Link>
             </Typography>
           </Grid>
         )}
 
-        <Grid item xs={12}>
-          <Divider sx={{ my: 2 }} />
-        </Grid>
+
+        <Grid item xs={12}><Divider sx={{ my: 2 }} /></Grid>
 
         {/* Items Section */}
         <Grid item xs={12}>
-          <Typography variant="h6" gutterBottom>
-            Order Items
-          </Typography>
+          <Typography variant="h6" gutterBottom>Order Items</Typography>
           <TableContainer component={Paper} variant="outlined">
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell sx={{ fontWeight: 'bold' }}>
-                    Item Description
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                    Quantity
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                    Unit Price
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>
-                    Total Price
-                  </TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Item Description</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Product Code</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Qty</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Unit Price</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>GL Account</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Rcvd Qty</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Line Status</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Tax (%)</TableCell>
+                  <TableCell sx={{ fontWeight: 'bold' }}>Disc. Type</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Disc. Val</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 'bold' }}>Total Price</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>
                 {purchaseOrder.order_items.map((item: OrderItem) => (
                   <TableRow key={item.id || Math.random()}>
-                    {' '}
-                    {/* Use item.id if available, else fallback for new items not yet saved */}
                     <TableCell>{item.item_description}</TableCell>
+                    <TableCell>{item.product_code || '-'}</TableCell>
                     <TableCell align="right">{item.quantity}</TableCell>
-                    <TableCell align="right">
-                      {formatCurrency(item.unit_price)}
-                    </TableCell>
-                    <TableCell align="right">
-                      {formatCurrency(item.total_price)}
-                    </TableCell>
+                    <TableCell align="right">{formatCurrency(item.unit_price, purchaseOrder.currency)}</TableCell>
+                    <TableCell>{item.gl_account_code || (item.gl_account ? `ID: ${item.gl_account}`: '-')}</TableCell>
+                    <TableCell align="right">{item.received_quantity ?? 0}</TableCell>
+                    <TableCell>{item.line_item_status?.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) || 'N/A'}</TableCell>
+                    <TableCell align="right">{item.tax_rate != null ? `${item.tax_rate}%` : '-'}</TableCell>
+                    <TableCell>{item.discount_type || '-'}</TableCell>
+                    <TableCell align="right">{item.discount_value != null ? formatCurrency(item.discount_value, purchaseOrder.currency) : '-'}</TableCell>
+                    <TableCell align="right">{formatCurrency(item.total_price, purchaseOrder.currency)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -315,33 +355,33 @@ const PurchaseOrderDetailView: React.FC = () => {
           </TableContainer>
         </Grid>
 
-        <Grid item xs={12}>
-          <Divider sx={{ my: 2 }} />
-        </Grid>
+        <Grid item xs={12}><Divider sx={{ my: 2 }} /></Grid>
 
         {/* Summary Section */}
         <Grid item xs={12} sx={{ textAlign: 'right' }}>
           <Typography variant="h6">
             <strong>Overall Total:</strong>{' '}
-            {formatCurrency(purchaseOrder.total_amount)}
+            {formatCurrency(purchaseOrder.total_amount, purchaseOrder.currency)}
           </Typography>
         </Grid>
 
-        {/* Notes Section */}
-        {purchaseOrder.notes && (
-          <>
-            <Grid item xs={12}>
-              <Divider sx={{ my: 2 }} />
+        {/* Notes & Payment Terms Section */}
+        {(purchaseOrder.notes || purchaseOrder.payment_terms) && (
+            <Grid item xs={12}><Divider sx={{my:2}}/></Grid>
+        )}
+        {purchaseOrder.payment_terms && (
+             <Grid item xs={12} md={6}>
+                <Typography variant="h6" gutterBottom>Payment Terms</Typography>
+                <Typography variant="body1">{purchaseOrder.payment_terms}</Typography>
             </Grid>
-            <Grid item xs={12}>
-              <Typography variant="h6" gutterBottom>
-                Notes / Terms
-              </Typography>
+        )}
+        {purchaseOrder.notes && (
+            <Grid item xs={12} md={purchaseOrder.payment_terms ? 6 : 12}>
+              <Typography variant="h6" gutterBottom>Notes</Typography>
               <Typography variant="body1" sx={{ whiteSpace: 'pre-line' }}>
                 {purchaseOrder.notes}
               </Typography>
             </Grid>
-          </>
         )}
       </Grid>
     </Paper>

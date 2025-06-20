@@ -304,13 +304,15 @@ const CheckRequestList: React.FC = () => {
     padding?: 'none' | 'normal';
   }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
-    { id: 'id', label: 'Req. ID', sortable: true },
+    { id: 'cr_id', label: 'CR ID', sortable: true }, // Changed from 'id' to 'cr_id'
     { id: 'purchase_order_number', label: 'PO #', sortable: true },
     { id: 'payee_name', label: 'Payee', sortable: true },
     { id: 'amount', label: 'Amount', sortable: true, numeric: true },
+    { id: 'currency', label: 'Currency', sortable:true },
     { id: 'status', label: 'Status', sortable: true },
+    { id: 'is_urgent', label: 'Urgent', sortable: true },
     { id: 'request_date', label: 'Request Date', sortable: true },
-    { id: 'requested_by_username', label: 'Requested By', sortable: true },
+    // { id: 'requested_by_username', label: 'Requested By', sortable: true }, // Optional for brevity
     { id: 'actions', label: 'Actions', sortable: false, numeric: true },
   ];
 
@@ -439,12 +441,13 @@ const CheckRequestList: React.FC = () => {
                   </TableCell>
                   <TableCell
                     id={`cr-checkbox-${req.id}`}
-                  >{`CR-${req.id}`}</TableCell>
+                  >{req.cr_id || `CR-${req.id}`}</TableCell> {/* Display actual cr_id */}
                   <TableCell>{req.purchase_order_number || '-'}</TableCell>
                   <TableCell>{req.payee_name}</TableCell>
                   <TableCell align="right">
-                    ${Number(req.amount).toFixed(2)}
+                    {formatCurrency(req.amount, req.currency)} {/* Use formatCurrency */}
                   </TableCell>
+                  <TableCell>{req.currency || '-'}</TableCell>
                   <TableCell>
                     <Chip
                       label={req.status.replace(/_/g, ' ')}
@@ -453,9 +456,12 @@ const CheckRequestList: React.FC = () => {
                     />
                   </TableCell>
                   <TableCell>
+                    {req.is_urgent ? <Chip label="Yes" color="error" size="small"/> : "No"}
+                  </TableCell>
+                  <TableCell>
                     {new Date(req.request_date).toLocaleDateString()}
                   </TableCell>
-                  <TableCell>{req.requested_by_username}</TableCell>
+                  {/* <TableCell>{req.requested_by_username}</TableCell> */}
                   <TableCell align="right">
                     <Tooltip title="View Details">
                       <IconButton

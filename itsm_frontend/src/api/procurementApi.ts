@@ -21,10 +21,68 @@ import type {
   AccountsDecisionPayload,
   ConfirmPaymentPayload,
   GetCheckRequestsParams,
+  // Types for dropdown data - to be added in procurementTypes.ts
+  Department,
+  Project,
+  ContractForDropdown,
+  GLAccount,
+  ExpenseCategory,
+  RecurringPaymentForDropdown,
+  // Vendor is typically handled by assetApi, but if a specific dropdown type is needed:
+  // VendorForDropdown
 } from '../modules/procurement/types/procurementTypes';
+
 
 // API Base Path
 const API_PROCUREMENT_PATH = '/procurement';
+
+// --- API Functions for Dropdown Data ---
+
+export const getDepartmentsForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<Department>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/departments/?page_size=200`; // Fetch many for dropdown
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<Department>;
+};
+
+export const getProjectsForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<Project>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/projects/?page_size=200`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<Project>;
+};
+
+// Note: getVendors is typically sourced from assetApi.ts.
+// If a specific simple list is needed from procurement, an endpoint could be added.
+
+export const getContractsForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<ContractForDropdown>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/contracts/?page_size=200`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<ContractForDropdown>;
+};
+
+export const getGLAccountsForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<GLAccount>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/gl-accounts/?page_size=200`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<GLAccount>;
+};
+
+export const getExpenseCategoriesForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<ExpenseCategory>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/expense-categories/?page_size=200`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<ExpenseCategory>;
+};
+
+export const getRecurringPaymentsForDropdown = async (
+  authenticatedFetch: AuthenticatedFetch,
+): Promise<PaginatedResponse<RecurringPaymentForDropdown>> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/recurring-payments/?page_size=200`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<RecurringPaymentForDropdown>;
+};
+
 
 // 4. API Client Functions (Memo - existing)
 // ... (existing memo functions remain unchanged) ...

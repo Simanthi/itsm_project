@@ -22,7 +22,28 @@ class PurchaseRequestMemoViewSet(viewsets.ModelViewSet):
     Provides custom actions for decision-making and cancellation.
     """
     serializer_class = PurchaseRequestMemoSerializer
-    permission_classes = [IsAuthenticated]
+    #permission_classes = [IsAuthenticated] # Default, will be overridden by actions or more specific perms
+
+    def get_permissions(self):
+        """
+        Instantiates and returns the list of permissions that this view requires.
+        """
+        if self.action == 'list' or self.action == 'retrieve':
+            # Anyone authenticated can view list or details
+            permission_classes = [IsAuthenticated]
+        elif self.action == 'create':
+             # Anyone authenticated can create
+            permission_classes = [IsAuthenticated]
+        elif self.action in ['update', 'partial_update', 'destroy', 'cancel']:
+            # Only owner or staff can edit/delete/cancel
+            # Note: 'cancel' is a custom action, 'destroy' is standard delete
+            permission_classes = [IsAuthenticated, IsOwnerOrReadOnly] # IsOwnerOrReadOnly checks created_by/requested_by
+        elif self.action == 'decide':
+            permission_classes = [IsAuthenticated, CanApproveRejectIOM] # Specific permission for deciding
+        else:
+            permission_classes = [IsAuthenticated] # Default
+        return [permission() for permission in permission_classes]
+
 
     def get_queryset(self):
         user = self.request.user
