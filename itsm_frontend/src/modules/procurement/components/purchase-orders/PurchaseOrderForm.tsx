@@ -883,7 +883,7 @@ const PurchaseOrderForm: React.FC = () => {
                        <TextField type="number" name="discount_value" value={item.discount_value || ''} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly, inputProps: { step: '0.01', min: 0 } }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell align="right">
-                      {formData.currency === 'KES' ? 'KES' : '$'}
+                      {formData.currency === 'KES' ? 'KES' : formData.currency === 'INR' ? '₹' : '$'}
                       {/* This total calculation needs to be more robust in OrderItem type using @property if it includes tax/discount */}
                       {((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
                     </TableCell>

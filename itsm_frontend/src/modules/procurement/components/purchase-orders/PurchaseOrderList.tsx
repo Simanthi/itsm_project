@@ -212,16 +212,13 @@ const PurchaseOrderList: React.FC = () => {
   }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
     { id: 'po_number', label: 'PO Number', sortable: true },
-    { id: 'vendor_details', label: 'Vendor', sortable: true }, // Sorting by vendor.name would be backend: 'vendor__name'
+    { id: 'vendor_details', label: 'Vendor', sortable: true }, // Sorting by vendor.name: 'vendor__name'
+    { id: 'po_type', label: 'PO Type', sortable: true },
     { id: 'order_date', label: 'Order Date', sortable: true },
     { id: 'status', label: 'Status', sortable: true },
-    {
-      id: 'total_amount',
-      label: 'Total Amount',
-      sortable: true,
-      numeric: true,
-    },
-    { id: 'created_by_username', label: 'Created By', sortable: true },
+    { id: 'total_amount', label: 'Total Amount', sortable: true, numeric: true },
+    { id: 'currency', label: 'Currency', sortable: true},
+    // { id: 'created_by_username', label: 'Created By', sortable: true }, // Can be re-added if space permits
     { id: 'actions', label: 'Actions', sortable: false, numeric: true },
   ];
 
@@ -356,6 +353,7 @@ const PurchaseOrderList: React.FC = () => {
                     {po.po_number}
                   </TableCell>
                   <TableCell>{po.vendor_details?.name || '-'}</TableCell>
+                  <TableCell>{po.po_type ? po.po_type.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()) : '-'}</TableCell>
                   <TableCell>
                     {new Date(po.order_date).toLocaleDateString()}
                   </TableCell>
@@ -370,10 +368,11 @@ const PurchaseOrderList: React.FC = () => {
                   </TableCell>
                   <TableCell align="right">
                     {po.total_amount != null
-                      ? `$${Number(po.total_amount).toFixed(2)}`
+                      ? formatCurrency(po.total_amount, po.currency) // Use formatCurrency helper
                       : '-'}
                   </TableCell>
-                  <TableCell>{po.created_by_username}</TableCell>
+                  <TableCell>{po.currency || '-'}</TableCell>
+                  {/* <TableCell>{po.created_by_username}</TableCell> */}
                   <TableCell align="right">
                     <Tooltip title="View Details">
                       <IconButton

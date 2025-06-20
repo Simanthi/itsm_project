@@ -14,32 +14,51 @@ User = get_user_model()
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Department
-        fields = '__all__'
+        fields = ['id', 'name', 'department_code'] # Optimized for dropdowns
 
 class ProjectSerializer(serializers.ModelSerializer):
     class Meta:
         model = Project
-        fields = '__all__'
+        fields = ['id', 'name', 'project_code'] # Optimized for dropdowns
 
 class ContractSerializer(serializers.ModelSerializer):
+    vendor_name = serializers.StringRelatedField(source='vendor', read_only=True)
     class Meta:
         model = Contract
-        fields = '__all__'
+        fields = ['id', 'contract_id', 'title', 'vendor', 'vendor_name'] # Optimized for dropdowns, include vendor for context
 
 class GLAccountSerializer(serializers.ModelSerializer):
     class Meta:
         model = GLAccount
-        fields = '__all__'
+        fields = ['id', 'name', 'account_code'] # Optimized for dropdowns
 
 class ExpenseCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = ExpenseCategory
-        fields = '__all__'
+        fields = ['id', 'name'] # Optimized for dropdowns
 
 class RecurringPaymentSerializer(serializers.ModelSerializer):
+    vendor_name = serializers.StringRelatedField(source='vendor', read_only=True)
     class Meta:
         model = RecurringPayment
-        fields = '__all__'
+        fields = ['id', 'payment_name', 'vendor', 'vendor_name', 'amount', 'currency'] # Optimized
+
+
+# Specific Vendor serializer for dropdowns if assets.VendorSerializer is too broad
+# assets.models.Vendor is imported as 'Vendor' in this file due to `from assets.serializers import VendorSerializer`
+# and then `from .models import Vendor`. This is confusing.
+# Let's use the fully qualified path for the asset vendor here for clarity, or ensure one consistent import.
+# For now, assuming `Vendor` from `.models` is NOT `assets.models.Vendor`.
+# The `VendorSerializer` from `assets.serializers` is already quite comprehensive.
+# If a simpler one is needed for dropdowns, it should explicitly use `assets.models.Vendor`.
+
+# Let's assume assets.serializers.VendorSerializer is sufficient for now or can be adjusted.
+# If a specific dropdown serializer for assets.models.Vendor is needed:
+# from assets.models import Vendor as AssetVendorModel
+# class AssetVendorDropdownSerializer(serializers.ModelSerializer):
+#     class Meta:
+#         model = AssetVendorModel
+#         fields = ['id', 'name']
 
 
 class PurchaseRequestMemoSerializer(serializers.ModelSerializer):

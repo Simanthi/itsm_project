@@ -10,9 +10,11 @@ import {
   Button,
   Divider,
   Chip,
+  Link, // For attachment link
 } from '@mui/material';
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
+import AttachmentIcon from '@mui/icons-material/Attachment'; // For attachment icon
 
 import { useAuth } from '../../../../context/auth/useAuth';
 import { getPurchaseRequestMemoById } from '../../../../api/procurementApi';
@@ -171,102 +173,115 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
 
       <Grid container spacing={3}>
         {/* Main Details Section */}
-        <Grid item xs={12}>
+        {/* Main Details Section */}
+        <Grid item xs={12} md={8}>
           <Typography variant="h6" gutterBottom>
-            Memo Details
+            Memo Details {memo.iom_id && `(${memo.iom_id})`}
           </Typography>
           <Typography variant="body1">
             <strong>Item Description:</strong>
           </Typography>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
             {memo.item_description}
           </Typography>
 
           <Typography variant="body1">
             <strong>Quantity:</strong> {memo.quantity}
           </Typography>
-          <Typography variant="body1">
+          <Typography variant="body1" sx={{ mb: 2 }}>
             <strong>Estimated Cost:</strong>{' '}
             {formatCurrency(memo.estimated_cost)}
           </Typography>
-        </Grid>
 
-        <Grid item xs={12}>
-          <Divider sx={{ my: 1 }} />
-        </Grid>
-
-        <Grid item xs={12}>
           <Typography variant="body1">
             <strong>Reason for Purchase:</strong>
           </Typography>
-          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 1 }}>
+          <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap', mb: 2 }}>
             {memo.reason}
           </Typography>
         </Grid>
 
-        <Grid item xs={12}>
-          <Divider sx={{ my: 1 }} />
-        </Grid>
-
-        {/* Requester Info Section */}
-        <Grid item xs={12} md={6}>
+        {/* Right Column for Requester, Status, Priority, etc. */}
+        <Grid item xs={12} md={4}>
           <Typography variant="h6" gutterBottom>
-            Requester Information
+            Overview
           </Typography>
           <Typography variant="body1">
             <strong>Requested By:</strong> {memo.requested_by_username}
           </Typography>
-          <Typography variant="body1">
+          <Typography variant="body1" sx={{ mb: 1 }}>
             <strong>Request Date:</strong> {formatDateString(memo.request_date)}
           </Typography>
-        </Grid>
-
-        {/* Status Section */}
-        <Grid item xs={12} md={6}>
-          <Typography variant="h6" gutterBottom>
-            Status
+           <Typography variant="body1" sx={{ mb: 1 }}>
+            <strong>Priority:</strong> <Chip label={memo.priority?.toUpperCase() || 'N/A'} size="small" />
           </Typography>
-          <Chip
-            label={memo.status
-              .replace(/_/g, ' ')
-              .replace(/\b\w/g, (l) => l.toUpperCase())}
-            color={getStatusChipColor(memo.status)}
-            size="medium"
-          />
+          <Typography variant="body1" sx={{ mb: 2 }}>
+            <strong>Status:</strong>&nbsp;
+            <Chip
+              label={memo.status
+                .replace(/_/g, ' ')
+                .replace(/\b\w/g, (l) => l.toUpperCase())}
+              color={getStatusChipColor(memo.status)}
+              size="small"
+            />
+          </Typography>
+
+          {memo.department_name && (
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Department:</strong> {memo.department_name}
+            </Typography>
+          )}
+          {memo.project_name && (
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Project:</strong> {memo.project_name}
+            </Typography>
+          )}
+          {memo.required_delivery_date && (
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Required Delivery:</strong> {formatDateString(memo.required_delivery_date)}
+            </Typography>
+          )}
+          {memo.suggested_vendor_name && (
+            <Typography variant="body1" sx={{ mb: 1 }}>
+              <strong>Suggested Vendor:</strong> {memo.suggested_vendor_name}
+            </Typography>
+          )}
+          {memo.attachments && typeof memo.attachments === 'string' && (
+            <Typography variant="body1" sx={{ mt: 1 }}>
+              <strong>Attachment:</strong>&nbsp;
+              <Link href={memo.attachments} target="_blank" rel="noopener noreferrer" sx={{display: 'inline-flex', alignItems: 'center'}}>
+                <AttachmentIcon sx={{fontSize: '1rem', mr: 0.5}} />
+                View Attachment
+              </Link>
+            </Typography>
+          )}
         </Grid>
 
-        {/* Approval Section - only show if there's an approver (i.e., status is not just pending) */}
-        {memo.status !== 'pending' &&
-          memo.status !== 'cancelled' &&
-          memo.approver_username && (
-            <>
-              <Grid item xs={12}>
-                <Divider sx={{ my: 2 }} />
-              </Grid>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Approval Information
+        {/* Approval Section - spans full width if present */}
+        {(memo.status !== 'pending' && memo.status !== 'cancelled' && memo.approver_username) && (
+          <Grid item xs={12}>
+            <Divider sx={{ my: 2 }} />
+            <Typography variant="h6" gutterBottom>
+              Approval Information
+            </Typography>
+            <Typography variant="body1">
+              <strong>Approver:</strong> {memo.approver_username || 'N/A'}
+            </Typography>
+            <Typography variant="body1">
+              <strong>Decision Date:</strong> {formatDateString(memo.decision_date)}
+            </Typography>
+            {memo.approver_comments && (
+              <>
+                <Typography variant="body1" sx={{ mt: 1 }}>
+                  <strong>Approver Comments:</strong>
                 </Typography>
-                <Typography variant="body1">
-                  <strong>Approver:</strong> {memo.approver_username || 'N/A'}
+                <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
+                  {memo.approver_comments}
                 </Typography>
-                <Typography variant="body1">
-                  <strong>Decision Date:</strong>{' '}
-                  {formatDateString(memo.decision_date)}
-                </Typography>
-                {memo.approver_comments && (
-                  <>
-                    <Typography variant="body1" sx={{ mt: 1 }}>
-                      <strong>Approver Comments:</strong>
-                    </Typography>
-                    <Typography variant="body1" sx={{ whiteSpace: 'pre-wrap' }}>
-                      {memo.approver_comments}
-                    </Typography>
-                  </>
-                )}
-              </Grid>
-            </>
-          )}
+              </>
+            )}
+          </Grid>
+        )}
       </Grid>
     </Paper>
   );
