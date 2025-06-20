@@ -304,7 +304,7 @@ const CheckRequestList: React.FC = () => {
     padding?: 'none' | 'normal';
   }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
-    { id: 'cr_id', label: 'CR ID', sortable: true },
+    { id: 'id', label: 'Req. ID', sortable: true },
     { id: 'purchase_order_number', label: 'PO #', sortable: true },
     { id: 'payee_name', label: 'Payee', sortable: true },
     { id: 'amount', label: 'Amount', sortable: true, numeric: true },
@@ -439,7 +439,7 @@ const CheckRequestList: React.FC = () => {
                   </TableCell>
                   <TableCell
                     id={`cr-checkbox-${req.id}`}
-                  >{req.cr_id}</TableCell>
+                  >{`CR-${req.id}`}</TableCell>
                   <TableCell>{req.purchase_order_number || '-'}</TableCell>
                   <TableCell>{req.payee_name}</TableCell>
                   <TableCell align="right">
@@ -592,7 +592,7 @@ const CheckRequestList: React.FC = () => {
         <DialogContent>
           <DialogContentText>
             {selectedRequest &&
-              `For Check Request ${selectedRequest.cr_id} to ${selectedRequest.payee_name} for $${Number(selectedRequest.amount).toFixed(2)}.`}
+              `For Check Request CR-${selectedRequest.id} to ${selectedRequest.payee_name} for $${Number(selectedRequest.amount).toFixed(2)}.`}
             {(dialogAction === 'reject' || dialogAction === 'approve') &&
               ' Please provide comments for your decision.'}
             {dialogAction === 'confirm_payment' &&

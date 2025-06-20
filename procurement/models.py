@@ -8,14 +8,6 @@ User = get_user_model()
 
 
 class PurchaseRequestMemo(models.Model):
-    iom_id = models.CharField(
-        _("IOM ID"),
-        max_length=20,
-        unique=True,
-        blank=True,
-        editable=False,
-        help_text=_("Unique Internal Office Memo ID (e.g., IM-AA-0001)")
-    )
     STATUS_CHOICES = [
         ('pending', _('Pending')),
         ('approved', _('Approved')),
@@ -65,26 +57,10 @@ class PurchaseRequestMemo(models.Model):
         ordering = ['-request_date']
 
     def __str__(self):
-        return f"{self.iom_id} - {self.item_description[:50]} by {self.requested_by.username}"
-
-    def save(self, *args, **kwargs):
-        if not self.iom_id:
-            self.iom_id = PurchaseRequestMemoSequence.get_next_sequence_value(prefix="IM")
-        super().save(*args, **kwargs)
+        return f"Request for {self.item_description[:50]} by {self.requested_by.username} on {self.request_date.strftime('%Y-%m-%d')}"
 
 
 class PurchaseOrder(models.Model):
-    # po_number will store the new unique ID.
-    # Existing: po_number = models.CharField(_("PO Number"), max_length=50, unique=True, help_text="Unique Purchase Order number")
-    # To be modified to be blank=True, editable=False initially and populated by save()
-    po_number = models.CharField(
-        _("PO Number"),
-        max_length=20,  # Adjusted length for "PO-XX-NNNN" format
-        unique=True,
-        blank=True,  # Will be populated by save method
-        editable=False,
-        help_text="Unique Purchase Order ID (e.g., PO-AA-0001)"
-    )
     PO_STATUS_CHOICES = [
         ('draft', _('Draft')),
         ('pending_approval', _('Pending Approval')),
@@ -143,16 +119,6 @@ class PurchaseOrder(models.Model):
         # self.total_amount = total # Avoid direct assignment if save() is not handled carefully
         return total
 
-    def save(self, *args, **kwargs):
-        if not self.po_number:
-            self.po_number = PurchaseOrderSequence.get_next_sequence_value(prefix="PO")
-        # Ensure total_amount is recalculated if order items might have changed outside of direct PO save.
-        # However, this is usually handled by OrderItem signals or PurchaseOrderSerializer.
-        # If called from serializer after items are handled, it's fine.
-        # If this save is triggered before items are finalized, total_amount might be stale.
-        # For now, let's assume total_amount is managed correctly by serializer or explicit calls.
-        super().save(*args, **kwargs)
-
 
 class OrderItem(models.Model):
     purchase_order = models.ForeignKey(
@@ -200,14 +166,6 @@ class CheckRequest(models.Model):
         ('other', _('Other')),
     ]
 
-    cr_id = models.CharField(
-        _("CR ID"),
-        max_length=20,
-        unique=True,
-        blank=True,
-        editable=False,
-        help_text=_("Unique Check Request ID (e.g., CR-AA-0001)")
-    )
     purchase_order = models.ForeignKey(
         PurchaseOrder,
         on_delete=models.PROTECT,
@@ -256,100 +214,5 @@ class CheckRequest(models.Model):
         ordering = ['-request_date']
 
     def __str__(self):
-        po_ref = f"(PO: {self.purchase_order.po_number})" if self.purchase_order else "(No PO)"
-        return f"{self.cr_id} - {self.amount} to {self.payee_name} {po_ref}"
-
-    def save(self, *args, **kwargs):
-        if not self.cr_id:
-            self.cr_id = CheckRequestSequence.get_next_sequence_value(prefix="CR")
-        super().save(*args, **kwargs)
-
-
-# --- Sequence Models for Unique ID Generation ---
-
-class AbstractProcurementSequence(models.Model):
-    """
-    Abstract base model for procurement ID sequences.
-    There should only ever be one instance of each concrete sequence model (pk=1).
-    """
-    current_alpha_part_char1 = models.CharField(
-        max_length=1,
-        default="A",
-        help_text="First character of the alphanumeric part (e.g., 'A' for XX-AA-0001)",
-    )
-    current_alpha_part_char2 = models.CharField(
-        max_length=1,
-        default="A",
-        help_text="Second character of the alphanumeric part (e.g., 'A' for XX-AA-0001)",
-    )
-    current_numeric_part = models.IntegerField(
-        default=0, help_text="Current numeric value (0-9999)"
-    )
-
-    class Meta:
-        abstract = True
-
-    @classmethod
-    def get_next_sequence_value(cls, prefix: str):
-        """
-        Atomically increments and retrieves the next sequence value.
-        Handles both numeric and alphanumeric parts.
-        """
-        from django.db import transaction
-        with transaction.atomic():
-            seq_instance, created = cls.objects.select_for_update().get_or_create(pk=1)
-
-            current_numeric = seq_instance.current_numeric_part
-            current_char1_val = ord(seq_instance.current_alpha_part_char1) - ord("A")
-            current_char2_val = ord(seq_instance.current_alpha_part_char2) - ord("A")
-
-            next_numeric = current_numeric + 1
-            next_char1_val = current_char1_val
-            next_char2_val = current_char2_val
-
-            if next_numeric > 9999:
-                next_numeric = 1
-                next_char2_val += 1
-                if next_char2_val >= 26:
-                    next_char2_val = 0
-                    next_char1_val += 1
-                    if next_char1_val >= 26:
-                        raise ValueError(
-                            f"{prefix} ID sequence exhausted (ZZ-9999 reached). Please implement a larger sequence or reset."
-                        )
-
-            seq_instance.current_numeric_part = next_numeric
-            seq_instance.current_alpha_part_char1 = chr(ord("A") + next_char1_val)
-            seq_instance.current_alpha_part_char2 = chr(ord("A") + next_char2_val)
-            seq_instance.save()
-
-            alpha_part = f"{seq_instance.current_alpha_part_char1}{seq_instance.current_alpha_part_char2}"
-            numeric_part = f"{seq_instance.current_numeric_part:04d}"
-            return f"{prefix}-{alpha_part}-{numeric_part}"
-
-
-class PurchaseRequestMemoSequence(AbstractProcurementSequence):
-    class Meta:
-        verbose_name = _("Purchase Request Memo ID Sequence")
-        verbose_name_plural = _("Purchase Request Memo ID Sequences")
-
-    def __str__(self):
-        return f"Current IOM ID: IM-{self.current_alpha_part_char1}{self.current_alpha_part_char2}-{self.current_numeric_part:04d}"
-
-
-class PurchaseOrderSequence(AbstractProcurementSequence):
-    class Meta:
-        verbose_name = _("Purchase Order ID Sequence")
-        verbose_name_plural = _("Purchase Order ID Sequences")
-
-    def __str__(self):
-        return f"Current PO ID: PO-{self.current_alpha_part_char1}{self.current_alpha_part_char2}-{self.current_numeric_part:04d}"
-
-
-class CheckRequestSequence(AbstractProcurementSequence):
-    class Meta:
-        verbose_name = _("Check Request ID Sequence")
-        verbose_name_plural = _("Check Request ID Sequences")
-
-    def __str__(self):
-        return f"Current CR ID: CR-{self.current_alpha_part_char1}{self.current_alpha_part_char2}-{self.current_numeric_part:04d}"
+        po_number_str = self.purchase_order.po_number if self.purchase_order else 'N/A'
+        return f"Check Request for {self.amount} to {self.payee_name} (PO: {po_number_str})"

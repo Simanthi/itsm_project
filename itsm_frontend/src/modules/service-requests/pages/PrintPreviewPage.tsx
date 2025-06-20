@@ -221,7 +221,7 @@ const PrintPreviewPage: React.FC = () => {
           <Typography variant="h6" sx={{ flexGrow: 1, ml: 2 }}>
             Print Preview
           </Typography>
-          <FormControl size="small" sx={{ m: 1, minWidth: 200, mr: 2, backgroundColor: 'white' }}>
+          <FormControl variant="outlined" size="small" sx={{ m: 1, minWidth: 200, mr: 2, backgroundColor: 'white' }}>
             <InputLabel id="template-select-label">Select Template</InputLabel>
             <Select
               labelId="template-select-label"

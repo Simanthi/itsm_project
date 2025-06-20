@@ -263,7 +263,6 @@ const PurchaseRequestMemoList: React.FC = () => {
     padding?: 'none' | 'normal';
   }[] = [
     { id: 'select', label: '', sortable: false, padding: 'none' },
-    { id: 'iom_id', label: 'IOM ID', sortable: true },
     { id: 'item_description', label: 'Item Description', sortable: true },
     { id: 'quantity', label: 'Qty', sortable: false },
     { id: 'requested_by_username', label: 'Requested By', sortable: true },
@@ -406,9 +405,8 @@ const PurchaseRequestMemoList: React.FC = () => {
                       }}
                     />
                   </TableCell>
-                  <TableCell>{memo.iom_id}</TableCell>
                   <TableCell
-                    // id={`memo-checkbox-${memo.id}`} // ID should be on a unique element if used for aria-labelledby
+                    id={`memo-checkbox-${memo.id}`}
                     sx={{
                       maxWidth: 300,
                       overflow: 'hidden',
