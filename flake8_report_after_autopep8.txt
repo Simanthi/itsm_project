@@ -1,3 +1,0 @@
-procurement/admin.py:1:1: F401 'django.contrib.admin' imported but unused
-procurement/tests.py:1:1: F401 'django.test.TestCase' imported but unused
-security_access/apps.py:9:9: F401 'security_access.models' imported but unused
