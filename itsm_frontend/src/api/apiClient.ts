@@ -34,17 +34,23 @@ export async function apiClient<T>(
   token: string,
   options?: RequestInit,
 ): Promise<T> {
-  const headers = {
-    'Content-Type': 'application/json',
+  // Base headers without Content-Type initially
+  const baseHeaders: Record<string, string> = {
     Authorization: `Bearer ${token}`,
   };
+
+  // Conditionally set Content-Type
+  // Do not set Content-Type if body is FormData, as browser will set it with boundary
+  if (!(options?.body instanceof FormData)) {
+    baseHeaders['Content-Type'] = 'application/json';
+  }
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {
       ...options,
       headers: {
-        ...headers,
-        ...options?.headers,
+        ...baseHeaders, // Use the conditionally prepared baseHeaders
+        ...options?.headers, // Allow explicit override from options
       },
     });
 

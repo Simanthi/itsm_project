@@ -1,6 +1,7 @@
 from rest_framework import viewsets, status as http_status
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.decorators import action
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser # Added
 from rest_framework.response import Response
 from django.utils import timezone
 from django.contrib.auth import get_user_model
@@ -28,6 +29,7 @@ class PurchaseRequestMemoViewSet(viewsets.ModelViewSet):
     Provides custom actions for decision-making and cancellation.
     """
     serializer_class = PurchaseRequestMemoSerializer
+    parser_classes = [MultiPartParser, FormParser, JSONParser] # Explicitly added
     #permission_classes = [IsAuthenticated] # Default, will be overridden by actions or more specific perms
 
     def get_permissions(self):

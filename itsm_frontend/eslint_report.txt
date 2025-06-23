@@ -1,0 +1,25 @@
+
+/app/itsm_frontend/src/api/procurementApi.ts
+   7:3  error  'PurchaseRequestMemoData' is defined but never used        @typescript-eslint/no-unused-vars
+   8:3  error  'PurchaseRequestMemoUpdateData' is defined but never used  @typescript-eslint/no-unused-vars
+  16:3  error  'PurchaseOrderData' is defined but never used              @typescript-eslint/no-unused-vars
+  19:3  error  'CheckRequestData' is defined but never used               @typescript-eslint/no-unused-vars
+  20:3  error  'CheckRequestUpdateData' is defined but never used         @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/modules/procurement/components/check-requests/CheckRequestForm.tsx
+  272:56  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  419:73  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+
+/app/itsm_frontend/src/modules/procurement/components/purchase-orders/PurchaseOrderForm.tsx
+  498:43  error  'parseErrorUntyped' is defined but never used  @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/modules/procurement/components/purchase-request-memos/PurchaseRequestMemoForm.tsx
+   59:7   error  'mockDepartments' is assigned a value but never used  @typescript-eslint/no-unused-vars
+   66:7   error  'mockProjects' is assigned a value but never used     @typescript-eslint/no-unused-vars
+   72:7   error  'mockVendors' is assigned a value but never used      @typescript-eslint/no-unused-vars
+  303:43  error  'parseErrorUntyped' is defined but never used         @typescript-eslint/no-unused-vars
+
+/app/itsm_frontend/src/modules/service-requests/pages/ServiceRequestDetailPage.tsx
+  15:10  error  'useServiceRequests' is defined but never used  @typescript-eslint/no-unused-vars
+
+✖ 13 problems (13 errors, 0 warnings)

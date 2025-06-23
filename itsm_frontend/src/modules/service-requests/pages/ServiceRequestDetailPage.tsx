@@ -12,7 +12,7 @@ import {
   Divider,
 } from '@mui/material';
 import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Print as PrintIcon } from '@mui/icons-material';
-import { useServiceRequests } from '../hooks/useServiceRequests'; // To potentially get a single request if already loaded
+// import { useServiceRequests } from '../hooks/useServiceRequests'; // To potentially get a single request if already loaded - REMOVED as unused
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Direct API call
 import { useAuth } from '../../../context/auth/useAuth'; // For authenticatedFetch

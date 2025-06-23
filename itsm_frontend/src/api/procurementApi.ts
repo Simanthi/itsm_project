@@ -4,8 +4,8 @@ import type {
   AuthenticatedFetch,
   // UserSummary, // Not directly used in this file's functions but kept for context if needed later
   PurchaseRequestMemo,
-  PurchaseRequestMemoData,
-  PurchaseRequestMemoUpdateData,
+  // PurchaseRequestMemoData, // No longer used directly as functions take FormData
+  // PurchaseRequestMemoUpdateData, // No longer used directly as functions take FormData
   PurchaseRequestDecisionData,
   PaginatedResponse,
   GetPurchaseRequestMemosParams,
@@ -13,11 +13,11 @@ import type {
   // OrderItem, // Not directly used in this file's functions
   // VendorSummary, // Not directly used in this file's functions
   PurchaseOrder,
-  PurchaseOrderData,
+  // PurchaseOrderData, // No longer used directly as functions take FormData
   GetPurchaseOrdersParams,
   CheckRequest,
-  CheckRequestData,
-  CheckRequestUpdateData,
+  // CheckRequestData, // No longer used directly as functions take FormData
+  // CheckRequestUpdateData, // No longer used directly as functions take FormData
   AccountsDecisionPayload,
   ConfirmPaymentPayload,
   GetCheckRequestsParams,
