@@ -89,11 +89,11 @@ These fields aim to add more detail, improve tracking, and facilitate better fin
 To elevate this ITSM software's procurement module to a world-class standard, consider these broader enhancements:
 
 1.  **Advanced Workflow & Approval Automation**:
-    *   **Dynamic Approval Chains**: Configure multi-level approval workflows based on amount, department, expense category, or project.
-    *   **Role-Based Approvals**: Assign approval steps to specific roles rather than individuals.
-    *   **Out-of-Office Delegation**: Allow users to delegate approval authority when unavailable.
-    *   **Parallel Approvals**: Allow multiple individuals/groups to approve simultaneously if needed.
-    *   **Escalation Rules**: Automatically escalate overdue approvals.
+    *   **Dynamic Approval Chains**: *Partially Implemented for IOMs.* System now supports rule-based generation of sequential approval steps for Purchase Request Memos (IOMs) based on IOM amount, department, and project. Configuration of rules is possible via Django Admin. Further enhancements could include workflows for other document types (POs, CRs) and more complex rule conditions.
+    *   **Role-Based Approvals**: *Implemented for IOM Approval Steps.* Approval rules can assign steps to specific Django Groups (roles), and any member of that group can action the step.
+    *   **Out-of-Office Delegation**: *Basic Model Implemented.* An `ApprovalDelegation` model has been added to capture delegation details (delegator, delegatee, period, reason). However, the logic to automatically apply these delegations within the approval workflow (e.g., re-assigning steps) is not yet implemented and is a future enhancement.
+    *   **Parallel Approvals**: *Future Enhancement.* Current implementation focuses on sequential steps based on rule order.
+    *   **Escalation Rules**: *Future Enhancement.*
 
 2.  **Comprehensive Vendor Management**:
     *   **Vendor Portal**: A secure portal for vendors to view POs, submit invoices, update their contact/banking information, and track payment statuses.

@@ -10,8 +10,14 @@ from .serializers import (
     PurchaseRequestMemoSerializer,
     PurchaseOrderSerializer,
     OrderItemSerializer,
-    CheckRequestSerializer  # Added CheckRequestSerializer
+    CheckRequestSerializer,
+    ApprovalRuleSerializer, # New
+    ApprovalStepSerializer  # New
 )
+from .models import ApprovalRule, ApprovalStep # New
+from django.db.models import Q # For complex queries
+from django.contrib.auth.models import Group # For group checks
+
 
 User = get_user_model()
 
@@ -58,35 +64,212 @@ class PurchaseRequestMemoViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         # department, project, suggested_vendor, etc. are passed in request data and handled by serializer
-        serializer.save(requested_by=self.request.user, status=PurchaseRequestMemo.STATUS_CHOICES[0][0])  # Default 'pending'
+        # Default status is 'draft', the save() method of PurchaseRequestMemo will handle triggering the workflow.
+        serializer.save(requested_by=self.request.user, status='draft')
 
-    @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])  # TODO: Permissions
-    def decide(self, request, pk=None):
-        memo = self.get_object()
-        decision = request.data.get('decision')
-        comments = request.data.get('comments', '')
-        if memo.status != PurchaseRequestMemo.STATUS_CHOICES[0][0]:  # 'pending'
-            return Response({'error': 'This request is not pending a decision.'}, status=http_status.HTTP_400_BAD_REQUEST)
-        valid_decisions = [PurchaseRequestMemo.STATUS_CHOICES[1][0], PurchaseRequestMemo.STATUS_CHOICES[2][0]]  # 'approved', 'rejected'
-        if decision not in valid_decisions:
-            return Response({'error': f"Invalid decision. Must be one of {valid_decisions}."}, status=http_status.HTTP_400_BAD_REQUEST)
-        memo.status = decision
-        memo.approver = request.user
-        memo.decision_date = timezone.now()
-        memo.approver_comments = comments
-        memo.save()
-        return Response(self.get_serializer(memo).data)
+    # @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated]) # TODO: Permissions / Re-evaluate this
+    # def decide(self, request, pk=None):
+    #     # This action needs to be re-thought. Decisions are now made on ApprovalSteps.
+    #     # This might be used for a final overall approval/rejection by an admin, or removed.
+    #     memo = self.get_object()
+    #     decision = request.data.get('decision')
+    #     comments = request.data.get('comments', '')
+    #
+    #     # For now, let's prevent direct decisions if in 'pending_approval'
+    #     if memo.status == 'pending_approval':
+    #         return Response({'error': 'This request is currently in an approval workflow. Actions should be on approval steps.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    #
+    #     # Original logic for non-workflow states (e.g. if it was 'pending' and no workflow applied)
+    #     # This part needs careful review based on how we want to handle IOMs that don't trigger a workflow.
+    #     # Assuming 'pending' is no longer a valid state to directly decide on if workflow is active.
+    #     # 'draft' status IOMs are not yet submitted for approval.
+    #
+    #     # if memo.status != PurchaseRequestMemo.STATUS_CHOICES[0][0]:  # 'pending'
+    #     #     return Response({'error': 'This request is not pending a decision.'}, status=http_status.HTTP_400_BAD_REQUEST)
+    #     # valid_decisions = [PurchaseRequestMemo.STATUS_CHOICES[1][0], PurchaseRequestMemo.STATUS_CHOICES[2][0]]  # 'approved', 'rejected'
+    #     # if decision not in valid_decisions:
+    #     #     return Response({'error': f"Invalid decision. Must be one of {valid_decisions}."}, status=http_status.HTTP_400_BAD_REQUEST)
+    #     # memo.status = decision
+    #     # memo.approver = request.user # This direct approver field might be deprecated or used differently
+    #     # memo.decision_date = timezone.now()
+    #     # memo.approver_comments = comments
+    #     # memo.save()
+    #     # return Response(self.get_serializer(memo).data)
+    #     return Response({'message': 'Direct decide action is under review due to new approval workflow.'}, status=http_status.HTTP_501_NOT_IMPLEMENTED)
+
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])  # TODO: Permissions
     def cancel(self, request, pk=None):
         memo = self.get_object()
         if not (memo.requested_by == request.user or request.user.is_staff or request.user.is_superuser):
             return Response({'error': 'You do not have permission to cancel this request.'}, status=http_status.HTTP_403_FORBIDDEN)
-        if memo.status != PurchaseRequestMemo.STATUS_CHOICES[0][0]:  # 'pending'
-            return Response({'error': f"Only requests with status '{PurchaseRequestMemo.STATUS_CHOICES[0][1]}' can be cancelled."}, status=http_status.HTTP_400_BAD_REQUEST)
-        memo.status = PurchaseRequestMemo.STATUS_CHOICES[4][0]  # 'cancelled'
-        memo.save()
+
+        cancellable_statuses = ['draft', 'pending_approval']
+        if memo.status not in cancellable_statuses:
+            return Response({'error': f"Only requests with status {cancellable_statuses} can be cancelled. Current status: {memo.get_status_display()}"}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        # Also cancel any pending approval steps
+        if memo.status == 'pending_approval':
+            memo.approval_steps.filter(status='pending').update(status='skipped', comments='IOM Cancelled by user.')
+
+        memo.status = 'cancelled' # This maps to PurchaseRequestMemo.STATUS_CHOICES[x][0] where x is the index for 'cancelled'
+        memo.save(update_fields=['status'])
         return Response(self.get_serializer(memo).data)
+
+
+class ApprovalRuleViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint that allows Approval Rules to be viewed or edited.
+    Typically restricted to administrators.
+    """
+    queryset = ApprovalRule.objects.all().select_related(
+        'approver_user', 'approver_group'
+    ).prefetch_related(
+        'departments', 'projects'
+    )
+    serializer_class = ApprovalRuleSerializer
+    permission_classes = [IsAuthenticated] # TODO: Replace with IsAdminUser or a custom permission for managing workflow rules.
+
+    # Add any custom logic or override methods if needed, e.g., for validation.
+
+
+class ApprovalStepViewSet(viewsets.ModelViewSet):
+    """
+    API endpoint for viewing and actioning (approving/rejecting) Approval Steps.
+
+    Users can list steps assigned to them or their groups.
+    Admins can see all steps.
+    Provides 'approve' and 'reject' custom actions.
+    """
+    serializer_class = ApprovalStepSerializer
+    permission_classes = [IsAuthenticated] # More specific permissions are handled within actions.
+
+    def get_queryset(self):
+        """
+        Customize queryset based on user role.
+        - Staff/Superusers: See all approval steps.
+        - Regular users: See pending steps assigned to them directly or to their groups.
+        """
+        user = self.request.user
+        # Users should see steps assigned to them or their groups.
+        # Admins might see all.
+        if user.is_staff or user.is_superuser:
+            return ApprovalStep.objects.all().select_related(
+                'purchase_request_memo', 'approval_rule',
+                'assigned_approver_user', 'assigned_approver_group', 'approved_by'
+            ).order_by('-created_at')
+
+        user_groups = user.groups.all()
+        return ApprovalStep.objects.filter(
+            Q(assigned_approver_user=user) | Q(assigned_approver_group__in=user_groups),
+            status='pending' # Typically users only care about pending steps for action
+        ).select_related(
+            'purchase_request_memo', 'approval_rule',
+            'assigned_approver_user', 'assigned_approver_group', 'approved_by'
+        ).order_by('purchase_request_memo__iom_id', 'step_order')
+
+    def _can_action_step(self, user, step):
+        """ Helper to check if a user can action a step. """
+        if step.status != 'pending':
+            return False, "This step is not pending action."
+
+        is_assigned_user = step.assigned_approver_user == user
+        is_in_assigned_group = False
+        if step.assigned_approver_group:
+            is_in_assigned_group = user.groups.filter(pk=step.assigned_approver_group.pk).exists()
+
+        if not (is_assigned_user or is_in_assigned_group):
+            return False, "You are not authorized to action this approval step."
+        return True, ""
+
+    @action(detail=True, methods=['post'])
+    def approve(self, request, pk=None):
+        """
+        Custom action to approve an ApprovalStep.
+        - Checks if the user is authorized and the step is pending.
+        - Updates step status to 'approved'.
+        - If this completes all approvals for the IOM, updates IOM status to 'approved'.
+        """
+        step = self.get_object()
+        user = request.user
+        comments = request.data.get('comments', '')
+
+        can_action, message = self._can_action_step(user, step)
+        if not can_action:
+            return Response({'error': message}, status=http_status.HTTP_403_FORBIDDEN)
+
+        step.status = 'approved'
+        step.approved_by = user
+        step.decision_date = timezone.now()
+        step.comments = comments
+        step.save()
+
+        # Check if this approval completes the IOM
+        iom = step.purchase_request_memo
+        pending_steps = iom.approval_steps.filter(status='pending').exists()
+        rejected_steps = iom.approval_steps.filter(status='rejected').exists() # Should not happen if one rejection fails the IOM
+
+        if not pending_steps and not rejected_steps:
+            # All steps are now actioned (approved or skipped), and none are rejected.
+            # Check if all required steps (non-skipped) are approved.
+            all_required_approved = not iom.approval_steps.filter(status__in=['pending', 'rejected']).exclude(status='skipped').exists()
+
+            if all_required_approved:
+                 # Double check if all non-skipped steps are indeed 'approved'
+                are_all_actually_approved = True
+                for s in iom.approval_steps.exclude(status='skipped'):
+                    if s.status != 'approved':
+                        are_all_actually_approved = False
+                        break
+                if are_all_actually_approved:
+                    iom.status = 'approved'
+                    iom.approver = user # Who took the final approving action for the IOM
+                    iom.decision_date = timezone.now()
+                    iom.approver_comments = f"Final approval step by {user.username}. Step comments: {comments}"
+                    iom.save(update_fields=['status', 'approver', 'decision_date', 'approver_comments'])
+
+        return Response(self.get_serializer(step).data)
+
+    @action(detail=True, methods=['post'])
+    def reject(self, request, pk=None):
+        """
+        Custom action to reject an ApprovalStep.
+        - Checks if the user is authorized and the step is pending.
+        - Requires comments for rejection.
+        - Updates step status to 'rejected'.
+        - Updates the parent IOM status to 'rejected'.
+        - Skips any other pending steps for the IOM.
+        """
+        step = self.get_object()
+        user = request.user
+        comments = request.data.get('comments', '')
+
+        if not comments:
+            return Response({'error': 'Comments are required for rejection.'}, status=http_status.HTTP_400_BAD_REQUEST)
+
+        can_action, message = self._can_action_step(user, step)
+        if not can_action:
+            return Response({'error': message}, status=http_status.HTTP_403_FORBIDDEN)
+
+        step.status = 'rejected'
+        step.approved_by = user # User who actioned
+        step.decision_date = timezone.now()
+        step.comments = comments
+        step.save()
+
+        # Update IOM status to rejected
+        iom = step.purchase_request_memo
+        iom.status = 'rejected'
+        iom.approver = user # User who rejected
+        iom.decision_date = timezone.now()
+        iom.approver_comments = f"Rejected by {user.username} at step '{step.rule_name_snapshot or step.step_order}'. Comments: {comments}"
+        iom.save(update_fields=['status', 'approver', 'decision_date', 'approver_comments'])
+
+        # Optionally, mark other pending steps for this IOM as 'skipped' or 'cancelled_due_to_rejection'
+        iom.approval_steps.filter(status='pending').update(status='skipped', comments=f"IOM rejected at step {step.step_order}.")
+
+
+        return Response(self.get_serializer(step).data)
 
 
 class PurchaseOrderViewSet(viewsets.ModelViewSet):
