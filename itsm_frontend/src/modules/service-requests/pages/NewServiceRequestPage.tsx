@@ -130,11 +130,15 @@ function NewServiceRequestPage() {
         setError(null);
         try {
           const requestData = await getServiceRequestById(authenticatedFetch, id);
-          setInitialFormData(requestData);
-          const reqWithCatalogId = requestData as ServiceRequest & { catalog_item_id?: number };
-          if (reqWithCatalogId.catalog_item_id) {
-            // Fetch linked catalog item
-            const item = await getCatalogItemById(authenticatedFetch, reqWithCatalogId.catalog_item_id);
+          const formDataToSet: Partial<ServiceRequest> & { catalog_item_id?: number } = {
+            ...requestData,
+            catalog_item_id: requestData.catalog_item_id === null ? undefined : requestData.catalog_item_id,
+          };
+          setInitialFormData(formDataToSet);
+
+          // Use formDataToSet for subsequent logic if it relies on the transformed value
+          if (formDataToSet.catalog_item_id) {
+            const item = await getCatalogItemById(authenticatedFetch, formDataToSet.catalog_item_id);
             setCatalogItemDetails(item);
           }
         } catch (err) {

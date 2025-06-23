@@ -386,3 +386,51 @@ export type AuthenticatedFetch = (
   endpoint: string,
   options?: RequestInit,
 ) => Promise<unknown>; // Changed Promise<any> to Promise<unknown> for better type safety
+
+
+// --- Common Model Types (Basic definitions for dropdowns/FKs) ---
+
+export interface Department {
+  id: number;
+  name: string;
+  department_code?: string;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  project_code?: string;
+}
+
+export interface ContractForDropdown {
+  id: number;
+  contract_id?: string;
+  title?: string;
+  vendor?: number;
+  vendor_name?: string;
+}
+
+export interface GLAccount {
+  id: number;
+  name: string;
+  account_code?: string;
+}
+
+export interface ExpenseCategory {
+  id: number;
+  name: string;
+}
+
+export interface RecurringPaymentForDropdown {
+  id: number;
+  payment_name?: string;
+  vendor?: number;
+  vendor_name?: string;
+  amount?: number | string;
+  currency?: string;
+}
+
+// Note: The main 'Vendor' type is typically sourced from assets module (e.g., assetApi.ts or a shared types file).
+// If procurementApi.ts specifically needs a Vendor type from *this* file for some reason (e.g. a simplified version for a dropdown),
+// it would be defined here. However, PurchaseRequestMemoForm.tsx correctly imports Vendor from assetApi.ts.
+// The errors listed for procurementApi.ts suggest it *expects* these common types (Department, Project etc.) from this file.

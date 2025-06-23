@@ -37,6 +37,7 @@ import type {
   PurchaseOrderStatus,
 } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../../../utils/formatters'; // Added import
 
 type Order = 'asc' | 'desc';
 
@@ -131,9 +132,10 @@ const PurchaseOrderList: React.FC = () => {
           return;
         }
         try {
-          await updatePurchaseOrder(authenticatedFetch, poId, {
-            status: 'cancelled',
-          });
+          const formDataPayload = new FormData();
+          formDataPayload.append('status', 'cancelled');
+
+          await updatePurchaseOrder(authenticatedFetch, poId, formDataPayload);
           showSnackbar('Purchase Order cancelled successfully!', 'success');
           fetchPurchaseOrders(); // Refresh the list
         } catch (err) {
