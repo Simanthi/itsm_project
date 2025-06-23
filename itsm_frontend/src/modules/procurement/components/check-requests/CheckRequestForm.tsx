@@ -107,6 +107,18 @@ const mockCurrencies = [ // Same as PO form
 ];
 // End mock data
 
+// Helper types for more specific API error handling
+interface ApiErrorValue {
+  [key: string]: string | string[]; // For nested errors, though primary use is direct field errors
+}
+
+interface ApiErrorResponse {
+  detail?: string; // Global error message
+  // For field errors, keys are field names, values are arrays of error strings or a single string.
+  // This allows for other potential string-keyed errors as well.
+  [key: string]: string | string[] | ApiErrorValue | undefined;
+}
+
 
 // Helper function for chip color
 const getStatusChipColorForCheckRequest = (
@@ -269,7 +281,7 @@ const CheckRequestForm: React.FC = () => {
     setFormData((prev) => ({ ...prev, [fieldName as string]: dateStr }));
   };
 
-  const handleSelectChange = (event: SelectChangeEvent<any>, fieldName: keyof CheckRequestData) => {
+  const handleSelectChange = (event: SelectChangeEvent<string | number | ''>, fieldName: keyof CheckRequestData) => {
     setFormData(prev => ({ ...prev, [fieldName as string]: event.target.value as string | number | null }));
   };
 
@@ -416,20 +428,36 @@ const CheckRequestForm: React.FC = () => {
       if (err instanceof Error) {
         message = err.message;
       }
-      const apiError = err as { data?: { detail?: string; [key:string]: any } };
-      if (apiError.data) {
-        if (apiError.data.detail) {
-            message = apiError.data.detail;
+      // Use the more specific ApiErrorResponse type
+      const apiError = err as { data?: ApiErrorResponse };
+      if (apiError?.data) {
+        if (typeof apiError.data.detail === 'string') {
+          message = apiError.data.detail;
         } else {
-            // Handle cases where error might be a dict of field errors
-            let structuredError = "";
-            for(const fieldKey in apiError.data){
-                structuredError += `${fieldKey}: ${apiError.data[fieldKey].join ? apiError.data[fieldKey].join(', ') : apiError.data[fieldKey]}; `;
+          let structuredError = "";
+          for (const fieldKey in apiError.data) {
+            // Skip 'detail' if it was not a string and handled above, or other non-field error keys
+            if (fieldKey === 'detail' || typeof apiError.data[fieldKey] === 'function') continue;
+
+            const errorValue = apiError.data[fieldKey];
+            if (typeof errorValue === 'string') {
+              structuredError += `${fieldKey}: ${errorValue}; `;
+            } else if (Array.isArray(errorValue)) {
+              structuredError += `${fieldKey}: ${errorValue.join(', ')}; `;
+            } else if (typeof errorValue === 'object' && errorValue !== null) {
+              // Handle nested objects if necessary, though DRF usually gives string/array for field errors
+              // This part might need adjustment based on actual complex error structures.
+              // For now, stringify if it's an object that's not string/array.
+              structuredError += `${fieldKey}: ${JSON.stringify(errorValue)}; `;
             }
-            if(structuredError) message = structuredError;
+          }
+          if (structuredError) message = structuredError.trim();
+          // If after all this, message is still the generic one and structuredError is empty,
+          // but apiError.data exists, it might be an unhandled structure.
+          // For now, this covers common DRF error responses (detail string or field errors).
         }
       }
-      setError(message);
+      setError(message); // Ensure message is updated if it was parsed
       showSnackbar(message, 'error');
     } finally {
       setIsSubmitting(false);

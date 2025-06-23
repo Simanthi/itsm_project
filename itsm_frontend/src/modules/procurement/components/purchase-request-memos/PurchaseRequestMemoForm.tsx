@@ -54,26 +54,9 @@ const initialFormData: PurchaseRequestMemoData = {
   attachments: null, // This is File | null for *Data types
 };
 
-// Mock data for dropdowns - replace with API calls in a real app
-// These would ideally be fetched from a central store or context if used across multiple forms
-const mockDepartments = [
-  { id: 1, name: 'Finance' },
-  { id: 2, name: 'Human Resources' },
-  { id: 3, name: 'IT Department' },
-  { id: 4, name: 'Operations' },
-];
+// Mock data for dropdowns was here, removed as it's unused.
+// API calls are now used to fetch this data.
 
-const mockProjects = [
-  { id: 1, name: 'Project Alpha' },
-  { id: 2, name: 'Project Beta' },
-  { id: 3, name: 'Project Gamma' },
-];
-
-const mockVendors = [
-  { id: 1, name: 'Vendor A Supplies' },
-  { id: 2, name: 'Vendor B Services' },
-  { id: 3, name: 'Vendor C Tech' },
-];
 // End mock data
 
 const PurchaseRequestMemoForm: React.FC = () => {
@@ -300,7 +283,7 @@ const PurchaseRequestMemoForm: React.FC = () => {
           detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
         }
         setError(detailedError);
-      } catch /* istanbul ignore next */ (parseErrorUntyped) { // Removed unused parseError variable
+      } catch /* istanbul ignore next */ { // Removed unused parseError variable
         setError(`Failed to save purchase request: ${message}`);
       }
       showSnackbar(`Error: ${message}`, 'error');

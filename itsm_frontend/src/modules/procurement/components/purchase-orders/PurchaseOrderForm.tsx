@@ -495,7 +495,7 @@ const PurchaseOrderForm: React.FC = () => {
           detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
         }
         setError(detailedError);
-      } catch /* istanbul ignore next */ (parseErrorUntyped) { // Removed unused parseError variable
+      } catch /* istanbul ignore next */ { // Removed unused parseError variable
          setError(`Failed to save PO: ${message}`);
       }
       showSnackbar(`Error: ${message}`, 'error');
