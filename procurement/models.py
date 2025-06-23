@@ -47,7 +47,7 @@ class PurchaseRequestMemo(models.Model):
         _("Status"),
         max_length=20,
         choices=STATUS_CHOICES,
-        default='pending'
+        default='draft' # Default to draft for new workflow
     )
     approver = models.ForeignKey(
         User,
