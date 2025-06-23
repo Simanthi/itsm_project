@@ -285,56 +285,26 @@ class PurchaseOrderViewSet(viewsets.ModelViewSet):
             'order_items__gl_account' # Prefetch GL account for order items
         ).order_by('-order_date')
 
-    def _parse_order_items_json(self, request_data_mutable):
-        import json
-        order_items_json_str = request_data_mutable.pop('order_items_json', [None])[0]
-        if order_items_json_str:
-            try:
-                order_items_data = json.loads(order_items_json_str)
-                request_data_mutable['order_items'] = order_items_data
-            except json.JSONDecodeError:
-                # Consider raising a ValidationError or returning a 400 response
-                # For now, we'll let it proceed and serializer might fail if order_items is missing/invalid
-                pass # Or log an error
-        return request_data_mutable
+    # _parse_order_items_json helper removed as logic moved to PurchaseOrderSerializer
 
     def create(self, request, *args, **kwargs):
-        mutable_data = request.data.copy() # Make data mutable
-
-        # Handle file fields manually if they are part of the mutable_data
-        # and need to be passed to the serializer correctly.
-        # For 'attachments', DRF handles it if 'attachments' is in request.FILES.
-        # If 'attachments' is also in request.data (e.g. as a string from somewhere),
-        # ensure it's handled or removed to prevent conflicts.
-
-        # If 'attachments' is part of request.data (e.g. filename string) and not a File object,
-        # it might interfere. DRF expects File objects in request.FILES.
-        # If sending filename as string in `data` and actual file in `request.FILES`
-        # ensure your serializer or model handles this. Typically, just send the file.
-
-        # If 'attachments' is expected as a file, it should be in request.FILES.
-        # The serializer will pick it up. If it's also in mutable_data as something else,
-        # it could cause issues. For now, let's assume standard DRF behavior.
-
-        processed_data = self._parse_order_items_json(mutable_data)
-
-        serializer = self.get_serializer(data=processed_data)
+        # Data is passed directly to serializer, which now handles 'order_items_json'
+        serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=http_status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
+        # Pass request to serializer context if it needs it (e.g. for created_by)
+        # The PurchaseOrderSerializer.create now expects created_by to be in validated_data or set by view
         serializer.save(created_by=self.request.user)
 
     def update(self, request, *args, **kwargs):
         partial = kwargs.pop('partial', False)
         instance = self.get_object()
-        mutable_data = request.data.copy()
-
-        processed_data = self._parse_order_items_json(mutable_data)
-
-        serializer = self.get_serializer(instance, data=processed_data, partial=partial)
+        # Data is passed directly to serializer
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
         self.perform_update(serializer)
 

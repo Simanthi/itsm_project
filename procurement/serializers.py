@@ -1,3 +1,4 @@
+import json # For parsing order_items_json
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
@@ -105,11 +106,13 @@ class OrderItemSerializer(serializers.ModelSerializer):
 
 
 class PurchaseOrderSerializer(serializers.ModelSerializer):
-    order_items = OrderItemSerializer(many=True)
+    order_items = OrderItemSerializer(many=True, required=False) # Not required if order_items_json is used
     vendor_details = VendorSerializer(source='vendor', read_only=True) # Assuming VendorSerializer exists and is suitable
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
     internal_office_memo_details = PurchaseRequestMemoSerializer(source='internal_office_memo', read_only=True)
     related_contract_details = serializers.StringRelatedField(source='related_contract', read_only=True)
+    # For handling JSON string input for order items, e.g. from multipart forms
+    order_items_json = serializers.CharField(write_only=True, required=False, allow_blank=True, help_text="JSON string of order items.")
 
 
     class Meta:
@@ -125,7 +128,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'shipping_address', 'notes',
             'payment_terms', 'shipping_method', 'billing_address', 'po_type',
             'related_contract', 'related_contract_details', 'attachments', 'revision_number', 'currency',
-            'order_items'
+            'order_items', 'order_items_json' # Added order_items_json
         ]
         read_only_fields = [
             'po_number', # Assuming system-generated
@@ -135,43 +138,96 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ]
         # `created_by` is typically set in the view.
 
-    def create(self, validated_data):
-        order_items_data = validated_data.pop('order_items', [])
-        po = PurchaseOrder.objects.create(**validated_data)
+    def _process_order_items(self, po_instance, order_items_data):
+        po_instance.order_items.all().delete() # Simple: delete existing, then create new
         current_total_amount = 0
-        for item_data in order_items_data:
-            item = OrderItem.objects.create(purchase_order=po, **item_data)
-            current_total_amount += item.total_price # Uses the @property from model
-        po.total_amount = current_total_amount
-        po.save(update_fields=['total_amount'])
+        for item_data_original in order_items_data:
+            item_data = item_data_original.copy() # Avoid modifying original dict from validated_data
+            # Adjust FKs for direct model creation: 'field_name': pk -> 'field_name_id': pk
+            if 'gl_account' in item_data and not isinstance(item_data['gl_account'], GLAccount):
+                item_data['gl_account_id'] = item_data.pop('gl_account')
+            # Add similar adjustments for other FKs in OrderItem if any (e.g., 'asset')
+
+            # Ensure numeric types are correct before direct model creation
+            from decimal import Decimal, InvalidOperation
+            decimal_fields = ['unit_price', 'tax_rate', 'discount_value']
+            for field_name in decimal_fields:
+                if field_name in item_data and item_data[field_name] is not None:
+                    try:
+                        item_data[field_name] = Decimal(str(item_data[field_name]))
+                    except InvalidOperation:
+                        # Handle error or raise validation error earlier if possible
+                        raise serializers.ValidationError({f'order_items.{field_name}': 'Invalid decimal value.'})
+
+            integer_fields = ['quantity', 'received_quantity']
+            for field_name in integer_fields:
+                 if field_name in item_data and item_data[field_name] is not None:
+                    try:
+                        item_data[field_name] = int(item_data[field_name])
+                    except ValueError:
+                        raise serializers.ValidationError({f'order_items.{field_name}': 'Invalid integer value.'})
+
+            item = OrderItem.objects.create(purchase_order=po_instance, **item_data)
+            current_total_amount += item.total_price
+        po_instance.total_amount = current_total_amount
+        # The caller of _process_order_items should save po_instance
+
+    def create(self, validated_data):
+        order_items_list = validated_data.pop('order_items', [])
+        order_items_json_str = validated_data.pop('order_items_json', None)
+
+        if order_items_json_str:
+            try:
+                order_items_list = json.loads(order_items_json_str)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError({'order_items_json': 'Invalid JSON format.'})
+
+        # Ensure created_by is set, typically done in view's perform_create
+        # If user is in context (e.g. from view), could also do:
+        # validated_data['created_by'] = self.context['request'].user
+
+        po = PurchaseOrder.objects.create(**validated_data)
+
+        if order_items_list: # If there are items from either source
+            self._process_order_items(po, order_items_list)
+            po.save(update_fields=['total_amount']) # Save again to store calculated total
+
         return po
 
     def update(self, instance, validated_data):
-        order_items_data = validated_data.pop('order_items', None)
-        # Handle FK updates for related_contract if provided as ID
-        # related_contract_id = validated_data.pop('related_contract', None)
-        # if related_contract_id:
-        #     instance.related_contract_id = related_contract_id
+        order_items_list = validated_data.pop('order_items', None) # Standard list of dicts
+        order_items_json_str = validated_data.pop('order_items_json', None) # JSON string
 
+        # Determine the source of order items data
+        actual_order_items_data = None
+        if order_items_json_str:
+            try:
+                actual_order_items_data = json.loads(order_items_json_str)
+            except json.JSONDecodeError:
+                raise serializers.ValidationError({'order_items_json': 'Invalid JSON format.'})
+        elif order_items_list is not None: # Check if 'order_items' was explicitly passed (even if empty list)
+            actual_order_items_data = order_items_list
+
+
+        # Update other PO fields first
         instance = super().update(instance, validated_data)
 
-        if order_items_data is not None:
-            # Simple approach: delete existing and create new ones.
-            # More complex logic might be needed for partial updates of line items.
-            instance.order_items.all().delete()
-            current_total_amount = 0
-            for item_data in order_items_data:
-                item = OrderItem.objects.create(purchase_order=instance, **item_data)
-                current_total_amount += item.total_price
-            instance.total_amount = current_total_amount
-            instance.save(update_fields=['total_amount'])
+        if actual_order_items_data is not None: # If items were provided (from json or direct list)
+            self._process_order_items(instance, actual_order_items_data)
+            instance.save(update_fields=['total_amount']) # Save PO with new total
         else:
-            # Recalculate total amount if order items were not part of the update
-            # but other fields might have changed that affect it (though less likely for PO total)
-            current_total_amount = sum(item.total_price for item in instance.order_items.all())
-            if instance.total_amount != current_total_amount:
-                 instance.total_amount = current_total_amount
-                 instance.save(update_fields=['total_amount'])
+            # If order items were not part of the update payload,
+            # but other PO fields might have changed (e.g. tax for whole PO if that was a thing)
+            # we might need to recalculate if items existed.
+            # For now, if no items data in payload, total_amount is not recalculated from items here.
+            # It's better if total_amount is always derived from items.
+            # If items are not touched, total_amount should not change unless other PO-level factors change it.
+            # Let's ensure it's recalculated if items exist, regardless of payload, to be safe.
+            if instance.order_items.exists() and actual_order_items_data is None:
+                 current_total_amount = sum(item.total_price for item in instance.order_items.all())
+                 if instance.total_amount != current_total_amount:
+                    instance.total_amount = current_total_amount
+                    instance.save(update_fields=['total_amount'])
         return instance
 
 
