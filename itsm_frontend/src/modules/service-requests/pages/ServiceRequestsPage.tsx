@@ -394,8 +394,7 @@ const ServiceRequestsPage: React.FC = () => {
             icon={<DeleteIcon />}
             label="Delete"
             onClick={() => handleDeleteRow(row.request_id)}
-            // color="error" // Typescript reports this as an error with the current type inference
-            sx={{ color: 'error.main' }} // Use sx prop for styling instead
+            color="error" // Reverted to this to check original error type
           />,
         ];
       },

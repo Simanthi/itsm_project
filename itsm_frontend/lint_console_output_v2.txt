@@ -1,0 +1,3 @@
+
+> itsm_frontend@0.0.0 lint
+> eslint . --output-file eslint_report_final_check_v2.txt

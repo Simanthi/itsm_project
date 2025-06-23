@@ -31,6 +31,7 @@ import {
   // getVendorsForDropdown, // Assuming getVendors from assetApi is used
 } from '../../../../api/procurementApi';
 import { getVendors } from '../../../../api/assetApi'; // For suggested vendor
+import type { Vendor } from '../../../../api/assetApi'; // Added explicit type import for Vendor
 import type {
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
