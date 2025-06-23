@@ -35,9 +35,9 @@ import type {
   PurchaseRequestMemo,
   PurchaseRequestMemoData,
   // PurchaseRequestMemoUpdateData, // formData type will handle partial updates
-  Department, // Import types for dropdown data
-  Project,
-  Vendor, // Using Vendor from assetApi for consistency
+  Department, // Import types for dropdown data - should now be resolved from ../../types/procurementTypes.ts
+  Project,    // Import types for dropdown data - should now be resolved from ../../types/procurementTypes.ts
+  // Vendor type is correctly imported from assetApi below
 } from '../../types';
 
 const initialFormData: PurchaseRequestMemoData = {
