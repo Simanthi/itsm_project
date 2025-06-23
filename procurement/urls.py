@@ -19,6 +19,10 @@ router.register(r'gl-accounts', common_views.GLAccountViewSet, basename='glaccou
 router.register(r'expense-categories', common_views.ExpenseCategoryViewSet, basename='expensecategory')
 router.register(r'recurring-payments', common_views.RecurringPaymentViewSet, basename='recurringpayment')
 
+# Approval workflow views
+router.register(r'approval-rules', views.ApprovalRuleViewSet, basename='approval-rule')
+router.register(r'approval-steps', views.ApprovalStepViewSet, basename='approval-step')
+
 
 app_name = 'procurement'
 

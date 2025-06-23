@@ -2,9 +2,11 @@ from django.contrib import admin
 from .models import (
     PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest,
     Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment,
-    ProcurementIDSequence # Import the new sequence model
+    ProcurementIDSequence, # Import the new sequence model
+    ApprovalRule, ApprovalStep, ApprovalDelegation # Import new approval models
 )
 from simple_history.admin import SimpleHistoryAdmin
+from django.utils.translation import gettext_lazy as _
 
 # Admin configuration for ProcurementIDSequence
 @admin.register(ProcurementIDSequence)
@@ -167,3 +169,113 @@ class RecurringPaymentAdmin(SimpleHistoryAdmin):
 # class OrderItemAdmin(SimpleHistoryAdmin):
 #     list_display = ('purchase_order', 'item_description', 'quantity', 'unit_price', 'total_price')
 #     readonly_fields = ('total_price',)
+
+
+@admin.register(ApprovalRule)
+class ApprovalRuleAdmin(SimpleHistoryAdmin):
+    list_display = ('name', 'order', 'min_amount', 'max_amount', 'approver_user', 'approver_group', 'is_active', 'approval_level_name')
+    list_filter = ('is_active', 'approver_user', 'approver_group', 'applies_to_all_departments', 'applies_to_all_projects')
+    search_fields = ('name', 'approval_level_name', 'approver_user__username', 'approver_group__name')
+    filter_horizontal = ('departments', 'projects') # More user-friendly for M2M
+    fieldsets = (
+        (None, {
+            'fields': ('name', 'order', 'is_active', 'approval_level_name')
+        }),
+        (_('Conditions'), {
+            'fields': (('min_amount', 'max_amount'),
+                       'applies_to_all_departments', 'departments',
+                       'applies_to_all_projects', 'projects')
+        }),
+        (_('Approver'), {
+            'fields': ('approver_user', 'approver_group')
+        }),
+    )
+
+    def get_form(self, request, obj=None, **kwargs):
+        # Dynamically set help text for M2M fields if needed, or other form adjustments
+        form = super().get_form(request, obj, **kwargs)
+        form.base_fields['departments'].help_text = _("Select departments if 'Applies to All Departments' is unchecked.")
+        form.base_fields['projects'].help_text = _("Select projects if 'Applies to All Projects' is unchecked.")
+        return form
+
+
+class ApprovalStepInline(admin.TabularInline): # Or admin.StackedInline
+    model = ApprovalStep
+    extra = 0 # No extra forms by default, these are system-generated
+    fields = ('step_order', 'status', 'assigned_approver_user', 'assigned_approver_group', 'approved_by', 'decision_date', 'rule_name_snapshot', 'comments')
+    readonly_fields = ('step_order', 'status', 'assigned_approver_user', 'assigned_approver_group', 'approved_by', 'decision_date', 'rule_name_snapshot') # Mostly read-only
+
+    def has_add_permission(self, request, obj=None):
+        return False # Steps should not be added manually via admin inline
+
+    def has_delete_permission(self, request, obj=None):
+        return False # Steps should not be deleted manually via admin inline (use skip/cancel logic)
+
+# Add ApprovalStepInline to PurchaseRequestMemoAdmin
+PurchaseRequestMemoAdmin.inlines = [ApprovalStepInline]
+
+
+@admin.register(ApprovalStep)
+class ApprovalStepAdmin(SimpleHistoryAdmin):
+    list_display = ('id', 'purchase_request_memo_link', 'step_order', 'status', 'assigned_approver_user', 'assigned_approver_group', 'approved_by', 'decision_date')
+    list_filter = ('status', 'step_order', 'assigned_approver_user', 'assigned_approver_group', 'decision_date')
+    search_fields = ('purchase_request_memo__iom_id', 'assigned_approver_user__username', 'assigned_approver_group__name', 'approved_by__username', 'rule_name_snapshot')
+    readonly_fields = ('purchase_request_memo', 'approval_rule', 'rule_name_snapshot', 'step_order',
+                       'assigned_approver_user', 'assigned_approver_group', 'status',
+                       'approved_by', 'decision_date', 'comments',
+                       'created_at', 'updated_at') # Essentially all fields are read-only from direct admin edit
+
+    def purchase_request_memo_link(self, obj):
+        from django.urls import reverse
+        from django.utils.html import format_html
+        if obj.purchase_request_memo:
+            link = reverse("admin:procurement_purchaserequestmemo_change", args=[obj.purchase_request_memo.id])
+            return format_html('<a href="{}">{}</a>', link, obj.purchase_request_memo.iom_id)
+        return "-"
+    purchase_request_memo_link.short_description = _("IOM")
+
+    def has_add_permission(self, request):
+        return False # Steps are system-generated
+
+    def has_change_permission(self, request, obj=None):
+        return False # Actions on steps should go through the API/application logic
+
+    def has_delete_permission(self, request, obj=None):
+        # Allow deletion for superusers for cleanup, but generally no.
+        return request.user.is_superuser
+
+
+@admin.register(ApprovalDelegation)
+class ApprovalDelegationAdmin(SimpleHistoryAdmin):
+    list_display = ('delegator', 'delegatee', 'start_date', 'end_date', 'is_active', 'reason')
+    list_filter = ('is_active', 'start_date', 'end_date', 'delegator', 'delegatee')
+    search_fields = ('delegator__username', 'delegatee__username', 'reason')
+    readonly_fields = ('created_at', 'updated_at')
+    fieldsets = (
+        (None, {
+            'fields': ('delegator', 'delegatee', ('start_date', 'end_date'), 'is_active', 'reason')
+        }),
+        (_('System Information'), {
+            'classes': ('collapse',),
+            'fields': ('created_at', 'updated_at')
+        }),
+    )
+
+    def formfield_for_foreignkey(self, db_field, request, **kwargs):
+        if db_field.name == "delegator":
+            # Optionally, default delegator to current user if not staff/superuser
+            if not request.user.is_staff:
+                kwargs["initial"] = request.user.id
+                kwargs["disabled"] = True # Non-staff can only delegate for themselves
+        return super().formfield_for_foreignkey(db_field, request, **kwargs)
+
+    def get_queryset(self, request):
+        qs = super().get_queryset(request)
+        if request.user.is_superuser or request.user.is_staff:
+            return qs
+        return qs.filter(delegator=request.user) # Users only see their own delegations
+
+    def save_model(self, request, obj, form, change):
+        if not obj.delegator_id: # If delegator is not set (e.g. for non-staff creating)
+            obj.delegator = request.user
+        super().save_model(request, obj, form, change)

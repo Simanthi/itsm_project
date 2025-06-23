@@ -2,11 +2,13 @@ from rest_framework import serializers
 from django.contrib.auth import get_user_model
 from .models import (
     PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest,
-    Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment # Import common models
+    ApprovalRule, ApprovalStep, ApprovalDelegation # Import main models
 )
+# Import common models directly from their source
+from .common_models import Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment
+from assets.models import Vendor # For VendorSerializer if used directly with assets.models.Vendor
 from assets.serializers import VendorSerializer
-# It's good practice to also have serializers for the common models if they are to be represented in detail
-# For now, we'll use PrimaryKeyRelatedField for FKs or simple string representations.
+from django.contrib.auth.models import Group # For Group serializer
 
 User = get_user_model()
 
@@ -22,7 +24,7 @@ class ProjectSerializer(serializers.ModelSerializer):
         fields = ['id', 'name', 'project_code'] # Optimized for dropdowns
 
 class ContractSerializer(serializers.ModelSerializer):
-    vendor_name = serializers.StringRelatedField(source='vendor', read_only=True)
+    vendor_name = serializers.StringRelatedField(source='vendor.name', read_only=True) # Assuming vendor is FK on Contract
     class Meta:
         model = Contract
         fields = ['id', 'contract_id', 'title', 'vendor', 'vendor_name'] # Optimized for dropdowns, include vendor for context
@@ -38,7 +40,7 @@ class ExpenseCategorySerializer(serializers.ModelSerializer):
         fields = ['id', 'name'] # Optimized for dropdowns
 
 class RecurringPaymentSerializer(serializers.ModelSerializer):
-    vendor_name = serializers.StringRelatedField(source='vendor', read_only=True)
+    vendor_name = serializers.StringRelatedField(source='vendor.name', read_only=True) # Assuming vendor is FK on RecurringPayment
     class Meta:
         model = RecurringPayment
         fields = ['id', 'payment_name', 'vendor', 'vendor_name', 'amount', 'currency'] # Optimized
@@ -81,11 +83,12 @@ class PurchaseRequestMemoSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = [
             'iom_id', # Assuming this is system-generated or handled by model logic
+            'requested_by_username', # read_only as it's from source
             'request_date', 'status', 'approver', 'approver_username',
             'decision_date', 'approver_comments', 'department_name', 'project_name',
-            'suggested_vendor_name'
+            'suggested_vendor_name',
+            'requested_by' # Should be read-only as it's set by the view
         ]
-        # `requested_by` is typically set in the view using `perform_create`.
 
 class OrderItemSerializer(serializers.ModelSerializer):
     gl_account_code = serializers.StringRelatedField(source='gl_account', read_only=True)
@@ -204,3 +207,97 @@ class CheckRequestSerializer(serializers.ModelSerializer):
         ]
         # `requested_by` set by view. `status` defaults.
         # `purchase_order`, `expense_category`, `recurring_payment` are writable by ID.
+
+
+# Serializers for Approval Workflow
+
+class GroupSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Group
+        fields = ['id', 'name']
+
+class ApprovalRuleSerializer(serializers.ModelSerializer):
+    departments_details = DepartmentSerializer(source='departments', many=True, read_only=True)
+    projects_details = ProjectSerializer(source='projects', many=True, read_only=True)
+    approver_user_details = serializers.StringRelatedField(source='approver_user', read_only=True)
+    approver_group_details = GroupSerializer(source='approver_group', read_only=True)
+
+    class Meta:
+        model = ApprovalRule
+        fields = [
+            'id', 'name', 'order', 'min_amount', 'max_amount',
+            'applies_to_all_departments', 'departments', 'departments_details',
+            'applies_to_all_projects', 'projects', 'projects_details',
+            'approver_user', 'approver_user_details',
+            'approver_group', 'approver_group_details',
+            'approval_level_name', 'is_active'
+        ]
+        # `departments` and `projects` are writable with lists of IDs.
+
+class ApprovalStepSerializer(serializers.ModelSerializer):
+    purchase_request_memo_id = serializers.PrimaryKeyRelatedField(
+        queryset=PurchaseRequestMemo.objects.all(),
+        source='purchase_request_memo'
+    )
+    purchase_request_memo_iom_id = serializers.CharField(source='purchase_request_memo.iom_id', read_only=True)
+    approval_rule_name = serializers.CharField(source='approval_rule.name', read_only=True, allow_null=True)
+    assigned_approver_user_name = serializers.CharField(source='assigned_approver_user.username', read_only=True, allow_null=True)
+    assigned_approver_group_name = serializers.CharField(source='assigned_approver_group.name', read_only=True, allow_null=True)
+    actioned_by_user_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True)
+    status_display = serializers.CharField(source='get_status_display', read_only=True)
+
+
+    class Meta:
+        model = ApprovalStep
+        fields = [
+            'id', 'purchase_request_memo_id', 'purchase_request_memo_iom_id',
+            'approval_rule', 'approval_rule_name', 'rule_name_snapshot', 'step_order',
+            'assigned_approver_user', 'assigned_approver_user_name',
+            'assigned_approver_group', 'assigned_approver_group_name',
+            'status', 'status_display', 'approved_by', 'actioned_by_user_name',
+            'decision_date', 'comments', 'created_at', 'updated_at'
+        ]
+        read_only_fields = [
+            'purchase_request_memo_iom_id', 'approval_rule_name', 'rule_name_snapshot',
+            'assigned_approver_user_name', 'assigned_approver_group_name',
+            'actioned_by_user_name', 'status_display',
+            'created_at', 'updated_at',
+            # Fields typically set by system/logic, not direct user input via generic endpoint
+            # 'approval_rule', 'step_order', 'assigned_approver_user', 'assigned_approver_group',
+            # 'approved_by', 'decision_date'
+        ]
+        # Most fields will be set by the system when steps are created or actioned.
+        # 'comments' might be updatable by an approver when taking action.
+
+
+class ApprovalDelegationSerializer(serializers.ModelSerializer):
+    delegator_username = serializers.CharField(source='delegator.username', read_only=True)
+    delegatee_username = serializers.CharField(source='delegatee.username', read_only=True)
+
+    class Meta:
+        model = ApprovalDelegation
+        fields = [
+            'id', 'delegator', 'delegator_username', 'delegatee', 'delegatee_username',
+            'start_date', 'end_date', 'reason', 'is_active',
+            'created_at', 'updated_at'
+        ]
+        read_only_fields = ['delegator_username', 'delegatee_username', 'created_at', 'updated_at']
+
+    def validate(self, data):
+        # Ensure delegator is the request.user or admin
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            if data.get('delegator') and data.get('delegator') != request.user and not request.user.is_staff:
+                raise serializers.ValidationError("You can only create delegations for yourself.")
+            # When creating, set delegator if not provided
+            if not data.get('delegator') and request.method == 'POST': # Check if it's a create operation
+                 data['delegator'] = request.user
+
+        # Model's clean method handles other validations (delegator!=delegatee, end_date > start_date)
+        # but DRF serializers don't call model.clean() automatically.
+        # We can call it explicitly or replicate logic.
+        if data.get('delegator') == data.get('delegatee'):
+            raise serializers.ValidationError("Delegator and Delegatee cannot be the same user.")
+        if data.get('start_date') and data.get('end_date') and data.get('start_date') >= data.get('end_date'):
+            raise serializers.ValidationError("End date must be after start date.")
+        return data
