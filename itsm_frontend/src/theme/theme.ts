@@ -234,7 +234,43 @@ export const darkTheme = createTheme({
     borderRadius: 3,
   },
   typography: baseTypography,
-  components: commonDarkModeComponents, // Use the common dark mode components
+  components: {
+    // Add this to apply body2 to all TableCell components by default
+    MuiTableCell: {
+      // REMOVE defaultProps: { variant: 'body2' }
+      styleOverrides: {
+        root: {
+          fontSize: baseTypography.body2.fontSize,
+          // Apply the font size directly here for all TableCell components
+        },
+        head: {
+          // <--- ADD THIS SECTION FOR TABLE HEADERS
+          fontSize: baseTypography.th1.fontSize,
+          fontWeight: 'bold', // Example: Make headers bold
+          color: 'primary.main', // Example: Use your primary theme color for headers
+
+          // You can also adjust padding, background, etc.
+          backgroundColor: 'primary.main', // Example: a light primary background
+        },
+      },
+    },
+    MuiListItemButton: {
+      styleOverrides: {
+        root: {
+          '&.Mui-selected': {
+            backgroundColor: 'rgb(56, 104, 124)', // Light blue for selected nav item (with transparency)
+          },
+          '&.Mui-selected:hover': {
+            backgroundColor: 'rgba(25, 118, 210, 0.12)',
+          },
+          '&:hover': {
+            backgroundColor: 'rgba(0, 0, 0, 0.04)', // Light hover effect
+            color: 'rgb(6, 91, 127)',
+          },
+        },
+      },
+    },
+  }, // Use the common dark mode components
 });
 
 // --- Oceanic Theme (Light Mode) ---

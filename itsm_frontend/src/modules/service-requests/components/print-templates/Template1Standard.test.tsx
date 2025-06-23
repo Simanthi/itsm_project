@@ -1,5 +1,6 @@
 /// <reference types="vitest/globals" />
-import { render, screen } from '@testing-library/react';
+import { render } from '@testing-library/react';
+import { screen } from '@testing-library/react';
 import { describe, it, expect } from 'vitest';
 import Template1Standard from './Template1Standard';
 import type { ServiceRequest } from '../../types/ServiceRequestTypes';

@@ -60,6 +60,7 @@ import type {
   ConfirmPaymentPayload,
 } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import { formatCurrency } from '../../../../utils/formatters';
 
 type Order = 'asc' | 'desc';
 

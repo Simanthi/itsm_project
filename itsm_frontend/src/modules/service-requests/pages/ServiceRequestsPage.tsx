@@ -394,7 +394,7 @@ const ServiceRequestsPage: React.FC = () => {
             icon={<DeleteIcon />}
             label="Delete"
             onClick={() => handleDeleteRow(row.request_id)}
-            color="error" // Reverted to this to check original error type
+            color="inherit" // Reverted to this to check original error type
           />,
         ];
       },
