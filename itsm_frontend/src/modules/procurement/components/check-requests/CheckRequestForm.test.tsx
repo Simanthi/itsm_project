@@ -6,34 +6,47 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestForm from './CheckRequestForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
+import type { CheckRequest, CheckRequestStatus, Vendor, PurchaseOrder, Department, Project, ExpenseCategory } from '../../types';
+import type { PaginatedResponse } from '../../../../api/types';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
 import * as assetApi from '../../../../api/assetApi';
+import * as useAuthHook from '../../../../context/auth/useAuth';
 
 // Define a PaginatedResponse type helper for mocks
-type MockPaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
+type MockPaginatedResponse<T> = PaginatedResponse<T>; // Use the actual PaginatedResponse type
+
+// Minimal Vendor type for mocks, ensuring ID is number and no extra props like 'phone'
+type MockVendor = Omit<Vendor, 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'is_active' | 'category'> & {
+    id: number; // Ensure id is number
+    // Add other mandatory fields from Vendor if any, e.g.
+    // address: string;
+    // vendor_code: string;
+    // payment_terms: string;
 };
+
 
 vi.mock('../../../../api/procurementApi', () => ({
   getCheckRequestById: vi.fn(),
   createCheckRequest: vi.fn(),
   updateCheckRequest: vi.fn(),
-  // getPurchaseOrdersForCheckRequest: vi.fn(), // This seems unused by the component, removing from mock
-  getPurchaseOrders: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })), // Corrected, component uses this
-  getDepartments: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),  // Adjusted for PaginatedResponse
-  getProjects: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })), // Adjusted for PaginatedResponse
-  getExpenseCategories: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })), // Adjusted for PaginatedResponse
-  // getGLAccounts is not used by CheckRequestForm, removing from this specific mock
+  getPurchaseOrders: vi.fn((): Promise<MockPaginatedResponse<PurchaseOrder>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getDepartments: vi.fn((): Promise<MockPaginatedResponse<Department>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getProjects: vi.fn((): Promise<MockPaginatedResponse<Project>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getExpenseCategories: vi.fn((): Promise<MockPaginatedResponse<ExpenseCategory>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
 }));
 
 vi.mock('../../../../api/assetApi', () => ({
-  getVendors: vi.fn((): Promise<MockPaginatedResponse<Partial<import('../../../../api/assetApi').Vendor>>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getVendors: vi.fn((): Promise<MockPaginatedResponse<Vendor>> => Promise.resolve({
+    results: [],
+    count: 0,
+    next: null,
+    previous: null
+  })),
 }));
+
+vi.mock('../../../../context/auth/useAuth');
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -44,12 +57,9 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-const mockAuthenticatedFetch = vi.fn();
-
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      {/* AuthProvider does not take a value prop directly, it provides context internally */}
       <AuthProvider>
         <UIProvider>
           {ui}
@@ -63,11 +73,20 @@ describe('CheckRequestForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
-    // Reset mocks for API calls that return promises with specific data for each test if needed
+    vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
+      authenticatedFetch: vi.fn(), // This specific mock for authenticatedFetch inside useAuth is fine
+      login: vi.fn(),
+      logout: vi.fn(),
+      loading: false,
+      isAuthenticated: true,
+    });
+    // Reset mocks for API calls
     vi.mocked(procurementApi.getPurchaseOrders).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
-    vi.mocked(assetApi.getVendors).mockResolvedValue({ results: [], count: 0, next: null, previous: null } as MockPaginatedResponse<Partial<import('../../../../api/assetApi').Vendor>>);
-    // getGLAccounts is not used by CheckRequestForm, so no need to reset its mock here
-    // getPurchaseOrdersForCheckRequest is not used, removed from mock and here
+    vi.mocked(assetApi.getVendors).mockResolvedValue({ results: [], count: 0, next: null, previous: null } as MockPaginatedResponse<Vendor>);
+    vi.mocked(procurementApi.getDepartments).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getProjects).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getExpenseCategories).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
   });
 
   it('renders the form in create mode', async () => {
@@ -76,13 +95,13 @@ describe('CheckRequestForm', () => {
   });
 
   it('renders the form in edit mode when checkRequestId is provided', async () => {
-    const mockCrId = 'cr123';
-    const numericMockCrId = 123; // Assuming ID is number
-    vi.mocked(ReactRouterDom.useParams).mockReturnValue({ checkRequestId: mockCrId });
+    const mockCrIdString = 'cr123';
+    const numericMockCrId = 123;
+    vi.mocked(ReactRouterDom.useParams).mockReturnValue({ checkRequestId: mockCrIdString });
 
-    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue({
+    const mockCheckRequest: CheckRequest = {
       id: numericMockCrId,
-      cr_number: 'CR-001',
+      cr_id: `CR-${numericMockCrId}`,
       purchase_order: null,
       vendor_id: 1,
       payee_name: 'Mock Payee from Edit',
@@ -95,17 +114,33 @@ describe('CheckRequestForm', () => {
       is_urgent: false,
       recurring_payment: null,
       currency: 'USD',
-      status: 'draft' as 'draft', // Cast to CheckRequestStatus type
+      status: 'pending_submission' as const, // Use 'as const' for literal type
       request_date: '2024-07-01T00:00:00Z',
+      requested_by: 1,
       requested_by_username: 'testuser',
-      // attachments: null,
-    });
+      attachments: null,
+      department: null,
+      department_name: null,
+      project: null,
+      project_name: null,
+      approved_by_accounts: null,
+      approved_by_accounts_username: null,
+      accounts_approval_date: null,
+      accounts_comments: null,
+      payment_method: null,
+      payment_date: null,
+      transaction_id: null,
+      payment_notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    };
+    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(mockCheckRequest);
 
     renderWithProviders(<CheckRequestForm />);
 
     await waitFor(() => {
-      expect(screen.getByRole('heading', { name: /Edit Check Request #123/i })).toBeInTheDocument(); // Corrected ID
-      expect(screen.getByDisplayValue('Test CR for edit')).toBeInTheDocument(); // Checks reason_for_payment
+      expect(screen.getByRole('heading', { name: `Edit Check Request #${numericMockCrId}` })).toBeInTheDocument();
+      expect(screen.getByDisplayValue('Test CR for edit')).toBeInTheDocument();
       expect(screen.getByDisplayValue('Mock Payee from Edit')).toBeInTheDocument();
       expect(screen.getByDisplayValue('1250.75')).toBeInTheDocument();
       expect(screen.getByDisplayValue('INV-EDIT-001')).toBeInTheDocument();
@@ -114,59 +149,76 @@ describe('CheckRequestForm', () => {
 
   it('validates required fields on submit', async () => {
     renderWithProviders(<CheckRequestForm />);
-    // Assuming a submit button text like "Submit Check Request" or "Save Check Request"
-    // fireEvent.click(screen.getByRole('button', { name: /Submit Check Request/i }));
-
-    // await waitFor(() => {
-      // Example: expect(screen.getByText(/Payee is required/i)).toBeInTheDocument();
-      // expect(screen.getByText(/Amount is required/i)).toBeInTheDocument();
-    // });
-    // Placeholder, actual validation depends on the form's implementation
+    // Placeholder
   });
 
   it('submits the form successfully in create mode', async () => {
-    // Provide a Vendor mock that matches the Vendor type (e.g., no 'phone' if not in type)
-    // Also ensure it's a PaginatedResponse
+    const minimalVendor: Vendor = {
+      id: 1,
+      name: "Test Vendor Payee",
+      contact_person: "",
+      email: "payee@example.com",
+      address: "",
+      vendor_code: "V001",
+      payment_terms: "",
+      // Ensure all non-optional fields from Vendor type are present
+      is_active: true,
+      category: null, // Example if category can be null or provide a valid category ID/object
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      created_by: null, // Or a user ID
+      updated_by: null, // Or a user ID
+    };
     vi.mocked(assetApi.getVendors).mockResolvedValue({
-      results: [{id: 1, name: "Test Vendor Payee", contact_person: "", email: "payee@example.com", /* other required Vendor fields */ }],
+      results: [minimalVendor],
       count: 1,
       next: null,
       previous: null
-    } as MockPaginatedResponse<Partial<import('../../../../api/assetApi').Vendor>>);
+    });
 
-    // const mockCreateCR = vi.mocked(procurementApi.createCheckRequest).mockResolvedValue({ // This line is unused for now
-    vi.mocked(procurementApi.createCheckRequest).mockResolvedValue({
-      id: 12345, // Assuming ID is number
-      // ... other fields based on CheckRequest type ...
-      cr_number: "CR-NEW-001",
-      status: 'pending_approval' as 'pending_approval', // Valid CheckRequestStatus
+    const createdCR: CheckRequest = { // Use full CheckRequest type
+      id: 12345,
+      cr_id: "CR-NEW-001", // This is a display ID, backend might generate it.
+      status: 'pending_approval' as const,
       amount: "500.00",
       request_date: new Date().toISOString(),
       payee_name: "Test Vendor Payee",
-      // ... other required fields from CheckRequest
-    });
+      purchase_order: null,
+      reason_for_payment: "test",
+      requested_by: 1,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      requested_by_username: "test",
+      invoice_number: null,
+      invoice_date: null,
+      payee_address: null,
+      expense_category: null,
+      is_urgent: false,
+      recurring_payment: null,
+      currency: 'USD',
+      attachments: null,
+      department: null,
+      department_name: null,
+      project: null,
+      project_name: null,
+      approved_by_accounts: null,
+      approved_by_accounts_username: null,
+      accounts_approval_date: null,
+      accounts_comments: null,
+      payment_method: null,
+      payment_date: null,
+      transaction_id: null,
+      payment_notes: null,
+    };
+    vi.mocked(procurementApi.createCheckRequest).mockResolvedValue(createdCR);
 
     renderWithProviders(<CheckRequestForm />);
 
-    // Fill form fields (examples, adjust to actual fields)
-    // const payeeAutocomplete = screen.getByLabelText(/Payee/i); // Or similar
-    // fireEvent.mouseDown(payeeAutocomplete);
-    // await waitFor(() => expect(screen.getByText('Test Vendor Payee')).toBeInTheDocument());
-    // fireEvent.click(screen.getByText('Test Vendor Payee'));
-
+    // Placeholder for actual form filling and submission
     // fireEvent.change(screen.getByLabelText(/Amount/i), { target: { value: '500' } });
-    // fireEvent.change(screen.getByLabelText(/Description/i), { target: { value: 'New CR Description' } });
-
-    // fireEvent.click(screen.getByRole('button', { name: /Submit Check Request/i }));
-
+    // fireEvent.click(screen.getByRole('button', { name: /Create Request/i }));
     // await waitFor(() => {
-    //   expect(mockCreateCR).toHaveBeenCalled();
+    //   expect(procurementApi.createCheckRequest).toHaveBeenCalled();
     // });
   });
-
-  // Add more tests:
-  // - Linking POs
-  // - Itemization if applicable
-  // - Different statuses and view-only mode
-  // - API error handling
 });
