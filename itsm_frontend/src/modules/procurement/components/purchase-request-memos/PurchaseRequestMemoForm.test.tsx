@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+// fireEvent removed as it's not used yet
+import { render, screen, waitFor } from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
@@ -8,14 +9,23 @@ import { AuthProvider } from '../../../../context/auth/AuthContext';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
+import * as assetApi from '../../../../api/assetApi'; // Ensure this is imported
 // Import other necessary API mocks if used by IOM form (e.g., assetApi for users/departments if they are fetched via assetApi)
+
+// Define a PaginatedResponse type helper for mocks
+type MockPaginatedResponse<T> = {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: T[];
+};
 
 vi.mock('../../../../api/procurementApi', () => ({
   getPurchaseRequestMemoById: vi.fn(),
   createPurchaseRequestMemo: vi.fn(),
   updatePurchaseRequestMemo: vi.fn(),
-  getDepartmentsForDropdown: vi.fn(() => Promise.resolve({ results: [], count: 0 })), // Corrected name
-  getProjectsForDropdown: vi.fn(() => Promise.resolve({ results: [], count: 0 })), // Added
+  getDepartmentsForDropdown: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getProjectsForDropdown: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
   // Add any other procurementApi functions used by PurchaseRequestMemoForm
 }));
 
@@ -24,7 +34,7 @@ vi.mock('../../../../api/procurementApi', () => ({
 
 // assetApi is already mocked separately if needed for vendors, let's ensure it is.
 vi.mock('../../../../api/assetApi', () => ({
-  getVendors: vi.fn(() => Promise.resolve({ results: [], count: 0 })),
+  getVendors: vi.fn((): Promise<MockPaginatedResponse<Partial<import('../../../../api/assetApi').Vendor>>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
 }));
 
 vi.mock('react-router-dom', async () => {
@@ -41,14 +51,8 @@ const mockAuthenticatedFetch = vi.fn();
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      <AuthProvider value={{
-        user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
-        authenticatedFetch: mockAuthenticatedFetch,
-        login: vi.fn(),
-        logout: vi.fn(),
-        loading: false,
-        isAuthenticated: true,
-       }}>
+      {/* AuthProvider does not take a value prop directly, it provides context internally */}
+      <AuthProvider>
         <UIProvider>
           {ui}
         </UIProvider>
@@ -62,9 +66,9 @@ describe('PurchaseRequestMemoForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     // Reset mocks for API calls that return promises with specific data
-    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({ results: [], count: 0 }); // Corrected function name
-    vi.mocked(procurementApi.getProjectsForDropdown).mockResolvedValue({ results: [], count: 0 });
-    // vi.mocked(assetApi.getVendors).mockResolvedValue({ results: [], count: 0 }); // Already mocked globally for assetApi
+    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getProjectsForDropdown).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(assetApi.getVendors).mockResolvedValue({ results: [], count: 0, next: null, previous: null } as MockPaginatedResponse<Partial<import('../../../../api/assetApi').Vendor>>);
     // Reset other necessary mocks
   });
 
@@ -78,19 +82,35 @@ describe('PurchaseRequestMemoForm', () => {
 
   it('renders the form in edit mode when memoId is provided', async () => {
     const mockMemoId = 'memo123';
+    const numericMockMemoId = 123; // Assuming ID is number
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({ memoId: mockMemoId });
 
     vi.mocked(procurementApi.getPurchaseRequestMemoById).mockResolvedValue({
-      id: mockMemoId,
-      memo_id_display: 'IOM-001', // Example display ID
-      // department: 1, // Example department ID
-      // requested_by: 1, // Example user ID
+      id: numericMockMemoId, // Corrected to number
+      memo_id_display: 'IOM-001',
+      department: 1,
+      project: null,
+      priority: 'medium',
+      required_delivery_date: '2024-08-01',
+      suggested_vendor: null,
+      requested_by: 1,
       item_description: 'Test IOM for edit',
       quantity: 5,
+      reason: "Need this for testing edit mode",
       estimated_cost: 250,
-      status: 'draft',
-      // ... other necessary fields for a PurchaseRequestMemo ...
+      status: 'draft' as 'draft', // Corrected type
       request_date: '2024-07-01T00:00:00Z',
+      // Add other fields as defined in PurchaseRequestMemo type for completeness
+      requested_by_username: 'testuser',
+      department_name: 'Test Department',
+      project_name: null,
+      suggested_vendor_name: null,
+      attachments: null, // Or a mock URL string
+      approver: null,
+      approver_username: null,
+      decision_date: null,
+      approver_comments: null,
+      iom_id: 'IOM-DISPLAY-001' // if this is different from memo_id_display
     });
 
     renderWithProviders(<PurchaseRequestMemoForm />);
@@ -115,12 +135,20 @@ describe('PurchaseRequestMemoForm', () => {
   });
 
   it('submits the form successfully in create mode', async () => {
-    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({ results: [{id: 1, name: "Test Department"}], count: 1 }); // Corrected
+    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({ results: [{id: 1, name: "Test Department", department_code: "TD"}], count: 1, next: null, previous: null }); // Corrected and completed
     // Mock other dropdowns if needed (e.g., users for requested_by)
 
-    const mockCreateMemo = vi.mocked(procurementApi.createPurchaseRequestMemo).mockResolvedValue({
-      id: 'memo-new-id',
-      // ... other fields ...
+    // const mockCreateMemo = vi.mocked(procurementApi.createPurchaseRequestMemo).mockResolvedValue({ // Unused for now
+    vi.mocked(procurementApi.createPurchaseRequestMemo).mockResolvedValue({
+      id: 12345, // Changed to number
+      // ... other fields based on PurchaseRequestMemo type ...
+      memo_id_display: "IOM-NEW-001",
+      status: 'pending' as 'pending', // Valid status
+      item_description: 'New IOM Description',
+      quantity: 10,
+      reason: "Reason for new IOM",
+      request_date: new Date().toISOString(),
+      // ... other required fields
     });
 
     renderWithProviders(<PurchaseRequestMemoForm />);

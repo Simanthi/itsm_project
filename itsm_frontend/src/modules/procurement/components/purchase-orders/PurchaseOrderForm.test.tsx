@@ -8,7 +8,7 @@ import { AuthProvider } from '../../../../context/auth/AuthContext';
 
 // Mock dependencies
 import * as procurementApi from '../../../../api/procurementApi';
-import * as assetApi from '../../../../api/assetApi';
+// import * as assetApi from '../../../../api/assetApi'; // Unused import
 
 vi.mock('../../../../api/procurementApi', () => ({
   getPurchaseRequestMemoById: vi.fn(),
@@ -41,14 +41,8 @@ const mockAuthenticatedFetch = vi.fn();
 const renderWithProviders = (ui: React.ReactElement) => {
   return render(
     <BrowserRouter>
-      <AuthProvider value={{
-        user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
-        authenticatedFetch: mockAuthenticatedFetch,
-        login: vi.fn(),
-        logout: vi.fn(),
-        loading: false,
-        isAuthenticated: true,
-       }}>
+      {/* AuthProvider does not take a value prop directly, it provides context internally */}
+      <AuthProvider>
         <UIProvider>
           {ui}
         </UIProvider>
@@ -106,6 +100,7 @@ describe('PurchaseOrderForm', () => {
           tax_rate: 5,
           discount_type: 'fixed',
           discount_value: 0,
+          total_price: 100, // Assuming (2 * 50) - 0 + (5% of 100) if tax is on item total before discount
         }
       ],
       // Add any other fields the component might expect from the API response
@@ -178,8 +173,13 @@ describe('PurchaseOrderForm', () => {
 
   it('submits the form successfully in create mode', async () => {
     const mockCreatePurchaseOrder = vi.mocked(procurementApi.createPurchaseOrder).mockResolvedValue({ // Corrected mock usage
-      id: 'new-id',
-      // ... other fields
+      id: 12345, // Changed to number
+      // ... other fields that PurchaseOrder type might expect upon creation
+      po_number: "PO-NEW-001", // Example
+      status: "pending_approval", // Example
+      order_date: "2024-07-27",
+      vendor: 1,
+      order_items: [], // Simplified for this mock, adjust if component needs more
     });
 
     renderWithProviders(<PurchaseOrderForm />);
@@ -207,16 +207,16 @@ describe('PurchaseOrderForm', () => {
     // Fill the initial item's details
     await waitFor(() => {
       // The form starts with one item row from initialOrderItemData
-      let itemDescriptions = screen.getAllByRole('textbox').filter(input => input.getAttribute('name') === 'item_description');
+      const itemDescriptions = screen.getAllByRole('textbox').filter(input => input.getAttribute('name') === 'item_description');
       expect(itemDescriptions).toHaveLength(1);
       fireEvent.change(itemDescriptions[0], { target: { value: 'Test Item Submitted' } });
 
-      let quantities = screen.getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'quantity');
+      const quantities = screen.getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'quantity');
       expect(quantities).toHaveLength(1);
       // initialOrderItemData already has quantity: 1, so no change needed unless testing different
       // fireEvent.change(quantities[0], { target: { value: '1' } });
 
-      let unitPrices = screen.getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'unit_price');
+      const unitPrices = screen.getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'unit_price');
       expect(unitPrices).toHaveLength(1);
       fireEvent.change(unitPrices[0], { target: { value: '150' } }); // Set a non-zero unit price
     });
