@@ -155,9 +155,10 @@ describe('PurchaseOrderForm', () => {
     const vendorAutocomplete = screen.getByLabelText(/Vendor/i);
     fireEvent.mouseDown(vendorAutocomplete);
     await waitFor(() => {
-      expect(screen.getByText('Test Vendor 1')).toBeInTheDocument();
+      // Expecting the vendor name from the MSW assetHandler
+      expect(screen.getByText('Test Vendor 1 (MSW)')).toBeInTheDocument();
     });
-    fireEvent.click(screen.getByText('Test Vendor 1'));
+    fireEvent.click(screen.getByText('Test Vendor 1 (MSW)'));
 
     // Ensure the DOM has settled after vendor selection before querying for Order Date
     await waitFor(() => {
