@@ -8,8 +8,7 @@ from procurement.models import (
 )
 from assets.models import Vendor as AssetVendor
 from procurement.serializers import (
-    PurchaseRequestMemoSerializer, PurchaseOrderSerializer, CheckRequestSerializer
-    # OrderItemSerializer is usually tested via PurchaseOrderSerializer if it's nested
+    PurchaseRequestMemoSerializer, PurchaseOrderSerializer, CheckRequestSerializer, OrderItemSerializer
 )
 
 User = get_user_model()
