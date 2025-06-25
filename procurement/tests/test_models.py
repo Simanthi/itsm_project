@@ -405,8 +405,11 @@ class ApprovalWorkflowModelsTestCase(TestCase):
         # Create some rules
         rule1 = ApprovalRule.objects.create(
             name="Dept Head Approval", order=10, approver_user=self.user1,
-            min_amount=500, applies_to_all_projects=True, departments=[self.dept1]
+            min_amount=500, applies_to_all_projects=True
+            # Departments will be set after creation
         )
+        rule1.departments.set([self.dept1])
+
         rule2 = ApprovalRule.objects.create(
             name="Finance Approval", order=20, approver_group=self.group1, # group1 contains user1
             min_amount=100, applies_to_all_departments=True, applies_to_all_projects=True

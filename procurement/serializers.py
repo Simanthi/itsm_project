@@ -138,6 +138,19 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         ]
         # `created_by` is typically set in the view.
 
+    def validate_order_items_json(self, value):
+        """
+        Check that order_items_json is a valid JSON string.
+        The actual parsing and validation of items will happen in create/update.
+        """
+        if not value: # Allow blank or null if field allows (it does: required=False, allow_blank=True)
+            return value
+        try:
+            json.loads(value)
+        except json.JSONDecodeError:
+            raise serializers.ValidationError("Invalid JSON format for order items.")
+        return value
+
     def _process_order_items(self, po_instance, order_items_data):
         po_instance.order_items.all().delete() # Simple: delete existing, then create new
         current_total_amount = 0
