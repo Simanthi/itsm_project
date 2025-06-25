@@ -5,7 +5,7 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseOrderForm from './PurchaseOrderForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseOrder, OrderItem, PurchaseOrderStatus } from '../../types/procurementTypes'; // Adjusted to use local types if possible or define mock structure
+import type { PurchaseOrder, OrderItem } from '../../types/procurementTypes'; // Removed PurchaseOrderStatus
 import type { Vendor } from '../../../assets/types/assetTypes';
 
 // Mock API dependencies
@@ -47,76 +47,9 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
-// Helper to create a full OrderItem, satisfying the type, including total_price
-const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({
-  id: item.id || 0, // Default to 0 or ensure it's provided
-  item_description: item.item_description || "Mock Item",
-  quantity: item.quantity || 1,
-  unit_price: item.unit_price || 0,
-  product_code: item.product_code || null,
-  gl_account: item.gl_account || null,
-  received_quantity: item.received_quantity || 0,
-  line_item_status: item.line_item_status || 'pending',
-  tax_rate: item.tax_rate || null,
-  discount_type: item.discount_type || null,
-  discount_value: item.discount_value || null,
-  total_price: item.total_price || ((item.quantity || 1) * (item.unit_price || 0)), // Basic calculation
-  // Add other required fields from OrderItem type with default values
-  // created_at: new Date().toISOString(), // Removed as per type
-  // updated_at: new Date().toISOString(), // Removed as per type
-});
-
-// createMockPurchaseOrder and createMockOrderItem might not be needed if MSW provides full objects,
-// or they might need to be adjusted to match the structure MSW handlers for GET by ID return.
-// For now, let's keep them and adjust if tests break due to structure mismatch.
-
-const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({
-  id: item.id || Date.now() + Math.random(), // Ensure unique ID for items not yet saved
-  item_description: item.item_description || "Mock Item",
-  quantity: item.quantity || 1,
-  unit_price: item.unit_price || 0,
-  product_code: item.product_code || null,
-  gl_account: item.gl_account || null,
-  gl_account_code: item.gl_account_code || null,
-  received_quantity: item.received_quantity || 0,
-  line_item_status: item.line_item_status || 'pending',
-  tax_rate: item.tax_rate || null,
-  discount_type: item.discount_type || null,
-  discount_value: item.discount_value || null,
-  total_price: item.total_price || ((item.quantity || 1) * (item.unit_price || 0)),
-});
-
-const createMockPurchaseOrder = (po: Partial<PurchaseOrder>): PurchaseOrder => {
-  const mockVendor: Vendor = po.vendor_details || { id: po.vendor || 1, name: "Mock Vendor from Helper" };
-  return {
-    id: po.id || Date.now(),
-    po_number: po.po_number || "PO-MOCK-HELPER-001",
-    vendor: mockVendor.id,
-    vendor_details: mockVendor,
-    order_date: po.order_date || new Date().toISOString(),
-    expected_delivery_date: po.expected_delivery_date || null,
-    status: po.status || 'draft',
-    total_amount: typeof po.total_amount === 'string' ? parseFloat(po.total_amount) : (po.total_amount || 0),
-    notes: po.notes || null,
-    shipping_address: po.shipping_address || null,
-    payment_terms: po.payment_terms || null,
-    shipping_method: po.shipping_method || null,
-    billing_address: po.billing_address || null,
-    po_type: po.po_type || null,
-    currency: po.currency || 'USD',
-    related_contract: po.related_contract || null,
-    related_contract_details: po.related_contract_details || null,
-    internal_office_memo: po.internal_office_memo || null,
-    internal_office_memo_details: po.internal_office_memo_details || undefined,
-    attachments: po.attachments || null,
-    order_items: po.order_items?.map(item => createMockOrderItem(item)) || [],
-    created_by: po.created_by || 1,
-    created_by_username: po.created_by_username || 'testuser_helper',
-    created_at: po.created_at || new Date().toISOString(),
-    updated_at: po.updated_at || new Date().toISOString(),
-    revision_number: po.revision_number || 0,
-  };
-};
+// Mock helper functions are no longer needed as MSW provides the data.
+// const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({...});
+// const createMockPurchaseOrder = (po: Partial<PurchaseOrder>): PurchaseOrder => ({...});
 
 
 describe('PurchaseOrderForm', () => {
