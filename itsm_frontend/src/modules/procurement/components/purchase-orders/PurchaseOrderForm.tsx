@@ -36,7 +36,7 @@ import {
   createPurchaseOrder,
   updatePurchaseOrder,
   getPurchaseRequestMemos, // To fetch approved IOMs
-  // getVendors,
+  getContractsForDropdown, // Added to fetch contracts
 } from '../../../../api/procurementApi';
 import { getVendors } from '../../../../api/assetApi'; // Using Vendor list from assetApi
 import type { Vendor } from '../../../../api/assetApi'; // Import full Vendor type from assetApi
@@ -47,6 +47,7 @@ import type {
   OrderItem, // Import OrderItem for mapping fetched PO items
   PurchaseRequestMemo,
   PurchaseOrderStatus,
+  ContractForDropdown, // Added type for contracts dropdown
 } from '../../types';
 
 // PO Status choices for the dropdown
@@ -89,10 +90,10 @@ const mockPoTypes = [
     { value: 'subscription', label: 'Subscription' },
     { value: 'framework_agreement', label: 'Framework Agreement' },
 ];
-const mockContracts = [ // Example contracts
-    { id: 1, title: "Master Service Agreement - Vendor A" },
-    { id: 2, title: "Software License - Tech Corp" },
-];
+// const mockContracts = [ // Example contracts // Removed mock data
+//     { id: 1, title: "Master Service Agreement - Vendor A" },
+//     { id: 2, title: "Software License - Tech Corp" },
+// ];
 const mockCurrencies = [
     { value: 'INR', label: 'INR - Indian Rupee' },
     { value: 'USD', label: 'USD - US Dollar' },
@@ -136,6 +137,7 @@ const PurchaseOrderForm: React.FC = () => {
 
   const [vendors, setVendors] = useState<Vendor[]>([]);
   const [approvedMemos, setApprovedMemos] = useState<PurchaseRequestMemo[]>([]);
+  const [contractsForDropdown, setContractsForDropdown] = useState<ContractForDropdown[]>([]); // Added state for contracts
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -172,10 +174,22 @@ const PurchaseOrderForm: React.FC = () => {
     }
   }, [authenticatedFetch]);
 
+  const fetchContractsList = useCallback(async () => {
+    if (!authenticatedFetch) return;
+    try {
+      const response = await getContractsForDropdown(authenticatedFetch);
+      setContractsForDropdown(response.results);
+    } catch (err) {
+      console.error('Failed to fetch contracts:', err);
+      showSnackbar('Failed to load contracts for dropdown.', 'error');
+    }
+  }, [authenticatedFetch, showSnackbar]);
+
   useEffect(() => {
     fetchVendorsList();
     fetchApprovedMemos();
-  }, [fetchVendorsList, fetchApprovedMemos]);
+    fetchContractsList(); // Call fetch contracts
+  }, [fetchVendorsList, fetchApprovedMemos, fetchContractsList]);
 
   const fetchPurchaseOrderForEdit = useCallback(async () => {
     if (!poId || !authenticatedFetch) return;
@@ -733,12 +747,13 @@ const PurchaseOrderForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Autocomplete
-              options={mockContracts}
-              getOptionLabel={(option) => option.title || ''}
-              value={mockContracts.find(c => c.id === formData.related_contract) || null}
+              options={contractsForDropdown}
+              getOptionLabel={(option) => option.title ? `${option.contract_id || 'Contract'} - ${option.title}` : `ID: ${option.id}`}
+              value={contractsForDropdown.find(c => c.id === formData.related_contract) || null}
               onChange={(_event, newValue) => handleAutocompleteChange('related_contract', newValue)}
               renderInput={(params) => <TextField {...params} label="Related Contract (Optional)" />}
               disabled={effectiveViewOnly}
+              isOptionEqualToValue={(option, value) => option.id === value.id}
             />
           </Grid>
           <Grid item xs={12} md={6}>
