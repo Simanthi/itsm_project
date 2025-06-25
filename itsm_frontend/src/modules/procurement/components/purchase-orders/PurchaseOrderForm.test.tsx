@@ -5,8 +5,7 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseOrderForm from './PurchaseOrderForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseOrder, OrderItem } from '../../types/procurementTypes'; // Removed PurchaseOrderStatus
-import type { Vendor } from '../../../assets/types/assetTypes';
+// Unused type imports removed: PurchaseOrder, OrderItem, Vendor
 
 // Mock API dependencies
 import * as useAuthHook from '../../../../context/auth/useAuth'; // Import useAuth
