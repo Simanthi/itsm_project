@@ -5,7 +5,8 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseOrderForm from './PurchaseOrderForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseOrder, OrderItem, PurchaseOrderStatus, Vendor, PaginatedResponse } from '../../types/procurementTypes'; // Adjusted to use local types if possible or define mock structure
+import type { PurchaseOrder, OrderItem, PurchaseOrderStatus } from '../../types/procurementTypes'; // Adjusted to use local types if possible or define mock structure
+import type { Vendor } from '../../../assets/types/assetTypes';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -129,7 +130,7 @@ describe('PurchaseOrderForm', () => {
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     // Re-mock useAuth for each test to provide default values or allow overrides
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
+      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // A fresh mock for each test
       login: vi.fn(),
       logout: vi.fn(),
@@ -154,7 +155,7 @@ describe('PurchaseOrderForm', () => {
       order_date: '2024-07-01T00:00:00Z',
       status: 'draft' as PurchaseOrderStatus,
       order_items: [createMockOrderItem({ id: 1, item_description: 'Existing Item 1', quantity: 2, unit_price: 50, total_price: 100 })],
-      total_amount: "100.00", // Ensure this is present
+      total_amount: 100.00, // Ensure this is present
     });
     vi.mocked(procurementApi.getPurchaseOrderById).mockResolvedValue(mockedPO);
 
@@ -214,7 +215,7 @@ describe('PurchaseOrderForm', () => {
       order_date: "2024-07-27",
       vendor: 1,
       order_items: [],
-      total_amount: "150.00" // ensure this is present
+      total_amount: 150.00 // ensure this is present
     });
     const mockCreatePurchaseOrder = vi.mocked(procurementApi.createPurchaseOrder).mockResolvedValue(mockCreatedPO);
 

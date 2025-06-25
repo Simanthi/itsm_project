@@ -6,7 +6,8 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseRequestMemoForm from './PurchaseRequestMemoForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseRequestMemo, Department, Project, Vendor, PaginatedResponse } from '../../types/procurementTypes';
+import type { PurchaseRequestMemo, Department, Project, PaginatedResponse } from '../../types/procurementTypes';
+import type { Vendor } from '../../../assets/types/assetTypes';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -79,7 +80,7 @@ describe('PurchaseRequestMemoForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
+      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
