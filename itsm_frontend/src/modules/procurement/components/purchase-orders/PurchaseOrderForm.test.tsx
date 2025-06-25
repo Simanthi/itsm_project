@@ -5,8 +5,7 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseOrderForm from './PurchaseOrderForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseOrder, OrderItem, PurchaseOrderStatus, Vendor } from '../../types'; // Adjusted to use local types if possible or define mock structure
-import type { PaginatedResponse } from '../../../../api/types'; // Assuming a general PaginatedResponse type
+import type { PurchaseOrder, OrderItem, PurchaseOrderStatus, Vendor, PaginatedResponse } from '../../types/procurementTypes'; // Adjusted to use local types if possible or define mock structure
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -60,9 +59,9 @@ const renderWithProviders = (ui: React.ReactElement) => {
   // Corrected AuthProvider usage: no 'value' prop
   // The actual context value will be provided by the AuthProvider's internal state and logic.
   // If specific auth values are needed for a test, the `useAuth` hook itself should be mocked.
-  const mockLogin = vi.fn();
-  const mockLogout = vi.fn();
-  const mockAuthFetch = vi.fn();
+  // const mockLogin = vi.fn(); // Removed as unused
+  // const mockLogout = vi.fn(); // Removed as unused
+  // const mockAuthFetch = vi.fn(); // Removed as unused
 
 
   return render(
@@ -91,8 +90,8 @@ const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({
   discount_value: item.discount_value || null,
   total_price: item.total_price || ((item.quantity || 1) * (item.unit_price || 0)), // Basic calculation
   // Add other required fields from OrderItem type with default values
-  created_at: new Date().toISOString(),
-  updated_at: new Date().toISOString(),
+  // created_at: new Date().toISOString(), // Removed as per type
+  // updated_at: new Date().toISOString(), // Removed as per type
 });
 
 // Helper to create a full PurchaseOrder, satisfying the type
@@ -100,11 +99,11 @@ const createMockPurchaseOrder = (po: Partial<PurchaseOrder>): PurchaseOrder => (
   id: po.id || 0,
   po_number: po.po_number || "PO-MOCK-001",
   vendor: po.vendor || 1, // Assuming vendor ID
-  vendor_details: po.vendor_details || { id: 1, name: "Mock Vendor", contact_person: "", email: "" } as Vendor,
+  vendor_details: po.vendor_details || { id: 1, name: "Mock Vendor" } as Vendor,
   order_date: po.order_date || new Date().toISOString(),
   expected_delivery_date: po.expected_delivery_date || null,
   status: po.status || 'draft',
-  total_amount: po.total_amount || "0.00",
+  total_amount: parseFloat(po.total_amount?.toString() || "0.00"), // Ensure number
   notes: po.notes || null,
   shipping_address: po.shipping_address || null,
   payment_terms: po.payment_terms || null,
@@ -130,7 +129,7 @@ describe('PurchaseOrderForm', () => {
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     // Re-mock useAuth for each test to provide default values or allow overrides
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
+      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // A fresh mock for each test
       login: vi.fn(),
       logout: vi.fn(),
