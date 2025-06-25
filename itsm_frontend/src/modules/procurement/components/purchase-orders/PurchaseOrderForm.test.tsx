@@ -130,6 +130,7 @@ describe('PurchaseOrderForm', () => {
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     // Re-mock useAuth for each test to provide default values or allow overrides
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      token: 'mockToken', // Added token
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // A fresh mock for each test
       login: vi.fn(),

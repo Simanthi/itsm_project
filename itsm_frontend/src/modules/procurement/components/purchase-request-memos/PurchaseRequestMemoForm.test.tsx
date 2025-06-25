@@ -80,6 +80,7 @@ describe('PurchaseRequestMemoForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      token: 'mockToken', // Added token
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(),
       login: vi.fn(),
