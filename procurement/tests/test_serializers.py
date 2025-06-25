@@ -101,6 +101,74 @@ class ProcurementSerializersTestCase(TestCase):
         expected_total = 200.00 # From order_items
         self.assertAlmostEqual(po.total_amount, expected_total, places=2)
 
+    def test_purchase_order_serializer_create_invalid_data(self):
+        mock_request = type('Request', (), {'user': self.user, 'method': 'POST'})
+        invalid_po_data = self.po_data.copy()
+        invalid_po_data.pop('vendor') # Remove required vendor
+        serializer = PurchaseOrderSerializer(data=invalid_po_data, context={'request': mock_request})
+        self.assertFalse(serializer.is_valid())
+        self.assertIn('vendor', serializer.errors)
+
+        invalid_po_data_items = self.po_data.copy()
+        invalid_po_data_items['order_items'] = [
+            {'item_description': 'Valid Item', 'quantity': 1, 'unit_price': '10.00'}, # Valid
+            {'item_description': '', 'quantity': 0, 'unit_price': '-5.00'} # Invalid
+        ]
+        serializer_items = PurchaseOrderSerializer(data=invalid_po_data_items, context={'request': mock_request})
+        # Depending on how OrderItemSerializer handles nested validation,
+        # this might raise error during full validation or during _process_order_items.
+        # For now, let's assume basic validation catches required fields in OrderItemSerializer if specified.
+        # If OrderItemSerializer's fields are not marked 'required=True', then this test needs refinement
+        # or the validation happens inside _process_order_items.
+        # The current OrderItemSerializer doesn't explicitly mark item_description as required, model does.
+        # Let's test for invalid JSON in order_items_json
+        invalid_json_data = self.po_data.copy()
+        invalid_json_data.pop('order_items') # Remove the list version
+        invalid_json_data['order_items_json'] = "{'bad_json': True}" # Python dict repr, not valid JSON
+        serializer_bad_json = PurchaseOrderSerializer(data=invalid_json_data, context={'request': mock_request})
+        self.assertFalse(serializer_bad_json.is_valid())
+        self.assertIn('order_items_json', serializer_bad_json.errors)
+
+
+    def test_purchase_order_serializer_update(self):
+        mock_request = type('Request', (), {'user': self.user, 'method': 'PATCH'})
+        po = PurchaseOrder.objects.create(vendor=self.vendor, created_by=self.user, status='draft', total_amount=0)
+        OrderItem.objects.create(purchase_order=po, item_description='Old Item', quantity=1, unit_price=50.00)
+        po.total_amount = 50.00 # Manually set for old state
+        po.save()
+
+        update_data = {
+            'status': 'pending_approval',
+            'notes': 'Updated notes',
+            'order_items_json': json.dumps([ # Using order_items_json for updates
+                {'item_description': 'New Item 1', 'quantity': 2, 'unit_price': '20.00'},
+                {'item_description': 'New Item 2', 'quantity': 1, 'unit_price': '30.00'}
+            ])
+        }
+        serializer = PurchaseOrderSerializer(po, data=update_data, partial=True, context={'request': mock_request})
+        self.assertTrue(serializer.is_valid(), serializer.errors)
+        updated_po = serializer.save()
+        self.assertEqual(updated_po.status, 'pending_approval')
+        self.assertEqual(updated_po.notes, 'Updated notes')
+        self.assertEqual(updated_po.order_items.count(), 2)
+        self.assertEqual(updated_po.order_items.first().item_description, 'New Item 1')
+        # Total: (2*20) + (1*30) = 40 + 30 = 70
+        self.assertAlmostEqual(updated_po.total_amount, 70.00, places=2)
+
+    def test_order_item_serializer_valid_and_invalid(self):
+        # Valid data
+        valid_item_data = {'item_description': 'Test Item', 'quantity': 1, 'unit_price': '10.99'}
+        # We need a PO context for OrderItem if it's a nested serializer or has related fields
+        # For direct testing, if it doesn't require PO context for basic validation:
+        item_serializer_valid = OrderItemSerializer(data=valid_item_data)
+        self.assertTrue(item_serializer_valid.is_valid(), item_serializer_valid.errors)
+
+        # Invalid data - e.g. quantity not a number
+        invalid_item_data = {'item_description': 'Test Item Bad', 'quantity': 'เยอะ', 'unit_price': '10.00'}
+        item_serializer_invalid = OrderItemSerializer(data=invalid_item_data)
+        self.assertFalse(item_serializer_invalid.is_valid())
+        self.assertIn('quantity', item_serializer_invalid.errors)
+
 
     def test_check_request_serializer_create(self):
         mock_request = type('Request', (), {'user': self.user, 'method': 'POST'})
@@ -116,3 +184,105 @@ class ProcurementSerializersTestCase(TestCase):
         self.assertEqual(cr.expense_category, self.expense_category)
         self.assertEqual(cr.status, 'pending_submission') # Default status
         self.assertIsNotNone(cr.cr_id)
+
+
+from procurement.models import ApprovalRule, ApprovalStep, ApprovalDelegation
+from procurement.serializers import ApprovalRuleSerializer, ApprovalStepSerializer, ApprovalDelegationSerializer
+from django.contrib.auth.models import Group
+import json # For PO order_items_json
+
+class ApprovalWorkflowSerializersTestCase(TestCase):
+    def setUp(self):
+        self.user1 = User.objects.create_user(username='appr_ser_user1', password='password')
+        self.user2 = User.objects.create_user(username='appr_ser_user2', password='password')
+        self.group1 = Group.objects.create(name='Appr Ser Group 1')
+        self.dept1 = Department.objects.create(name='Appr Ser Dept')
+        self.proj1 = Project.objects.create(name='Appr Ser Proj')
+        self.iom = PurchaseRequestMemo.objects.create(
+            item_description='IOM for Approval Ser', requested_by=self.user1, estimated_cost=100
+        )
+
+        self.approval_rule_data = {
+            'name': 'Test Rule Serializer',
+            'order': 10,
+            'min_amount': '50.00',
+            'approver_user': self.user1.id,
+            'departments': [self.dept1.id],
+            'projects': [self.proj1.id]
+        }
+        self.approval_step_data = { # Mostly read-only, but test what can be set if any
+            'purchase_request_memo_id': self.iom.id, # Corrected field name for input
+            'step_order': 10, # Assuming this could be set if creating manually (unlikely use case)
+            'comments': 'Step comment via serializer'
+        }
+        self.delegation_data = {
+            'delegator': self.user1.id,
+            'delegatee': self.user2.id,
+            'start_date': datetime.datetime.now(datetime.timezone.utc).isoformat(),
+            'end_date': (datetime.datetime.now(datetime.timezone.utc) + datetime.timedelta(days=5)).isoformat(),
+            'reason': 'Vacation'
+        }
+        self.mock_request_user1 = type('Request', (), {'user': self.user1, 'method': 'POST'})
+
+
+    def test_approval_rule_serializer(self):
+        # Create
+        serializer_create = ApprovalRuleSerializer(data=self.approval_rule_data)
+        self.assertTrue(serializer_create.is_valid(), serializer_create.errors)
+        rule = serializer_create.save()
+        self.assertEqual(rule.name, 'Test Rule Serializer')
+        self.assertEqual(rule.approver_user, self.user1)
+        self.assertTrue(rule.departments.filter(id=self.dept1.id).exists())
+
+        # Representation (Read)
+        serializer_read = ApprovalRuleSerializer(instance=rule)
+        self.assertIn('departments_details', serializer_read.data)
+        self.assertEqual(len(serializer_read.data['departments_details']), 1)
+        self.assertEqual(serializer_read.data['departments_details'][0]['name'], self.dept1.name)
+
+    def test_approval_step_serializer(self):
+        # Most fields are read-only or set by system.
+        # Test creation with minimal writable fields (if any, usually system creates these)
+        # For this test, we'll assume 'comments' can be updated.
+        rule = ApprovalRule.objects.create(name='Rule for Step Ser', order=5, approver_user=self.user1)
+        step = ApprovalStep.objects.create(
+            purchase_request_memo=self.iom, approval_rule=rule, step_order=5, assigned_approver_user=self.user1
+        )
+
+        # Update comments
+        update_data = {'comments': 'Updated step comments'}
+        serializer_update = ApprovalStepSerializer(step, data=update_data, partial=True)
+        self.assertTrue(serializer_update.is_valid(), serializer_update.errors)
+        updated_step = serializer_update.save()
+        self.assertEqual(updated_step.comments, 'Updated step comments')
+
+        # Representation (Read)
+        serializer_read = ApprovalStepSerializer(instance=updated_step)
+        self.assertEqual(serializer_read.data['rule_name_snapshot'], rule.name)
+        self.assertEqual(serializer_read.data['assigned_approver_user_name'], self.user1.username)
+        self.assertEqual(serializer_read.data['status_display'], 'Pending') # Default status
+
+    def test_approval_delegation_serializer_create_and_validate(self):
+        # Create
+        serializer_create = ApprovalDelegationSerializer(data=self.delegation_data, context={'request': self.mock_request_user1})
+        self.assertTrue(serializer_create.is_valid(), serializer_create.errors)
+        delegation = serializer_create.save() # delegator should be set from context by serializer
+        self.assertEqual(delegation.delegator, self.user1)
+        self.assertEqual(delegation.delegatee, self.user2)
+        self.assertEqual(delegation.reason, 'Vacation')
+
+        # Test validation: delegator = delegatee
+        invalid_data_same_user = self.delegation_data.copy()
+        invalid_data_same_user['delegatee'] = self.user1.id
+        serializer_invalid_same = ApprovalDelegationSerializer(data=invalid_data_same_user, context={'request': self.mock_request_user1})
+        self.assertFalse(serializer_invalid_same.is_valid())
+        self.assertIn('non_field_errors', serializer_invalid_same.errors) # Model clean error often goes here or specific field if overridden
+                                                                        # Or check for specific error message if validate() raises it directly on a field.
+                                                                        # Our validate() raises a generic ValidationError.
+
+        # Test validation: end_date < start_date
+        invalid_data_date = self.delegation_data.copy()
+        invalid_data_date['end_date'] = (datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=1)).isoformat()
+        serializer_invalid_date = ApprovalDelegationSerializer(data=invalid_data_date, context={'request': self.mock_request_user1})
+        self.assertFalse(serializer_invalid_date.is_valid())
+        self.assertIn('non_field_errors', serializer_invalid_date.errors)
