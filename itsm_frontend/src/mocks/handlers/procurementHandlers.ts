@@ -54,7 +54,7 @@ export const procurementHandlers = [
       related_contract_details: null,
       attachments: null,
       internal_office_memo: null,
-      internal_office_memo_details: undefined, // Or a mock memo detail if needed by component
+      // internal_office_memo_details: undefined, // Removed, not part of direct PurchaseOrder type for mocks
     };
     return HttpResponse.json(mockCreatedPO, { status: 201 });
   }),
@@ -124,7 +124,7 @@ export const procurementHandlers = [
       related_contract_details: null,
       attachments: null,
       internal_office_memo: null,
-      internal_office_memo_details: undefined,
+      // internal_office_memo_details: undefined, // Removed
     };
     return HttpResponse.json(mockPO);
   }),
