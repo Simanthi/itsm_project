@@ -112,7 +112,7 @@ describe('CheckRequestForm', () => {
       // department: null, // Removed as per type
       // department_name: null, // Removed as per type
       // project: null, // Removed as per type
-      project_name: null,
+      //project_name: null,
       approved_by_accounts: null,
       approved_by_accounts_username: null,
       accounts_approval_date: null,
@@ -152,7 +152,7 @@ describe('CheckRequestForm', () => {
       // vendor_code: "V001", // Removed as per type
       // payment_terms: "", // Removed as per type
       // Ensure all non-optional fields from Vendor type are present
-      is_active: true,
+      //is_active: true,
       // category: null, // Removed as per type
       // created_at: new Date().toISOString(), // Removed as per type
       // updated_at: new Date().toISOString(), // Removed as per type
@@ -190,7 +190,7 @@ describe('CheckRequestForm', () => {
       // department: null, // Removed as per type
       // department_name: null, // Removed as per type
       // project: null, // Removed as per type
-      project_name: null,
+      //project_name: null,
       approved_by_accounts: null,
       approved_by_accounts_username: null,
       accounts_approval_date: null,
