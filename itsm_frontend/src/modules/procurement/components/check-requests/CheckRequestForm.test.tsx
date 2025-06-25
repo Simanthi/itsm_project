@@ -6,8 +6,7 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestForm from './CheckRequestForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { CheckRequest, CheckRequestStatus, Vendor, PurchaseOrder, Department, Project, ExpenseCategory } from '../../types';
-import type { PaginatedResponse } from '../../../../api/types';
+import type { CheckRequest, Vendor, PurchaseOrder, Department, Project, ExpenseCategory, PaginatedResponse } from '../../types/procurementTypes';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -17,24 +16,14 @@ import * as useAuthHook from '../../../../context/auth/useAuth';
 // Define a PaginatedResponse type helper for mocks
 type MockPaginatedResponse<T> = PaginatedResponse<T>; // Use the actual PaginatedResponse type
 
-// Minimal Vendor type for mocks, ensuring ID is number and no extra props like 'phone'
-type MockVendor = Omit<Vendor, 'created_at' | 'updated_at' | 'created_by' | 'updated_by' | 'is_active' | 'category'> & {
-    id: number; // Ensure id is number
-    // Add other mandatory fields from Vendor if any, e.g.
-    // address: string;
-    // vendor_code: string;
-    // payment_terms: string;
-};
-
-
 vi.mock('../../../../api/procurementApi', () => ({
   getCheckRequestById: vi.fn(),
   createCheckRequest: vi.fn(),
   updateCheckRequest: vi.fn(),
   getPurchaseOrders: vi.fn((): Promise<MockPaginatedResponse<PurchaseOrder>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getDepartments: vi.fn((): Promise<MockPaginatedResponse<Department>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getProjects: vi.fn((): Promise<MockPaginatedResponse<Project>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getExpenseCategories: vi.fn((): Promise<MockPaginatedResponse<ExpenseCategory>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getDepartmentsForDropdown: vi.fn((): Promise<MockPaginatedResponse<Department>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getProjectsForDropdown: vi.fn((): Promise<MockPaginatedResponse<Project>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
+  getExpenseCategoriesForDropdown: vi.fn((): Promise<MockPaginatedResponse<ExpenseCategory>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
 }));
 
 vi.mock('../../../../api/assetApi', () => ({
@@ -74,7 +63,7 @@ describe('CheckRequestForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
+      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // This specific mock for authenticatedFetch inside useAuth is fine
       login: vi.fn(),
       logout: vi.fn(),
@@ -84,9 +73,9 @@ describe('CheckRequestForm', () => {
     // Reset mocks for API calls
     vi.mocked(procurementApi.getPurchaseOrders).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
     vi.mocked(assetApi.getVendors).mockResolvedValue({ results: [], count: 0, next: null, previous: null } as MockPaginatedResponse<Vendor>);
-    vi.mocked(procurementApi.getDepartments).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
-    vi.mocked(procurementApi.getProjects).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
-    vi.mocked(procurementApi.getExpenseCategories).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getProjectsForDropdown).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
+    vi.mocked(procurementApi.getExpenseCategoriesForDropdown).mockResolvedValue({ results: [], count: 0, next: null, previous: null });
   });
 
   it('renders the form in create mode', async () => {
@@ -103,7 +92,6 @@ describe('CheckRequestForm', () => {
       id: numericMockCrId,
       cr_id: `CR-${numericMockCrId}`,
       purchase_order: null,
-      vendor_id: 1,
       payee_name: 'Mock Payee from Edit',
       payee_address: '123 Mock St',
       invoice_number: 'INV-EDIT-001',
@@ -131,8 +119,8 @@ describe('CheckRequestForm', () => {
       payment_date: null,
       transaction_id: null,
       payment_notes: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      // created_at: new Date().toISOString(), // Removed as per type
+      // updated_at: new Date().toISOString(), // Removed as per type
     };
     vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(mockCheckRequest);
 
@@ -186,8 +174,8 @@ describe('CheckRequestForm', () => {
       purchase_order: null,
       reason_for_payment: "test",
       requested_by: 1,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      // created_at: new Date().toISOString(), // Removed as per type
+      // updated_at: new Date().toISOString(), // Removed as per type
       requested_by_username: "test",
       invoice_number: null,
       invoice_date: null,

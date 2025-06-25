@@ -6,8 +6,7 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseRequestMemoForm from './PurchaseRequestMemoForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { PurchaseRequestMemo, PurchaseRequestStatus, Department, Project, Vendor } from '../../types';
-import type { PaginatedResponse } from '../../../../api/types';
+import type { PurchaseRequestMemo, Department, Project, Vendor, PaginatedResponse } from '../../types/procurementTypes';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -58,21 +57,21 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 // Helper to create a full Vendor for mocks, satisfying the type
-const createMockVendor = (vendor: Partial<Vendor>): Vendor => ({
-  id: vendor.id || 0, // Ensure id is number
-  name: vendor.name || "Mock Vendor",
-  contact_person: vendor.contact_person || null,
-  email: vendor.email || null,
-  address: vendor.address || null,
-  vendor_code: vendor.vendor_code || null,
-  payment_terms: vendor.payment_terms || null,
-  category: vendor.category || null,
-  created_at: vendor.created_at || new Date().toISOString(),
-  updated_at: vendor.updated_at || new Date().toISOString(),
-  created_by: vendor.created_by || null,
-  updated_by: vendor.updated_by || null,
-  is_active: vendor.is_active === undefined ? true : vendor.is_active,
-});
+// const createMockVendor = (vendor: Partial<Vendor>): Vendor => ({ // Removed as unused
+//   id: vendor.id || 0, // Ensure id is number
+//   name: vendor.name || "Mock Vendor",
+//   contact_person: vendor.contact_person || null,
+//   email: vendor.email || null,
+//   address: vendor.address || null,
+//   vendor_code: vendor.vendor_code || null,
+//   payment_terms: vendor.payment_terms || null,
+//   category: vendor.category || null,
+//   created_at: vendor.created_at || new Date().toISOString(),
+//   updated_at: vendor.updated_at || new Date().toISOString(),
+//   created_by: vendor.created_by || null,
+//   updated_by: vendor.updated_by || null,
+//   is_active: vendor.is_active === undefined ? true : vendor.is_active,
+// });
 
 
 describe('PurchaseRequestMemoForm', () => {
@@ -80,7 +79,7 @@ describe('PurchaseRequestMemoForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, username: 'testuser', email: 'test@example.com', roles: ['admin'] },
+      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(),
       login: vi.fn(),
       logout: vi.fn(),
@@ -115,7 +114,7 @@ describe('PurchaseRequestMemoForm', () => {
       quantity: 5,
       reason: 'Urgent need',
       estimated_cost: 250,
-      status: 'draft' as const,
+      status: 'pending' as const, // Changed from 'draft'
       priority: 'high' as const,
       request_date: '2024-07-01T00:00:00Z',
       required_delivery_date: '2024-08-01',
@@ -126,8 +125,8 @@ describe('PurchaseRequestMemoForm', () => {
       approver_username: null,
       decision_date: null,
       approver_comments: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      // created_at: new Date().toISOString(), // Removed as per type
+      // updated_at: new Date().toISOString(), // Removed as per type
     };
     vi.mocked(procurementApi.getPurchaseRequestMemoById).mockResolvedValue(mockMemo);
 
@@ -178,8 +177,8 @@ describe('PurchaseRequestMemoForm', () => {
       approver_username: null,
       decision_date: null,
       approver_comments: null,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
+      // created_at: new Date().toISOString(), // Removed as per type
+      // updated_at: new Date().toISOString(), // Removed as per type
     };
     vi.mocked(procurementApi.createPurchaseRequestMemo).mockResolvedValue(createdMemo);
 
