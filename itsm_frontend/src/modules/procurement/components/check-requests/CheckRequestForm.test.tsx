@@ -64,6 +64,7 @@ describe('CheckRequestForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
+      token: 'mockToken', // Added token
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // This specific mock for authenticatedFetch inside useAuth is fine
       login: vi.fn(),
@@ -109,7 +110,7 @@ describe('CheckRequestForm', () => {
       requested_by_username: 'testuser',
       attachments: null,
       // department: null, // Removed as per type
-      department_name: null,
+      // department_name: null, // Removed as per type
       project: null,
       project_name: null,
       approved_by_accounts: null,
@@ -148,15 +149,15 @@ describe('CheckRequestForm', () => {
       contact_person: "",
       email: "payee@example.com",
       address: "",
-      vendor_code: "V001",
+      // vendor_code: "V001", // Removed as per type
       payment_terms: "",
       // Ensure all non-optional fields from Vendor type are present
       is_active: true,
-      category: null, // Example if category can be null or provide a valid category ID/object
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-      created_by: null, // Or a user ID
-      updated_by: null, // Or a user ID
+      // category: null, // Removed as per type
+      // created_at: new Date().toISOString(), // Removed as per type
+      // updated_at: new Date().toISOString(), // Removed as per type
+      // created_by: null, // Removed as per type
+      // updated_by: null, // Removed as per type
     };
     vi.mocked(assetApi.getVendors).mockResolvedValue({
       results: [minimalVendor],
@@ -187,7 +188,7 @@ describe('CheckRequestForm', () => {
       currency: 'USD',
       attachments: null,
       // department: null, // Removed as per type
-      department_name: null,
+      // department_name: null, // Removed as per type
       project: null,
       project_name: null,
       approved_by_accounts: null,
