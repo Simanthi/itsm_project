@@ -488,19 +488,35 @@ const PurchaseOrderForm: React.FC = () => {
       }
       navigate('/procurement/purchase-orders'); // Adjust navigation path
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      // Add more detailed error parsing if backend sends structured errors
-       try {
-        const errorResponse = JSON.parse(message); // Assuming error is JSON string
-        let detailedError = 'Failed to save PO: ';
-        for (const key in errorResponse) {
-          detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
-        }
-        setError(detailedError);
-      } catch /* istanbul ignore next */ { // Removed unused parseError variable
-         setError(`Failed to save PO: ${message}`);
+      const rawMessage = err instanceof Error ? err.message : String(err);
+      let jsonErrorBody = '';
+      const bodyPrefix = "API Error: 400 Body: ";
+      if (rawMessage.startsWith(bodyPrefix)) {
+        jsonErrorBody = rawMessage.substring(bodyPrefix.length);
       }
-      showSnackbar(`Error: ${message}`, 'error');
+
+      let finalError = `Failed to save PO: ${rawMessage}`; // Default error
+
+      if (jsonErrorBody) {
+        try {
+          const errorResponse = JSON.parse(jsonErrorBody);
+          let detailedError = 'Failed to save PO: ';
+          for (const key in errorResponse) {
+            if (Array.isArray(errorResponse[key])) {
+              detailedError += `${key}: ${errorResponse[key].join(', ')}; `;
+            } else {
+              detailedError += `${key}: ${String(errorResponse[key])}; `; // Ensure string conversion
+            }
+          }
+          // Remove trailing semicolon and space
+          finalError = detailedError.trim().endsWith(';') ? detailedError.trim().slice(0, -1) : detailedError.trim();
+        } catch (parseError) {
+          console.error("Failed to parse error JSON from API response:", parseError);
+          // finalError remains the rawMessage or a generic one
+        }
+      }
+      setError(finalError);
+      showSnackbar(finalError, 'error'); // Show the parsed or raw error
     } finally {
       setIsSubmitting(false);
     }
@@ -835,11 +851,11 @@ const PurchaseOrderForm: React.FC = () => {
               </TableHead>
               <TableBody>
                 {orderItems.map((item: OrderItemData, index: number) => (
-                  <TableRow key={index}>
+                  <TableRow key={index}>{/* Ensure no whitespace before the first TableCell */}
                     <TableCell>
                       <TextField name="item_description" value={item.item_description} onChange={(e) => handleItemChange(index, e)} fullWidth required size="small" InputProps={{ readOnly: effectiveViewOnly }} disabled={effectiveViewOnly}/>
                     </TableCell>
-                     <TableCell>
+                    <TableCell>
                       <TextField name="product_code" value={item.product_code || ''} onChange={(e) => handleItemChange(index, e)} fullWidth size="small" InputProps={{ readOnly: effectiveViewOnly }} disabled={effectiveViewOnly}/>
                     </TableCell>
                     <TableCell>
@@ -850,7 +866,6 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell>
                         <FormControl fullWidth size="small" disabled={effectiveViewOnly}>
-                            {/* Removed duplicate FormControl wrapper here */}
                             <Select name="gl_account" value={item.gl_account || ''} onChange={(e) => handleItemChange(index, e)} displayEmpty>
                                 <MenuItem value=""><em>None</em></MenuItem>
                                 {mockGLAccounts.map(acc => <MenuItem key={acc.id} value={acc.id}>{acc.code}</MenuItem>)}
@@ -887,7 +902,6 @@ const PurchaseOrderForm: React.FC = () => {
                     </TableCell>
                     <TableCell align="right">
                       {formData.currency === 'KES' ? 'KES' : formData.currency === 'INR' ? '₹' : '$'}
-                      {/* This total calculation needs to be more robust in OrderItem type using @property if it includes tax/discount */}
                       {((item.quantity || 0) * (item.unit_price || 0)).toFixed(2)}
                     </TableCell>
                     {!effectiveViewOnly && (
