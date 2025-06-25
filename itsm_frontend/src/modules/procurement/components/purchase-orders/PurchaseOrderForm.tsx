@@ -221,7 +221,7 @@ const PurchaseOrderForm: React.FC = () => {
         // revision_number: po.revision_number, // Display only
       });
       setOrderItems(
-        po.order_items.map((item: OrderItem) => ({ // Use OrderItem type here for full data
+        (po.order_items || []).map((item: OrderItem) => ({ // Use OrderItem type here for full data
           id: item.id,
           item_description: item.item_description,
           quantity: item.quantity,
