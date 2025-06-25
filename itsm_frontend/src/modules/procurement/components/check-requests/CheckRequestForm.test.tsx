@@ -6,7 +6,8 @@ import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestForm from './CheckRequestForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { CheckRequest, Vendor, PurchaseOrder, Department, Project, ExpenseCategory, PaginatedResponse } from '../../types/procurementTypes';
+import type { CheckRequest, PurchaseOrder, Department, Project, ExpenseCategory, PaginatedResponse } from '../../types/procurementTypes';
+import type { Vendor } from '../../../assets/types/assetTypes';
 
 // Mock API dependencies
 import * as procurementApi from '../../../../api/procurementApi';
@@ -63,7 +64,7 @@ describe('CheckRequestForm', () => {
     vi.clearAllMocks();
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true },
+      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       authenticatedFetch: vi.fn(), // This specific mock for authenticatedFetch inside useAuth is fine
       login: vi.fn(),
       logout: vi.fn(),
@@ -107,7 +108,7 @@ describe('CheckRequestForm', () => {
       requested_by: 1,
       requested_by_username: 'testuser',
       attachments: null,
-      department: null,
+      // department: null, // Removed as per type
       department_name: null,
       project: null,
       project_name: null,
@@ -185,7 +186,7 @@ describe('CheckRequestForm', () => {
       recurring_payment: null,
       currency: 'USD',
       attachments: null,
-      department: null,
+      // department: null, // Removed as per type
       department_name: null,
       project: null,
       project_name: null,
