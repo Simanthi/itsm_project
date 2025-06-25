@@ -161,11 +161,18 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
 
             integer_fields = ['quantity', 'received_quantity']
             for field_name in integer_fields:
-                 if field_name in item_data and item_data[field_name] is not None:
+                if field_name in item_data and item_data[field_name] is not None:
                     try:
                         item_data[field_name] = int(item_data[field_name])
                     except ValueError:
                         raise serializers.ValidationError({f'order_items.{field_name}': 'Invalid integer value.'})
+                elif field_name == 'received_quantity': # Explicitly default received_quantity if None or not present
+                    item_data[field_name] = 0
+
+
+            # Ensure received_quantity defaults to 0 if not provided or None, to respect model default
+            if item_data.get('received_quantity') is None:
+                item_data['received_quantity'] = 0
 
             item = OrderItem.objects.create(purchase_order=po_instance, **item_data)
             current_total_amount += item.total_price
