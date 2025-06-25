@@ -111,7 +111,7 @@ describe('CheckRequestForm', () => {
       attachments: null,
       // department: null, // Removed as per type
       // department_name: null, // Removed as per type
-      project: null,
+      // project: null, // Removed as per type
       project_name: null,
       approved_by_accounts: null,
       approved_by_accounts_username: null,
@@ -150,7 +150,7 @@ describe('CheckRequestForm', () => {
       email: "payee@example.com",
       address: "",
       // vendor_code: "V001", // Removed as per type
-      payment_terms: "",
+      // payment_terms: "", // Removed as per type
       // Ensure all non-optional fields from Vendor type are present
       is_active: true,
       // category: null, // Removed as per type
@@ -189,7 +189,7 @@ describe('CheckRequestForm', () => {
       attachments: null,
       // department: null, // Removed as per type
       // department_name: null, // Removed as per type
-      project: null,
+      // project: null, // Removed as per type
       project_name: null,
       approved_by_accounts: null,
       approved_by_accounts_username: null,
