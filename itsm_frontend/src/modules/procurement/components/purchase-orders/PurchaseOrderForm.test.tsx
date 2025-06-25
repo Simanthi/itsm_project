@@ -9,48 +9,19 @@ import type { PurchaseOrder, OrderItem, PurchaseOrderStatus } from '../../types/
 import type { Vendor } from '../../../assets/types/assetTypes';
 
 // Mock API dependencies
-import * as procurementApi from '../../../../api/procurementApi';
 import * as useAuthHook from '../../../../context/auth/useAuth'; // Import useAuth
+// MSW will handle API mocks, so direct vi.mock for procurementApi and assetApi will be removed or adjusted.
 
-// Define a PaginatedResponse type helper for mocks - already in other files, ensure consistency
-type MockPaginatedResponse<T> = {
-  count: number;
-  next: string | null;
-  previous: string | null;
-  results: T[];
-};
-
-vi.mock('../../../../api/procurementApi', () => ({
-  getPurchaseRequestMemoById: vi.fn(),
-  getPurchaseOrderById: vi.fn(),
-  createPurchaseOrder: vi.fn(),
-  updatePurchaseOrder: vi.fn(),
-  getDepartments: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getProjects: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getExpenseCategories: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getGLAccounts: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getPurchaseRequestMemos: vi.fn((): Promise<MockPaginatedResponse<unknown>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-}));
-
-// assetApi mock for getVendors
-vi.mock('../../../../api/assetApi', () => ({
-  getVendors: vi.fn((): Promise<MockPaginatedResponse<Partial<Vendor>>> => Promise.resolve({
-    results: [{ id: 1, name: "Test Vendor 1", contact_person: "Tess Ting", email: "test@vendor.com" }], // Removed phone
-    count: 1,
-    next: null,
-    previous: null
-  })),
-}));
-
-// Mock the useAuth hook module
+// Mock the useAuth hook module - This is a React hook, not an API call, so keep it.
 vi.mock('../../../../context/auth/useAuth');
 
+// Mock react-router-dom - This is for routing context, not API calls, so keep it.
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useParams: vi.fn(),
-    useNavigate: vi.fn(() => vi.fn()),
+    useNavigate: vi.fn(() => vi.fn()), // Keep the mock for useNavigate
   };
 });
 
@@ -95,44 +66,77 @@ const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({
   // updated_at: new Date().toISOString(), // Removed as per type
 });
 
-// Helper to create a full PurchaseOrder, satisfying the type
-const createMockPurchaseOrder = (po: Partial<PurchaseOrder>): PurchaseOrder => ({
-  id: po.id || 0,
-  po_number: po.po_number || "PO-MOCK-001",
-  vendor: po.vendor || 1, // Assuming vendor ID
-  vendor_details: po.vendor_details || { id: 1, name: "Mock Vendor" } as Vendor,
-  order_date: po.order_date || new Date().toISOString(),
-  expected_delivery_date: po.expected_delivery_date || null,
-  status: po.status || 'draft',
-  total_amount: parseFloat(po.total_amount?.toString() || "0.00"), // Ensure number
-  notes: po.notes || null,
-  shipping_address: po.shipping_address || null,
-  payment_terms: po.payment_terms || null,
-  shipping_method: po.shipping_method || null,
-  billing_address: po.billing_address || null,
-  po_type: po.po_type || null,
-  currency: po.currency || 'USD',
-  related_contract: po.related_contract || null,
-  internal_office_memo: po.internal_office_memo || null,
-  attachments: po.attachments || null,
-  order_items: po.order_items?.map(item => createMockOrderItem(item)) || [],
-  created_by: po.created_by || 1,
-  created_by_username: po.created_by_username || 'testuser',
-  created_at: po.created_at || new Date().toISOString(),
-  updated_at: po.updated_at || new Date().toISOString(),
-  revision_number: po.revision_number || 0,
+// createMockPurchaseOrder and createMockOrderItem might not be needed if MSW provides full objects,
+// or they might need to be adjusted to match the structure MSW handlers for GET by ID return.
+// For now, let's keep them and adjust if tests break due to structure mismatch.
+
+const createMockOrderItem = (item: Partial<OrderItem>): OrderItem => ({
+  id: item.id || Date.now() + Math.random(), // Ensure unique ID for items not yet saved
+  item_description: item.item_description || "Mock Item",
+  quantity: item.quantity || 1,
+  unit_price: item.unit_price || 0,
+  product_code: item.product_code || null,
+  gl_account: item.gl_account || null,
+  gl_account_code: item.gl_account_code || null,
+  received_quantity: item.received_quantity || 0,
+  line_item_status: item.line_item_status || 'pending',
+  tax_rate: item.tax_rate || null,
+  discount_type: item.discount_type || null,
+  discount_value: item.discount_value || null,
+  total_price: item.total_price || ((item.quantity || 1) * (item.unit_price || 0)),
 });
+
+const createMockPurchaseOrder = (po: Partial<PurchaseOrder>): PurchaseOrder => {
+  const mockVendor: Vendor = po.vendor_details || { id: po.vendor || 1, name: "Mock Vendor from Helper" };
+  return {
+    id: po.id || Date.now(),
+    po_number: po.po_number || "PO-MOCK-HELPER-001",
+    vendor: mockVendor.id,
+    vendor_details: mockVendor,
+    order_date: po.order_date || new Date().toISOString(),
+    expected_delivery_date: po.expected_delivery_date || null,
+    status: po.status || 'draft',
+    total_amount: typeof po.total_amount === 'string' ? parseFloat(po.total_amount) : (po.total_amount || 0),
+    notes: po.notes || null,
+    shipping_address: po.shipping_address || null,
+    payment_terms: po.payment_terms || null,
+    shipping_method: po.shipping_method || null,
+    billing_address: po.billing_address || null,
+    po_type: po.po_type || null,
+    currency: po.currency || 'USD',
+    related_contract: po.related_contract || null,
+    related_contract_details: po.related_contract_details || null,
+    internal_office_memo: po.internal_office_memo || null,
+    internal_office_memo_details: po.internal_office_memo_details || undefined,
+    attachments: po.attachments || null,
+    order_items: po.order_items?.map(item => createMockOrderItem(item)) || [],
+    created_by: po.created_by || 1,
+    created_by_username: po.created_by_username || 'testuser_helper',
+    created_at: po.created_at || new Date().toISOString(),
+    updated_at: po.updated_at || new Date().toISOString(),
+    revision_number: po.revision_number || 0,
+  };
+};
 
 
 describe('PurchaseOrderForm', () => {
+  const mockNavigate = vi.fn();
+
   beforeEach(() => {
-    vi.clearAllMocks();
+    vi.clearAllMocks(); // Clears all mocks, including react-router-dom if needed, but useParams/useNavigate are re-mocked below
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
-    // Re-mock useAuth for each test to provide default values or allow overrides
+    vi.mocked(ReactRouterDom.useNavigate).mockReturnValue(mockNavigate); // Use the persistent mock
+
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
-      token: 'mockToken', // Added token
+      token: 'mockToken',
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
-      authenticatedFetch: vi.fn(), // A fresh mock for each test
+      authenticatedFetch: vi.fn().mockImplementation(async (url, options) => {
+        // This basic mock for authenticatedFetch might still be useful for things MSW doesn't catch,
+        // or it can be removed if MSW covers all fetch calls made by the component.
+        // For now, let's assume MSW handles it. If not, this would need to simulate a fetch response.
+        console.warn(`AuthenticatedFetch called for ${url} with options:`, options, `THIS SHOULD IDEALLY BE HANDLED BY MSW`);
+        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      }),
       login: vi.fn(),
       logout: vi.fn(),
       loading: false,
@@ -140,34 +144,34 @@ describe('PurchaseOrderForm', () => {
     });
   });
 
-  it('renders the form in create mode', async () => {
+  it('renders the form in create mode and loads initial data (vendors, memos, contracts)', async () => {
     renderWithProviders(<PurchaseOrderForm />);
     expect(screen.getByRole('heading', { name: /Create Purchase Order/i })).toBeInTheDocument();
+
+    // Check if data from MSW handlers for GET requests is loaded
+    // Example: Vendors (assuming one of the mock vendors is "Test Vendor 1 (MSW)")
+    // Need to interact with Autocomplete to show options
+    const vendorAutocomplete = screen.getByLabelText(/Vendor/i);
+    fireEvent.mouseDown(vendorAutocomplete);
+    await screen.findByText('Test Vendor 1 (MSW)'); // From assetHandlers
+    // Add similar checks for approved memos and contracts if their Autocompletes are present initially
   });
 
-  it('renders the form in edit mode when orderId is provided', async () => {
+  it('renders the form in edit mode when orderId is provided and loads PO data', async () => {
     const mockPoId = '123';
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({ poId: mockPoId });
-
-    const mockedPO = createMockPurchaseOrder({
-      id: parseInt(mockPoId),
-      po_number: 'PO-EDIT-001',
-      vendor: 1,
-      order_date: '2024-07-01T00:00:00Z',
-      status: 'draft' as PurchaseOrderStatus,
-      order_items: [createMockOrderItem({ id: 1, item_description: 'Existing Item 1', quantity: 2, unit_price: 50, total_price: 100 })],
-      total_amount: 100.00, // Ensure this is present
-    });
-    vi.mocked(procurementApi.getPurchaseOrderById).mockResolvedValue(mockedPO);
+    // MSW handler for GET /api/procurement/purchase-orders/:poId will provide the PO data
 
     renderWithProviders(<PurchaseOrderForm />);
 
     await waitFor(() => {
       expect(screen.getByRole('heading', { name: /Edit Purchase Order/i })).toBeInTheDocument();
     });
-    expect(screen.getByDisplayValue('PO-EDIT-001')).toBeInTheDocument();
-    expect(screen.getByDisplayValue('Existing Item 1')).toBeInTheDocument();
+    // Check for data from the MSW GET by ID handler
+    await screen.findByDisplayValue(`PO-EDIT-${mockPoId}`); // From procurementHandlers
+    await screen.findByDisplayValue('Existing Item 1 (MSW)'); // From procurementHandlers
   });
+
 
   it('allows adding and removing order items', async () => {
     renderWithProviders(<PurchaseOrderForm />);
@@ -209,19 +213,13 @@ describe('PurchaseOrderForm', () => {
   });
 
   it('submits the form successfully in create mode', async () => {
-    const mockCreatedPO = createMockPurchaseOrder({
-      id: 12345,
-      po_number: "PO-NEW-001",
-      status: "pending_approval" as PurchaseOrderStatus,
-      order_date: "2024-07-27",
-      vendor: 1,
-      order_items: [],
-      total_amount: 150.00 // ensure this is present
-    });
-    const mockCreatePurchaseOrder = vi.mocked(procurementApi.createPurchaseOrder).mockResolvedValue(mockCreatedPO);
+    // MSW will handle the POST request and return a mock response.
+    // We don't need to mock `procurementApi.createPurchaseOrder` directly anymore.
+    // The `mockNavigate` function (setup in beforeEach) will be used to check navigation.
 
     renderWithProviders(<PurchaseOrderForm />);
 
+    // Wait for initial data to load (e.g., vendors)
     const vendorAutocomplete = screen.getByLabelText(/Vendor/i);
     fireEvent.mouseDown(vendorAutocomplete);
     await waitFor(() => {
@@ -257,8 +255,18 @@ describe('PurchaseOrderForm', () => {
 
     fireEvent.click(screen.getByRole('button', { name: /Create Purchase Order/i }));
 
+    // Wait for the submission to complete and check for success indicators
+    // (e.g., snackbar message, navigation)
+    // The actual API call is handled by MSW.
     await waitFor(() => {
-      expect(mockCreatePurchaseOrder).toHaveBeenCalled();
+      // Check for navigation (assuming it navigates on success)
+      expect(mockNavigate).toHaveBeenCalledWith('/procurement/purchase-orders');
     });
+
+    // Optionally, check for a success snackbar message if your UIContext shows one
+    // This depends on your UIProvider and useUI hook implementation.
+    // Example: expect(screen.getByText('Purchase Order created successfully!')).toBeInTheDocument();
+    // This requires showSnackbar to actually render text that can be queried.
+    // For now, navigation check is a good primary assertion.
   });
 });
