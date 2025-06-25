@@ -1,5 +1,6 @@
 {
   "devDependencies": {
+    "happy-dom": "^18.0.1",
     "msw": "^2.10.2"
   }
 }
