@@ -25,6 +25,10 @@ vi.mock('react-router-dom', async () => {
 });
 
 // const mockAuthenticatedFetch = vi.fn(); // Removed as unused
+import { server } from '../../../../mocks/server'; // Import MSW server
+import { assetHandlers } from '../../../../mocks/handlers/assetHandlers'; // Import specific handlers
+import { procurementHandlers } from '../../../../mocks/handlers/procurementHandlers'; // Import specific handlers
+
 
 const renderWithProviders = (ui: React.ReactElement) => {
   // Corrected AuthProvider usage: no 'value' prop
@@ -59,15 +63,18 @@ describe('PurchaseOrderForm', () => {
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(ReactRouterDom.useNavigate).mockReturnValue(mockNavigate); // Use the persistent mock
 
+    // Explicitly use MSW handlers for this test suite
+    server.use(...assetHandlers, ...procurementHandlers);
+
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
-      authenticatedFetch: vi.fn().mockImplementation(async (url, options) => {
-        // This basic mock for authenticatedFetch might still be useful for things MSW doesn't catch,
-        // or it can be removed if MSW covers all fetch calls made by the component.
-        // For now, let's assume MSW handles it. If not, this would need to simulate a fetch response.
-        console.warn(`AuthenticatedFetch called for ${url} with options:`, options, `THIS SHOULD IDEALLY BE HANDLED BY MSW`);
-        return Promise.resolve({ ok: true, json: () => Promise.resolve({}) });
+      // Ensure this uses the global window.fetch that MSW can intercept
+      authenticatedFetch: vi.fn(async (url, options) => {
+        console.log('THIS IS THE MOCKED authenticatedFetch from PurchaseOrderForm.test.tsx'); // DEBUG LINE
+        // This will now use the global fetch, which MSW can intercept.
+        const response = await window.fetch(url, options);
+        return response;
       }),
       login: vi.fn(),
       logout: vi.fn(),

@@ -7,7 +7,8 @@ const API_BASE_PATH = '/api'; // Define a common base path if your API routes sh
 
 export const procurementHandlers = [
   // Handler for creating a Purchase Order
-  http.post(`${API_BASE_PATH}/procurement/purchase-orders/`, async () => {
+  http.post(`/procurement/purchase-orders/`, async () => {
+    console.log('[MSW] POST /procurement/purchase-orders/ called');
     // Simulate successful PO creation
     const mockVendor: Vendor = { id: 1, name: 'Mock Vendor from MSW' }; // Simplified Vendor
     const mockCreatedPO: PurchaseOrder = {
@@ -54,13 +55,13 @@ export const procurementHandlers = [
       related_contract_details: null,
       attachments: null,
       internal_office_memo: null,
-      // internal_office_memo_details: undefined, // Removed, not part of direct PurchaseOrder type for mocks
     };
     return HttpResponse.json(mockCreatedPO, { status: 201 });
   }),
 
   // Handler for fetching approved Purchase Request Memos
-  http.get(`${API_BASE_PATH}/procurement/memos/`, ({request}) => {
+  http.get(`/procurement/memos/`, ({request}) => {
+    console.log('[MSW] GET /procurement/memos/ called');
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
 
@@ -83,7 +84,8 @@ export const procurementHandlers = [
   }),
 
   // Handler for fetching Contracts for Dropdown
-  http.get(`${API_BASE_PATH}/procurement/contracts/`, () => {
+  http.get(`/procurement/contracts/`, () => {
+    console.log('[MSW] GET /procurement/contracts/ called');
     const mockContracts: ContractForDropdown[] = [
       { id: 1, contract_id: 'CTR-001', title: 'Main Contract (MSW)', vendor: 1, vendor_name: 'Vendor A' },
       { id: 2, contract_id: 'CTR-002', title: 'Service Agreement (MSW)', vendor: 2, vendor_name: 'Vendor B' },
@@ -95,8 +97,8 @@ export const procurementHandlers = [
   }),
 
   // Handler for fetching Purchase Order by ID (for edit mode)
-  http.get(`${API_BASE_PATH}/procurement/purchase-orders/:poId`, ({ params }) => {
-    console.log(`[MSW] GET /api/procurement/purchase-orders/${params.poId} called`);
+  http.get(`/procurement/purchase-orders/:poId`, ({ params }) => {
+    console.log(`[MSW] GET /procurement/purchase-orders/${params.poId} called`);
     const { poId } = params;
     // Simulate fetching a PO. You can make this more dynamic if needed.
     const mockVendor: Vendor = { id: 1, name: 'Mock Vendor for Edit (MSW)' };
@@ -127,7 +129,6 @@ export const procurementHandlers = [
       related_contract_details: null,
       attachments: null,
       internal_office_memo: null,
-      // internal_office_memo_details: undefined, // Removed
     };
     return HttpResponse.json(mockPO);
   }),
