@@ -132,6 +132,70 @@ export const procurementHandlers = [
     };
     return HttpResponse.json(mockPO);
   }),
+
+  // Handler for creating a Purchase Request Memo (IOM) - SUCCESS
+  http.post(`/procurement/memos/`, async ({ request }) => {
+    const data = await request.formData();
+    console.log('[MSW GLOBAL SUCCESS HANDLER] POST /procurement/memos/ called with FormData:', data); // Added log
+    const now = new Date().toISOString();
+    // Simulate successful IOM creation
+    const mockCreatedIOM: PurchaseRequestMemo = {
+      id: Date.now(),
+      iom_id: `IOM-MSW-${Date.now()}`,
+      item_description: data.get('item_description') as string || 'Mock Item from MSW',
+      quantity: Number(data.get('quantity')) || 1,
+      estimated_cost: Number(data.get('estimated_cost')) || null,
+      reason: data.get('reason') as string || 'Mock Reason',
+      status: 'pending',
+      priority: (data.get('priority') as PurchaseRequestMemo['priority']) || 'medium',
+      request_date: now,
+      required_delivery_date: data.get('required_delivery_date') as string || null,
+      department: data.get('department') ? Number(data.get('department')) : null,
+      project: data.get('project') ? Number(data.get('project')) : null,
+      suggested_vendor: data.get('suggested_vendor') ? Number(data.get('suggested_vendor')) : null,
+      // department_name, project_name, suggested_vendor_name would typically be populated by backend based on IDs
+      attachments: data.has('attachments') ? `http://localhost/mock-attachment/${(data.get('attachments') as File).name}` : null,
+      requested_by: 1, // Mock user ID
+      requested_by_username: 'msw_user',
+      // approver fields typically null on creation
+      approver: null,
+      approver_username: null,
+      decision_date: null,
+      approver_comments: null,
+    };
+    return HttpResponse.json(mockCreatedIOM, { status: 201 });
+  }),
+
+  // Handler for creating a Check Request - SUCCESS
+  http.post(`/procurement/check-requests/`, async ({ request }) => {
+    const data = await request.formData();
+    console.log('[MSW] POST /procurement/check-requests/ called with FormData:', data);
+    const now = new Date().toISOString();
+    const mockCreatedCR: any = { // Using 'any' for brevity, ensure it matches CheckRequest type
+      id: Date.now(),
+      cr_id: `CR-MSW-${Date.now()}`,
+      payee_name: data.get('payee_name') as string || 'Mock Payee from MSW',
+      amount: data.get('amount') as string || '0.00',
+      reason_for_payment: data.get('reason_for_payment') as string || 'Mock Reason',
+      status: 'pending_submission',
+      request_date: now,
+      currency: data.get('currency') as string || 'USD',
+      invoice_date: data.get('invoice_date') as string || null,
+      invoice_number: data.get('invoice_number') as string || null,
+      payee_address: data.get('payee_address') as string || null,
+      expense_category: data.get('expense_category') ? Number(data.get('expense_category')) : null,
+      is_urgent: data.get('is_urgent') === 'true',
+      recurring_payment: data.get('recurring_payment') ? Number(data.get('recurring_payment')) : null,
+      attachments: data.has('attachments') ? `http://localhost/mock-attachment/${(data.get('attachments') as File).name}` : null,
+      purchase_order: data.get('purchase_order') ? Number(data.get('purchase_order')) : null,
+      requested_by: 1, // Mock user ID
+      requested_by_username: 'msw_user',
+      // Other fields usually null/default on creation
+    };
+    return HttpResponse.json(mockCreatedCR, { status: 201 });
+  }),
+
+
 ];
 
 // Export the handlers array

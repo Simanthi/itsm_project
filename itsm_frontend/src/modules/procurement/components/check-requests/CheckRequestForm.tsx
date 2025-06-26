@@ -343,6 +343,7 @@ const CheckRequestForm: React.FC = () => {
 
   const handleSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
+    console.log('[CheckRequestForm handleSubmit] formData:', JSON.stringify(formData, null, 2)); // Added for debugging tests
     setIsSubmitting(true);
     setError(null);
 
@@ -524,7 +525,7 @@ const CheckRequestForm: React.FC = () => {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} aria-label="Check Request Form">
         <Grid container spacing={3}>
           {/* Basic Information */}
           <Grid item xs={12} md={6}>

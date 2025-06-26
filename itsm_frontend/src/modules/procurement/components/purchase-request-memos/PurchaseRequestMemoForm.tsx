@@ -255,39 +255,72 @@ const PurchaseRequestMemoForm: React.FC = () => {
 
     try {
       if (isEditMode && memoId) {
-        // Update might need to handle file differently or use PATCH with JSON for non-file fields
-        // For simplicity, if attachments is a File, it's a new upload.
-        // If it's a string (URL), we might not want to resend it unless it's cleared.
-        // This example assumes updatePurchaseRequestMemo can handle FormData.
         await updatePurchaseRequestMemo(
           authenticatedFetch,
           parseInt(memoId, 10),
-          submissionPayload, // No longer need 'as FormData'
+          submissionPayload,
         );
         showSnackbar('Purchase request updated successfully!', 'success');
       } else {
         await createPurchaseRequestMemo(
           authenticatedFetch,
-          submissionPayload, // No longer need 'as FormData'
+          submissionPayload,
         );
         showSnackbar('Purchase request created successfully!', 'success');
       }
+      console.log('[PurchaseRequestMemoForm] Navigating after success to /procurement/iom'); // Added for test debugging
+      console.log('[PurchaseRequestMemoForm] Navigating after success to /procurement/iom'); // Added for test debugging
       navigate('/procurement/iom');
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
-      // Attempt to parse backend error if it's a JSON response
-      // This is a common pattern but might need adjustment based on your API
-      try {
-        const errorResponse = JSON.parse(message);
-        let detailedError = 'Failed to save: ';
-        for (const key in errorResponse) {
-          detailedError += `${key}: ${errorResponse[key].join ? errorResponse[key].join(', ') : errorResponse[key]}; `;
+      console.error("Submission error in PurchaseRequestMemoForm:", err);
+      let messageToDisplay = 'Failed to save purchase request.'; // Default message
+
+      // Check if the error object has a 'data' property (like Axios errors or our direct mock)
+      if (err && typeof err === 'object' && 'data' in err && err.data && typeof err.data === 'object') {
+        const errorData = err.data as Record<string, string | string[]>;
+        let fieldErrors = '';
+        for (const key in errorData) {
+          if (Object.prototype.hasOwnProperty.call(errorData, key)) {
+            const errorValue = errorData[key];
+            fieldErrors += `${key}: ${Array.isArray(errorValue) ? errorValue.join(', ') : String(errorValue)}; `;
+          }
         }
-        setError(detailedError);
-      } catch /* istanbul ignore next */ { // Removed unused parseError variable
-        setError(`Failed to save purchase request: ${message}`);
+        if (fieldErrors) {
+          messageToDisplay = `Failed to save: ${fieldErrors.trim().slice(0, -1)}`; // Remove trailing semicolon
+        } else if (err instanceof Error && err.message) {
+           // Fallback if .data was empty or not structured as expected but it's an Error instance
+          messageToDisplay = `Failed to save purchase request: ${err.message}`;
+        }
+      } else if (err instanceof Error && err.message) { // Handle generic Error instances or string errors from authenticatedFetch
+         // Check for specific string patterns from authenticatedFetch if necessary
+        const bodyPrefix = "API Error: 400 Body: ";
+        if (err.message.startsWith(bodyPrefix)) {
+            try {
+                const jsonErrorBody = err.message.substring(bodyPrefix.length);
+                const parsedBody = JSON.parse(jsonErrorBody);
+                let fieldErrors = '';
+                for (const key in parsedBody) {
+                    if (Object.prototype.hasOwnProperty.call(parsedBody, key)) {
+                        const errorValue = parsedBody[key];
+                        fieldErrors += `${key}: ${Array.isArray(errorValue) ? errorValue.join(', ') : String(errorValue)}; `;
+                    }
+                }
+                if (fieldErrors) {
+                    messageToDisplay = `Failed to save: ${fieldErrors.trim().slice(0, -1)}`;
+                } else {
+                     messageToDisplay = `Failed to save purchase request: An unknown error occurred.`;
+                }
+            } catch (parseError) {
+                console.error("Failed to parse error JSON from API response string:", parseError);
+                messageToDisplay = `Failed to save purchase request: ${err.message}`;
+            }
+        } else {
+            messageToDisplay = `Failed to save purchase request: ${err.message}`;
+        }
       }
-      showSnackbar(`Error: ${message}`, 'error');
+
+      setError(messageToDisplay);
+      showSnackbar(messageToDisplay, 'error');
     } finally {
       setIsSubmitting(false);
     }
