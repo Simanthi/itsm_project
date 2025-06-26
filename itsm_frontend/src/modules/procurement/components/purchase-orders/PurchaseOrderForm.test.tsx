@@ -70,11 +70,25 @@ describe('PurchaseOrderForm', () => {
       token: 'mockToken',
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
       // Ensure this uses the global window.fetch that MSW can intercept
-      authenticatedFetch: vi.fn(async (url, options) => {
-        console.log('THIS IS THE MOCKED authenticatedFetch from PurchaseOrderForm.test.tsx'); // DEBUG LINE
-        // This will now use the global fetch, which MSW can intercept.
-        const response = await window.fetch(url, options);
-        return response;
+      authenticatedFetch: vi.fn(async (url, options?: RequestInit) => { // Added RequestInit type for options
+        console.log(`[TEST MOCK authFetch] Calling URL: ${url} with options:`, options);
+        const rawResponse = await window.fetch(url, options);
+        if (!rawResponse.ok) {
+          const errorBody = await rawResponse.text();
+          console.error(`[TEST MOCK authFetch] API Error ${rawResponse.status}: ${errorBody} for URL: ${url}`);
+          throw new Error(`API Error: ${rawResponse.status} Body: ${errorBody}`);
+        }
+        // Check if the response is empty before trying to parse JSON
+        const textContent = await rawResponse.text();
+        if (textContent) {
+          try {
+            return JSON.parse(textContent); // Parse the JSON before returning
+          } catch (e) {
+            console.error(`[TEST MOCK authFetch] Failed to parse JSON: ${textContent} for URL: ${url}`, e);
+            throw new Error(`Failed to parse JSON response from ${url}`);
+          }
+        }
+        return null; // Or undefined, or handle as appropriate for empty responses
       }),
       login: vi.fn(),
       logout: vi.fn(),

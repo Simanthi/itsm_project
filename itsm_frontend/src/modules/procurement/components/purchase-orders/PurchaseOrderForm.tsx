@@ -748,9 +748,9 @@ const PurchaseOrderForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} md={4}>
             <Autocomplete
-              options={contractsForDropdown}
+              options={contractsForDropdown || []}
               getOptionLabel={(option) => option.title ? `${option.contract_id || 'Contract'} - ${option.title}` : `ID: ${option.id}`}
-              value={contractsForDropdown.find(c => c.id === formData.related_contract) || null}
+              value={(contractsForDropdown || []).find(c => c.id === formData.related_contract) || null}
               onChange={(_event, newValue) => handleAutocompleteChange('related_contract', newValue)}
               renderInput={(params) => <TextField {...params} label="Related Contract (Optional)" />}
               disabled={effectiveViewOnly}

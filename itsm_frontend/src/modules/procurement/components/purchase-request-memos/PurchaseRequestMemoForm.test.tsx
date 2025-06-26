@@ -95,7 +95,12 @@ describe('PurchaseRequestMemoForm', () => {
 
   it('renders the form in create mode', async () => {
     renderWithProviders(<PurchaseRequestMemoForm />);
-    expect(screen.getByLabelText(/Item Description/i)).toBeInTheDocument();
+    // Wait for async operations triggered by useEffect (dropdown data fetching) to complete
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Item Description/i)).toBeInTheDocument();
+      // Add checks for elements that might appear after dropdowns load, if applicable
+      // For now, ensuring the main elements are rendered after potential state updates is key.
+    });
   });
 
   it('renders the form in edit mode when memoId is provided', async () => {
@@ -103,10 +108,22 @@ describe('PurchaseRequestMemoForm', () => {
     const numericMockMemoId = 123;
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({ memoId: mockMemoIdString });
 
+    // Mock department data for the dropdown
+    const mockDepartments: Department[] = [
+      { id: 1, name: 'Test Dept', department_code: 'TD001' },
+      { id: 2, name: 'Another Dept', department_code: 'AD002' },
+    ];
+    vi.mocked(procurementApi.getDepartmentsForDropdown).mockResolvedValue({
+      results: mockDepartments,
+      count: mockDepartments.length,
+      next: null,
+      previous: null,
+    });
+
     const mockMemo: PurchaseRequestMemo = {
       id: numericMockMemoId,
       iom_id: 'IOM-001',
-      department: 1,
+      department: 1, // This ID should match one in mockDepartments
       department_name: 'Test Dept',
       project: null,
       project_name: null,
@@ -138,12 +155,25 @@ describe('PurchaseRequestMemoForm', () => {
       expect(screen.getByDisplayValue('Test IOM for edit')).toBeInTheDocument();
       expect(screen.getByDisplayValue('5')).toBeInTheDocument();
       expect(screen.getByDisplayValue('250')).toBeInTheDocument();
+      // Check if the department is correctly selected/displayed if the form has such a field
+      // For example, if there's a Select dropdown for department:
+      // Assuming the Select might display the name 'Test Dept' or its value '1'
+      // This depends on how the Select is implemented in PurchaseRequestMemoForm.
+      // If it's a standard MUI Select, it might show the value, or the label if getOptionLabel is used.
+      // For now, the main goal is to ensure the warning is gone.
+      // A more robust check would be to find the Select by its label and check its value.
+      // e.g. expect(screen.getByLabelText(/Department/i)).toHaveValue('1');
     });
   });
 
   it('validates required fields on submit', async () => {
     renderWithProviders(<PurchaseRequestMemoForm />);
-    // Placeholder
+    // Wait for initial async operations (dropdown data fetching) to complete
+    // For placeholder tests, this ensures any initial state updates are processed.
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Item Description/i)).toBeInTheDocument(); // Basic check
+    });
+    // Placeholder for actual validation logic test
   });
 
   it('submits the form successfully in create mode', async () => {
@@ -185,6 +215,10 @@ describe('PurchaseRequestMemoForm', () => {
     vi.mocked(procurementApi.createPurchaseRequestMemo).mockResolvedValue(createdMemo);
 
     renderWithProviders(<PurchaseRequestMemoForm />);
+    // Wait for initial async operations (dropdown data fetching) to complete
+    await waitFor(() => {
+      expect(screen.getByLabelText(/Item Description/i)).toBeInTheDocument(); // Basic check
+    });
     // Placeholder for actual form filling and submission
   });
 });
