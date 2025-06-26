@@ -96,6 +96,7 @@ export const procurementHandlers = [
 
   // Handler for fetching Purchase Order by ID (for edit mode)
   http.get(`${API_BASE_PATH}/procurement/purchase-orders/:poId`, ({ params }) => {
+    console.log(`[MSW] GET /api/procurement/purchase-orders/${params.poId} called`);
     const { poId } = params;
     // Simulate fetching a PO. You can make this more dynamic if needed.
     const mockVendor: Vendor = { id: 1, name: 'Mock Vendor for Edit (MSW)' };
@@ -108,6 +109,8 @@ export const procurementHandlers = [
       status: 'draft',
       total_amount: 100.00,
       order_items: [{ id: 1, item_description: 'Existing Item 1 (MSW)', quantity: 2, unit_price: 50, total_price: 100, product_code: null, gl_account: null, gl_account_code: null, received_quantity: 0, line_item_status: 'pending', tax_rate: null, discount_type: null, discount_value: null, }],
+      // Ensure order_items is always an array, even if empty, for safety:
+      // order_items: poToReturn.order_items || [],
       created_by: 1,
       created_by_username: 'editor_user',
       created_at: new Date().toISOString(),
