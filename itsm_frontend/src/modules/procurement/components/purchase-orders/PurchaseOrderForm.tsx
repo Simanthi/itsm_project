@@ -200,6 +200,7 @@ const PurchaseOrderForm: React.FC = () => {
         authenticatedFetch,
         parseInt(poId, 10),
       );
+      console.log('[PurchaseOrderForm] Fetched PO for edit:', JSON.stringify(po, null, 2)); // Debug log
       setFormData({
         po_number: po.po_number,
         vendor: po.vendor, // Expects vendor ID
