@@ -100,6 +100,7 @@ const mockRecurringPayments = [ // Example recurring payments
     { id: 2, name: 'Annual Domain Renewal B' },
 ];
 const mockCurrencies = [ // Same as PO form
+    { value: 'INR', label: 'INR - Indian Rupee' },
     { value: 'USD', label: 'USD - US Dollar' },
     { value: 'EUR', label: 'EUR - Euro' },
     { value: 'KES', label: 'KES - Kenyan Shilling' },

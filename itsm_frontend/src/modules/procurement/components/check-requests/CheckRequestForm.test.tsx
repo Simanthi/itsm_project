@@ -82,7 +82,11 @@ describe('CheckRequestForm', () => {
 
   it('renders the form in create mode', async () => {
     renderWithProviders(<CheckRequestForm />);
-    expect(screen.getByRole('heading', { name: /Create New Check Request/i })).toBeInTheDocument();
+    // Wait for async operations triggered by useEffect (dropdown data fetching) to complete
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Create New Check Request/i })).toBeInTheDocument();
+      // Add checks for elements that might appear after dropdowns load, if applicable
+    });
   });
 
   it('renders the form in edit mode when checkRequestId is provided', async () => {
@@ -139,7 +143,11 @@ describe('CheckRequestForm', () => {
 
   it('validates required fields on submit', async () => {
     renderWithProviders(<CheckRequestForm />);
-    // Placeholder
+    // Wait for initial async operations (dropdown data fetching) to complete
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Create New Check Request/i })).toBeInTheDocument(); // Basic check
+    });
+    // Placeholder for actual validation logic test
   });
 
   it('submits the form successfully in create mode', async () => {
@@ -203,6 +211,10 @@ describe('CheckRequestForm', () => {
     vi.mocked(procurementApi.createCheckRequest).mockResolvedValue(createdCR);
 
     renderWithProviders(<CheckRequestForm />);
+    // Wait for initial async operations (dropdown data fetching) to complete
+    await waitFor(() => {
+      expect(screen.getByRole('heading', { name: /Create New Check Request/i })).toBeInTheDocument(); // Basic check
+    });
 
     // Placeholder for actual form filling and submission
     // fireEvent.change(screen.getByLabelText(/Amount/i), { target: { value: '500' } });
