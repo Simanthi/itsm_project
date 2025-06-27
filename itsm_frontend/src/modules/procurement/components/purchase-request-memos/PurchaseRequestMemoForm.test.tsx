@@ -3,7 +3,7 @@ import { render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
-import { http, HttpResponse } from 'msw';
+// import { http, HttpResponse } from 'msw'; // Unused import
 import { server } from '../../../../mocks/server';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import PurchaseRequestMemoForm from './PurchaseRequestMemoForm';
@@ -183,7 +183,7 @@ describe('PurchaseRequestMemoForm', () => {
     const mockNavigateFn = vi.fn();
     vi.mocked(ReactRouterDom.useNavigate).mockReturnValue(mockNavigateFn);
 
-    vi.mocked(procurementApi.createPurchaseRequestMemo).mockImplementation(async (data, formData) => {
+    vi.mocked(procurementApi.createPurchaseRequestMemo).mockImplementation(async (_data, formData) => { // Mark data as unused
       console.log('[Test Spy Success] createPurchaseRequestMemo mock implementation called.');
       console.log('[Test Spy Success] FormData entries:');
       formData.forEach((value, key) => {

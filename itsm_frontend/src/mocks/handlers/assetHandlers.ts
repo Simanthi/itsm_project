@@ -3,8 +3,6 @@ import { http, HttpResponse } from 'msw';
 import type { Vendor } from '../../modules/assets/types/assetTypes'; // Adjust path as needed
 import type { PaginatedResponse } from '../../modules/procurement/types/procurementTypes'; // Assuming generic PaginatedResponse
 
-const API_ASSET_PATH = '/api/assets'; // Assuming your API base path for assets
-
 export const assetHandlers = [
   http.get(`/assets/vendors/`, () => {
     console.log('[MSW] GET /assets/vendors/ called');

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor, act, within, fireEvent } from '@testing-library/react';
+import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
@@ -147,11 +147,11 @@ describe('CheckRequestForm', () => {
     const user = userEvent.setup();
 
     const mockPurchaseOrders: PurchaseOrder[] = [
-      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: '1000', status: 'approved', order_date: '2024-01-01', currency: 'USD' },
+      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: 1000, status: 'approved', order_date: '2024-01-01', currency: 'USD' },
     ];
     const mockExpenseCategories: ExpenseCategory[] = [
-      { id: 1, name: 'Office Supplies', description: 'General office supplies' },
-      { id: 2, name: 'Travel', description: 'Travel expenses' },
+      { id: 1, name: 'Office Supplies' },
+      { id: 2, name: 'Travel' },
     ];
 
     vi.mocked(procurementApi.getPurchaseOrders).mockResolvedValue({ results: mockPurchaseOrders, count: mockPurchaseOrders.length, next: null, previous: null });
@@ -265,17 +265,19 @@ describe('CheckRequestForm', () => {
       expect(formDataSent.get('purchase_order')).toBe(String(createdCRData.purchase_order));
       expect(formDataSent.get('expense_category')).toBe(String(createdCRData.expense_category));
       expect(formDataSent.get('invoice_date')).toBe(createdCRData.invoice_date);
-      expect(ReactRouterDom.useNavigate()()).toHaveBeenCalledWith('/procurement/check-requests');
+      // Get the mock function returned by useNavigate()
+      const navigateMockFn = vi.mocked(ReactRouterDom.useNavigate).mock.results[0].value;
+      expect(navigateMockFn).toHaveBeenCalledWith('/procurement/check-requests');
     });
   }, 15000); // Increased timeout for more interactions
 
   it('shows an error if required fields are missing on submit (e.g. for 400 bad request)', async () => {
     const user = userEvent.setup();
     const mockPurchaseOrders: PurchaseOrder[] = [
-      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: '1000', status: 'approved', order_date: '2024-01-01', currency: 'USD' },
+      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: 1000, status: 'approved', order_date: '2024-01-01', currency: 'USD' },
     ];
     const mockExpenseCategories: ExpenseCategory[] = [
-      { id: 1, name: 'Office Supplies', description: 'General office supplies' },
+      { id: 1, name: 'Office Supplies' },
     ];
 
     vi.mocked(procurementApi.getPurchaseOrders).mockResolvedValue({ results: mockPurchaseOrders, count: mockPurchaseOrders.length, next: null, previous: null });
@@ -294,9 +296,9 @@ describe('CheckRequestForm', () => {
       expect(screen.getByRole('heading', { name: /Create New Check Request/i })).toBeInTheDocument();
     });
 
-    const specificErrorHandlerCR = http.post(`/api/procurement/check-requests/`, async ({request}) => {
+    const specificErrorHandlerCR = http.post(`/api/procurement/check-requests/`, async () => { // Removed unused 'request'
         console.log('[MSW Test Handler] CheckRequestForm ERROR HANDLER matched POST /api/procurement/check-requests/');
-        // const body = await request.formData();
+        // const body = await (arguments[0] as { request: HttpRequest }).request.formData(); // If needed, access through arguments
         // console.log("MSW Error Handler received form data:", Object.fromEntries(body.entries()));
         return HttpResponse.json(
           {

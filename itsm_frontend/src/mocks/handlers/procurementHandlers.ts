@@ -3,8 +3,6 @@ import { http, HttpResponse } from 'msw';
 import type { PurchaseOrder, PurchaseRequestMemo, ContractForDropdown, PaginatedResponse } from '../../modules/procurement/types/procurementTypes'; // Adjust path as needed
 import type { Vendor } from '../../modules/assets/types/assetTypes'; // For vendor_details in mock PO
 
-const API_BASE_PATH = '/api'; // Define a common base path if your API routes share it, e.g. /api
-
 export const procurementHandlers = [
   // Handler for creating a Purchase Order
   http.post(`/procurement/purchase-orders/`, async () => {
@@ -60,7 +58,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for fetching approved Purchase Request Memos
-  http.get(`/procurement/memos/`, ({request}) => {
+  http.get(`/procurement/memos/`, ({ request }: { request: HttpRequest }) => {
     console.log('[MSW] GET /procurement/memos/ called');
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
@@ -97,7 +95,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for fetching Purchase Order by ID (for edit mode)
-  http.get(`/procurement/purchase-orders/:poId`, ({ params }) => {
+  http.get(`/procurement/purchase-orders/:poId`, ({ params }: { params: { poId: string } }) => {
     console.log(`[MSW] GET /procurement/purchase-orders/${params.poId} called`);
     const { poId } = params;
     // Simulate fetching a PO. You can make this more dynamic if needed.
@@ -134,7 +132,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for creating a Purchase Request Memo (IOM) - SUCCESS
-  http.post(`/procurement/memos/`, async ({ request }) => {
+  http.post(`/procurement/memos/`, async ({ request }: { request: HttpRequest }) => {
     const data = await request.formData();
     console.log('[MSW GLOBAL SUCCESS HANDLER] POST /procurement/memos/ called with FormData:', data); // Added log
     const now = new Date().toISOString();
@@ -167,7 +165,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for creating a Check Request - SUCCESS
-  http.post(`/procurement/check-requests/`, async ({ request }) => {
+  http.post(`/procurement/check-requests/`, async ({ request }: { request: HttpRequest }) => {
     const data = await request.formData();
     console.log('[MSW] POST /procurement/check-requests/ called with FormData:', data);
     const now = new Date().toISOString();
