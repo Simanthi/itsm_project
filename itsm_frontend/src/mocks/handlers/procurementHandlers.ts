@@ -1,5 +1,5 @@
 // src/mocks/handlers/procurementHandlers.ts
-import { http, HttpResponse, type HttpRequest } from 'msw';
+import { http, HttpResponse } from 'msw'; // Removed HttpRequest import
 import type { CheckRequest, PurchaseOrder, PurchaseRequestMemo, ContractForDropdown, PaginatedResponse } from '../../modules/procurement/types/procurementTypes'; // Adjust path as needed
 import type { Vendor } from '../../modules/assets/types/assetTypes'; // For vendor_details in mock PO
 
@@ -58,7 +58,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for fetching approved Purchase Request Memos
-  http.get(`/procurement/memos/`, ({ request }: { request: HttpRequest }) => {
+  http.get(`/procurement/memos/`, ({ request }) => { // Removed explicit HttpRequest type
     console.log('[MSW] GET /procurement/memos/ called');
     const url = new URL(request.url);
     const status = url.searchParams.get('status');
@@ -132,7 +132,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for creating a Purchase Request Memo (IOM) - SUCCESS
-  http.post(`/procurement/memos/`, async ({ request }: { request: HttpRequest }) => {
+  http.post(`/procurement/memos/`, async ({ request }) => { // Removed explicit HttpRequest type
     const data = await request.formData();
     console.log('[MSW GLOBAL SUCCESS HANDLER] POST /procurement/memos/ called with FormData:', data); // Added log
     const now = new Date().toISOString();
@@ -165,7 +165,7 @@ export const procurementHandlers = [
   }),
 
   // Handler for creating a Check Request - SUCCESS
-  http.post(`/procurement/check-requests/`, async ({ request }: { request: HttpRequest }) => {
+  http.post(`/procurement/check-requests/`, async ({ request }) => { // Removed explicit HttpRequest type
     const data = await request.formData();
     console.log('[MSW] POST /procurement/check-requests/ called with FormData:', data);
     const now = new Date().toISOString();
