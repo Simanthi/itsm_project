@@ -602,5 +602,5 @@ class IOMTemplateAPIAccessTests(APITestCase):
         self.assertIn(self.template_group_b.name, template_names)
         self.assertIn(self.template_inactive.name, template_names)
 
-```
+
 
