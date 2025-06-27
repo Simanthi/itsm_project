@@ -50,6 +50,10 @@ const MyApprovalsPage = lazy(() => import('./modules/workflows/pages/MyApprovals
 const ReportsAnalyticsPage = lazy(() => import('./modules/reports/ReportsAnalyticsPage'));
 const CatalogPage = lazy(() => import('./modules/service-catalog/pages/CatalogPage'));
 
+// IOM Template Admin Pages
+const IomTemplateListPage = lazy(() => import('./modules/iomTemplateAdmin/pages/IomTemplateListPage'));
+const IomTemplateFormPage = lazy(() => import('./modules/iomTemplateAdmin/pages/IomTemplateFormPage'));
+
 
 function AppContent() {
   return (
@@ -170,6 +174,12 @@ function AppContent() {
               <Route path="workflows" element={<ApprovalWorkflowPage />} /> 
               <Route path="my-approvals" element={<MyApprovalsPage />} /> {/* Added MyApprovalsPage Route */}
               <Route path="reports" element={<ReportsAnalyticsPage />} />
+
+              {/* Admin / Settings Routes */}
+              {/* TODO: Group these under a common /admin or /settings parent route if desired */}
+              <Route path="admin/iom-templates" element={<IomTemplateListPage />} />
+              <Route path="admin/iom-templates/new" element={<IomTemplateFormPage />} />
+              <Route path="admin/iom-templates/edit/:templateId" element={<IomTemplateFormPage />} />
             </Route>
             {/* Fallback for unmatched routes */}
             <Route path="*" element={<NotFoundPage />} />

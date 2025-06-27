@@ -31,6 +31,7 @@ import PaletteOutlinedIcon from '@mui/icons-material/PaletteOutlined'; // Icon f
 import AccountCircle from '@mui/icons-material/AccountCircle';
 import CategoryIcon from '@mui/icons-material/Category';
 import PlaylistAddCheckIcon from '@mui/icons-material/PlaylistAddCheck';
+import ListAltIcon from '@mui/icons-material/ListAlt'; // Icon for IOM Templates
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import DashboardIcon from '@mui/icons-material/Dashboard';
@@ -204,6 +205,8 @@ function HomePage() {
       path: '/security-access',
     },
     { text: 'Reports & Analytics', icon: <AssessmentIcon />, path: '/reports' },
+    // Add new admin/settings link here
+    { text: 'IOM Templates', icon: <ListAltIcon />, path: '/admin/iom-templates' },
   ];
 
   const settingsNavItems = [
