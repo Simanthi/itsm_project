@@ -1,6 +1,6 @@
 // src/mocks/handlers/procurementHandlers.ts
-import { http, HttpResponse } from 'msw';
-import type { PurchaseOrder, PurchaseRequestMemo, ContractForDropdown, PaginatedResponse } from '../../modules/procurement/types/procurementTypes'; // Adjust path as needed
+import { http, HttpResponse, type HttpRequest } from 'msw';
+import type { CheckRequest, PurchaseOrder, PurchaseRequestMemo, ContractForDropdown, PaginatedResponse } from '../../modules/procurement/types/procurementTypes'; // Adjust path as needed
 import type { Vendor } from '../../modules/assets/types/assetTypes'; // For vendor_details in mock PO
 
 export const procurementHandlers = [
@@ -169,26 +169,37 @@ export const procurementHandlers = [
     const data = await request.formData();
     console.log('[MSW] POST /procurement/check-requests/ called with FormData:', data);
     const now = new Date().toISOString();
-    const mockCreatedCR: any = { // Using 'any' for brevity, ensure it matches CheckRequest type
+    const mockCreatedCR: CheckRequest = {
       id: Date.now(),
       cr_id: `CR-MSW-${Date.now()}`,
       payee_name: data.get('payee_name') as string || 'Mock Payee from MSW',
-      amount: data.get('amount') as string || '0.00',
+      amount: data.get('amount') as string || '0.00', // CheckRequest type expects string for amount
       reason_for_payment: data.get('reason_for_payment') as string || 'Mock Reason',
       status: 'pending_submission',
       request_date: now,
-      currency: data.get('currency') as string || 'USD',
-      invoice_date: data.get('invoice_date') as string || null,
-      invoice_number: data.get('invoice_number') as string || null,
-      payee_address: data.get('payee_address') as string || null,
-      expense_category: data.get('expense_category') ? Number(data.get('expense_category')) : null,
-      is_urgent: data.get('is_urgent') === 'true',
-      recurring_payment: data.get('recurring_payment') ? Number(data.get('recurring_payment')) : null,
-      attachments: data.has('attachments') ? `http://localhost/mock-attachment/${(data.get('attachments') as File).name}` : null,
-      purchase_order: data.get('purchase_order') ? Number(data.get('purchase_order')) : null,
       requested_by: 1, // Mock user ID
       requested_by_username: 'msw_user',
-      // Other fields usually null/default on creation
+      currency: data.get('currency') as string || 'USD',
+      invoice_date: data.get('invoice_date') as string || undefined, // Match CheckRequest type (optional string)
+      invoice_number: data.get('invoice_number') as string || undefined, // Match CheckRequest type (optional string)
+      payee_address: data.get('payee_address') as string || undefined, // Match CheckRequest type (optional string)
+      expense_category: data.get('expense_category') ? Number(data.get('expense_category')) : undefined, // Match CheckRequest type (optional number)
+      is_urgent: data.get('is_urgent') === 'true',
+      recurring_payment: data.get('recurring_payment') ? Number(data.get('recurring_payment')) : undefined, // Match CheckRequest type (optional number)
+      attachments: data.has('attachments') ? `http://localhost/mock-attachment/${(data.get('attachments') as File).name}` : undefined, // Match CheckRequest type (optional string or File)
+      purchase_order: data.get('purchase_order') ? Number(data.get('purchase_order')) : undefined, // Match CheckRequest type (optional number)
+      // Optional fields from CheckRequest, ensure they are compatible or explicitly set to undefined/null
+      purchase_order_number: undefined,
+      expense_category_name: undefined,
+      recurring_payment_details: undefined,
+      approved_by_accounts: undefined,
+      approved_by_accounts_username: undefined,
+      accounts_approval_date: undefined,
+      accounts_comments: undefined,
+      payment_method: undefined,
+      payment_date: undefined,
+      transaction_id: undefined,
+      payment_notes: undefined,
     };
     return HttpResponse.json(mockCreatedCR, { status: 201 });
   }),
