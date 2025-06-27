@@ -252,13 +252,21 @@ describe('PurchaseRequestMemoForm', () => {
   it('shows an error message if submission fails in create mode', async () => {
     const user = userEvent.setup();
 
+    // Define a more specific error type for the mock
+    interface MockApiError extends Error {
+      data?: {
+        item_description?: string[];
+        [key: string]: any; // Allow other potential error fields
+      };
+    }
+
     // Bypassing MSW for this specific error simulation due to FormData handling issues with happy-dom/msw
     // Directly mock createPurchaseRequestMemo to reject with the expected error structure.
     vi.mocked(procurementApi.createPurchaseRequestMemo).mockImplementation(async () => {
       console.log('[Test Spy Direct Reject] Mocked procurementApi.createPurchaseRequestMemo is REJECTING for failure test.');
-      const mockError = new Error("Simulated API Error from direct mock implementation");
+      const mockError: MockApiError = new Error("Simulated API Error from direct mock implementation");
       // This structure should align with how errors are processed in the component's handleSubmit catch block
-      (mockError as any).data = { item_description: ['This field is required.'] };
+      mockError.data = { item_description: ['This field is required.'] };
       // Forcing a structure that the component's error handler (showSnackbar(message, 'error')) will use.
       // The component's catch block does:
       // if (apiError?.data) { if (typeof apiError.data.detail === 'string') { message = apiError.data.detail; } else { /* build structuredError */ } }
