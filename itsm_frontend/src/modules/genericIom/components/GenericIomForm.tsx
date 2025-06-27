@@ -28,7 +28,20 @@ interface GenericIomFormProps {
   // Props can be used if this form is embedded, but using useParams for page-level form
 }
 
-const GenericIomForm: React.FC<GenericIomFormProps> = () => {
+// Define the type for assetContext prop
+interface AssetContextType {
+  objectId: number;
+  contentTypeAppLabel: string;
+  contentTypeModel: string;
+  assetName?: string;
+  assetTag?: string;
+}
+
+interface GenericIomFormProps {
+  assetContext?: AssetContextType | null; // Make it optional
+}
+
+const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) => {
   const { templateId: templateIdParam, iomId: iomIdParam } = useParams<{ templateId?: string; iomId?: string }>();
   const navigate = useNavigate();
   const { authenticatedFetch } = useAuth();
@@ -39,20 +52,35 @@ const GenericIomForm: React.FC<GenericIomFormProps> = () => {
 
   // Form state for standard fields
   const [subject, setSubject] = useState<string>('');
-  const [toUsersStr, setToUsersStr] = useState<string>(''); // Comma-separated IDs
-  const [toGroupsStr, setToGroupsStr] = useState<string>(''); // Comma-separated IDs
-  // TODO: Add state for parent_content_type_id and parent_object_id
+  const [toUsersStr, setToUsersStr] = useState<string>('');
+  const [toGroupsStr, setToGroupsStr] = useState<string>('');
+  const [parentContentTypeId, setParentContentTypeId] = useState<number | null>(null);
+  const [parentObjectId, setParentObjectId] = useState<number | null>(null);
+  const [parentDisplay, setParentDisplay] = useState<string>(''); // For showing e.g. "Asset: Laptop X"
 
   // Form state for dynamic data_payload fields
   const [dynamicFormData, setDynamicFormData] = useState<IomDataPayload>({});
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isEditMode, setIsEditMode] = useState<boolean>(false); // This will be set by iomIdParam
   const [error, setError] = useState<string | null>(null);
 
-  const isEditMode = Boolean(iomIdParam);
-  const templateId = isEditMode ? null : (templateIdParam ? parseInt(templateIdParam,10) : null);
-  const iomId = isEditMode ? (iomIdParam ? parseInt(iomIdParam,10) : null) : null;
+  // Determine mode and IDs from URL params
+  const currentIomId = iomIdParam ? parseInt(iomIdParam, 10) : null;
+  const currentTemplateIdForCreate = templateIdParam ? parseInt(templateIdParam, 10) : null;
+
+  // API function to get ContentType ID (placeholder - needs actual implementation)
+  const fetchContentTypeId = useCallback(async (appLabel: string, model: string): Promise<number | null> => {
+    if (!authenticatedFetch) return null;
+    // In a real app, you'd call an API endpoint:
+    // const response = await authenticatedFetch(`/api/core/content-type-id/?app_label=${appLabel}&model=${model}`);
+    // For this PoC, let's simulate or assume a known ID for 'assets.asset' if possible,
+    // or return null and handle it.
+    // This is a simplification. A real implementation needs this endpoint.
+    console.warn(`fetchContentTypeId: Simulated for ${appLabel}.${model}. Needs real API endpoint.`);
+    if (appLabel === 'assets' && model === 'asset') return 7; // Example ID, **DO NOT USE IN PRODUCTION**
+    return null;
+  }, [authenticatedFetch]);
 
 
   const loadData = useCallback(async () => {
@@ -60,47 +88,64 @@ const GenericIomForm: React.FC<GenericIomFormProps> = () => {
     setIsLoading(true);
     setError(null);
     try {
-      if (isEditMode && iomId) {
-        const fetchedIom = await getGenericIomById(authenticatedFetch, iomId);
-        if (!fetchedIom.iom_template_details) { // Ensure template details are fetched with IOM for edit
-            showSnackbar("IOM data is missing template details for editing.", "error");
-            setError("IOM data is missing template details for editing.");
-            setIsLoading(false);
-            return;
+      if (currentIomId) { // Edit mode
+        setIsEditMode(true);
+        const fetchedIom = await getGenericIomById(authenticatedFetch, currentIomId);
+        if (!fetchedIom.iom_template_details) {
+            throw new Error("IOM data is missing template details for editing.");
         }
-        // Assuming iom_template_details contains the full template structure including fields_definition
-        const templateForEdit = fetchedIom.iom_template_details as unknown as IOMTemplate; // Cast if necessary
+        const templateForEdit = fetchedIom.iom_template_details as unknown as IOMTemplate;
         setIomTemplate(templateForEdit);
         setSubject(fetchedIom.subject);
         setDynamicFormData(fetchedIom.data_payload || {});
         setInitialDataPayload(fetchedIom.data_payload || {});
         setToUsersStr(fetchedIom.to_users?.join(',') || '');
         setToGroupsStr(fetchedIom.to_groups?.join(',') || '');
-        // TODO: Set parent record fields
-      } else if (templateId) { // Create mode
-        const fetchedTemplate = await getIomTemplateById(authenticatedFetch, templateId);
+        setParentContentTypeId(fetchedIom.parent_content_type || null);
+        setParentObjectId(fetchedIom.parent_object_id || null);
+        if (fetchedIom.parent_record_display) setParentDisplay(fetchedIom.parent_record_display);
+
+      } else if (currentTemplateIdForCreate) { // Create mode
+        setIsEditMode(false);
+        const fetchedTemplate = await getIomTemplateById(authenticatedFetch, currentTemplateIdForCreate);
         setIomTemplate(fetchedTemplate);
-        // Initialize dynamicFormData with defaultValues from template
-        const initialPayload: IomDataPayload = {};
+        let initialPayload: IomDataPayload = {};
         fetchedTemplate.fields_definition.forEach(field => {
           if (field.defaultValue !== undefined) {
             initialPayload[field.name] = field.defaultValue;
           }
         });
+
+        // Pre-fill from assetContext if available
+        if (assetContext) {
+          setParentObjectId(assetContext.objectId);
+          const ctId = await fetchContentTypeId(assetContext.contentTypeAppLabel, assetContext.contentTypeModel);
+          setParentContentTypeId(ctId);
+          setParentDisplay(`Asset: ${assetContext.assetName || assetContext.assetTag || `ID ${assetContext.objectId}`}`);
+
+          // Example pre-filling a data_payload field if template is designed for it
+          const assetNameField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_name' || f.name === 'asset_name');
+          if (assetNameField && assetContext.assetName) {
+            initialPayload[assetNameField.name] = assetContext.assetName;
+          }
+          const assetTagField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_tag' || f.name === 'asset_tag');
+          if (assetTagField && assetContext.assetTag) {
+            initialPayload[assetTagField.name] = assetContext.assetTag;
+          }
+        }
         setDynamicFormData(initialPayload);
         setInitialDataPayload(initialPayload);
       } else {
-        setError("No Template ID provided for new IOM or IOM ID for editing.");
-        showSnackbar("Cannot load form: Missing Template or IOM ID.", "error");
+        throw new Error("No Template ID for new IOM or IOM ID for editing.");
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unknown error occurred";
-      setError(`Failed to load data: ${message}`);
+      setError(`Failed to load form data: ${message}`);
       showSnackbar(`Error: ${message}`, 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, templateId, iomId, isEditMode, showSnackbar]);
+  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, assetContext, fetchContentTypeId]);
 
   useEffect(() => {
     loadData();
@@ -130,30 +175,31 @@ const GenericIomForm: React.FC<GenericIomFormProps> = () => {
 
     const commonPayload = {
         subject,
+        subject,
         data_payload: dynamicFormData,
         to_users: toUsersStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
         to_groups: toGroupsStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
-        // TODO: Add parent_content_type_id, parent_object_id
+        parent_content_type_id: parentContentTypeId,
+        parent_object_id: parentObjectId,
     };
 
     try {
-      if (isEditMode && iomId) {
+      if (isEditMode && currentIomId) {
         const updateData: GenericIOMUpdateData = commonPayload;
-        // Note: iom_template cannot be changed on update as per GenericIOMUpdateData definition
-        const updatedIom = await updateGenericIom(authenticatedFetch, iomId, updateData);
+        const updatedIom = await updateGenericIom(authenticatedFetch, currentIomId, updateData);
         showSnackbar(`IOM "${updatedIom.subject}" updated successfully!`, 'success');
         navigate(`/ioms/view/${updatedIom.id}`);
-      } else if (templateId) { // Create mode
+      } else if (currentTemplateIdForCreate) {
         const createData: GenericIOMCreateData = {
           ...commonPayload,
-          iom_template: templateId, // Add templateId for creation
+          iom_template: currentTemplateIdForCreate,
         };
         const newIom = await createGenericIom(authenticatedFetch, createData);
         showSnackbar(`IOM "${newIom.subject}" created successfully!`, 'success');
-        navigate(`/ioms/view/${newIom.id}`); // Navigate to the new IOM's detail view
+        navigate(`/ioms/view/${newIom.id}`);
       }
-    } catch (err: any) {
-      const errorData = err?.data || err;
+    } catch (err: unknown) {
+      const errorData = (err as any)?.data || err;
       let errorMessage = "Failed to save IOM.";
       if (typeof errorData === 'object' && errorData !== null) {
         const fieldErrors = Object.entries(errorData)
@@ -193,6 +239,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = () => {
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>Template: {iomTemplate.name}</Typography>
             {iomTemplate.description && <Typography variant="body2" color="textSecondary" gutterBottom>{iomTemplate.description}</Typography>}
+            {parentDisplay && <Typography variant="subtitle1" color="primary.main" sx={{mt:1}}>Relating to: {parentDisplay}</Typography>}
           </Grid>
 
           <Grid item xs={12}>
@@ -250,8 +297,35 @@ const GenericIomForm: React.FC<GenericIomFormProps> = () => {
                 helperText="Future: Group selector component."
             />
           </Grid>
-          {/* TODO: Add Parent Record GFK input fields (ContentType dropdown, ObjectID input) */}
-
+          {/* Parent Record GFK input fields - simplified for PoC, hidden if pre-filled by context */}
+          {!assetContext && !isEditMode && ( // Only show if not pre-filled and not editing (where it's part of fetched data)
+            <>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="parentContentTypeId"
+                  label="Parent Type ID (Optional)"
+                  type="number"
+                  value={parentContentTypeId || ''}
+                  onChange={(e) => setParentContentTypeId(e.target.value ? parseInt(e.target.value) : null)}
+                  fullWidth
+                  disabled={isSubmitting}
+                  helperText="ID of the ContentType (e.g., for 'assets.asset'). Needs API to lookup."
+                />
+              </Grid>
+              <Grid item xs={12} sm={6}>
+                <TextField
+                  name="parentObjectId"
+                  label="Parent Object ID (Optional)"
+                  type="number"
+                  value={parentObjectId || ''}
+                  onChange={(e) => setParentObjectId(e.target.value ? parseInt(e.target.value) : null)}
+                  fullWidth
+                  disabled={isSubmitting || !parentContentTypeId} // Disable if no content type selected
+                  helperText="ID of the related object."
+                />
+              </Grid>
+            </>
+          )}
 
           <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
             <Button
