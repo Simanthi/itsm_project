@@ -28,10 +28,8 @@ import {
   getIomCategories,
 } from '../../../api/genericIomApi';
 import type {
-  IOMTemplate,
-  IOMTemplateCreateData,
-  // IOMTemplate, // Unused type import
-  IOMTemplateCreateData,
+  // IOMTemplate, // Unused type import - this was correctly identified as unused
+  IOMTemplateCreateData, // This is the one Pylance flags as duplicate, ensure it's not re-declared or aliased badly
   IOMTemplateUpdateData,
   IOMCategory,
   FieldDefinition,
@@ -177,8 +175,10 @@ const IomTemplateForm: React.FC = () => {
         return;
       }
       setFormData(prev => ({ ...prev, fields_definition: parsedJson as FieldDefinition[] }));
-    } catch (parseError) { // Changed 'e' to 'parseError' to avoid conflict if 'e' is used elsewhere
+    } catch (err) {
+      // Using err here, and it's logged if needed by setJsonError or other mechanisms
       setJsonError("Invalid JSON format. Please check syntax.");
+      console.error("JSON parsing error in fields_definition:", err); // Log the actual error
     }
   };
 
@@ -194,13 +194,14 @@ const IomTemplateForm: React.FC = () => {
         return;
     }
 
-    const finalPayload = { ...formData }; // Changed let to const
+    const finalPayload = { ...formData };
     try {
         const parsedFieldsDef = JSON.parse(fieldsDefinitionString);
         finalPayload.fields_definition = parsedFieldsDef;
-    } catch (parseError) { // Changed 'e' to 'parseError'
+    } catch (err) {
         setJsonError("Invalid JSON format in Fields Definition. Cannot submit.");
         showSnackbar("Invalid JSON in Fields Definition.", "error");
+        console.error("JSON parsing error during submit:", err); // Log the actual error
         return;
     }
 
@@ -229,21 +230,22 @@ const IomTemplateForm: React.FC = () => {
       }
       navigate('/admin/iom-templates');
     } catch (err: unknown) { // Changed err: any to err: unknown
-      const errorData = (err as any)?.data || err; // Use type assertion carefully or type guard
       let errorMessage = "Failed to save IOM template.";
-      if (typeof errorData === 'object' && errorData !== null) {
+      // Type guard for error structure
+      if (err && typeof err === 'object' && 'data' in err && err.data && typeof err.data === 'object') {
+        const errorData = err.data as Record<string, string | string[]>; // Assume this structure
         const fieldErrors = Object.entries(errorData)
-            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`) // Ensure value is string
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`)
             .join('; ');
         if (fieldErrors) errorMessage = `Validation Error: ${fieldErrors}`;
-      } else if (err instanceof Error) { // Check if it's an Error instance
-        errorMessage = err.message;
-      } else if (typeof errorData === 'string') {
-        errorMessage = errorData;
+      } else if (err instanceof Error) {
+        errorMessage = `An error occurred: ${err.message}`;
+      } else if (typeof err === 'string') {
+        errorMessage = err;
       }
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
-      console.error("Submission error:", err);
+      console.error("Submission error:", err); // Log the original error object
     } finally {
       setIsSubmitting(false);
     }
