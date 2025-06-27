@@ -4,11 +4,11 @@ import {
   TextField,
   Button,
   Box,
-  Typography,
+  // Typography, // Unused import
   CircularProgress,
   Alert,
   Grid,
-  Paper,
+  // Paper, // Unused import
   FormControl,
   InputLabel,
   Select,
@@ -29,6 +29,8 @@ import {
 } from '../../../api/genericIomApi';
 import type {
   IOMTemplate,
+  IOMTemplateCreateData,
+  // IOMTemplate, // Unused type import
   IOMTemplateCreateData,
   IOMTemplateUpdateData,
   IOMCategory,
@@ -170,14 +172,12 @@ const IomTemplateForm: React.FC = () => {
     setJsonError(null); // Clear previous JSON error on change
     try {
       const parsedJson = JSON.parse(event.target.value);
-      // Basic validation, more can be added in serializer or model
       if (!Array.isArray(parsedJson)) {
         setJsonError("Fields Definition must be a valid JSON array.");
         return;
       }
-      // Optionally validate structure of each item in the array here too
       setFormData(prev => ({ ...prev, fields_definition: parsedJson as FieldDefinition[] }));
-    } catch (e) {
+    } catch (parseError) { // Changed 'e' to 'parseError' to avoid conflict if 'e' is used elsewhere
       setJsonError("Invalid JSON format. Please check syntax.");
     }
   };
@@ -194,18 +194,16 @@ const IomTemplateForm: React.FC = () => {
         return;
     }
 
-    // Ensure fields_definition is parsed and set correctly from the string before submission
-    let finalPayload = { ...formData };
+    const finalPayload = { ...formData }; // Changed let to const
     try {
         const parsedFieldsDef = JSON.parse(fieldsDefinitionString);
         finalPayload.fields_definition = parsedFieldsDef;
-    } catch (e) {
+    } catch (parseError) { // Changed 'e' to 'parseError'
         setJsonError("Invalid JSON format in Fields Definition. Cannot submit.");
         showSnackbar("Invalid JSON in Fields Definition.", "error");
         return;
     }
 
-    // Clean up simple_approval fields if approval_type is not 'simple'
     if (finalPayload.approval_type !== 'simple') {
         finalPayload.simple_approval_user = undefined;
         finalPayload.simple_approval_group = undefined;
@@ -229,16 +227,17 @@ const IomTemplateForm: React.FC = () => {
         await createIomTemplate(authenticatedFetch, finalPayload as IOMTemplateCreateData);
         showSnackbar('IOM Template created successfully!', 'success');
       }
-      navigate('/admin/iom-templates'); // Adjust if route is different
-    } catch (err: any) {
-      const errorData = err?.data || err;
+      navigate('/admin/iom-templates');
+    } catch (err: unknown) { // Changed err: any to err: unknown
+      const errorData = (err as any)?.data || err; // Use type assertion carefully or type guard
       let errorMessage = "Failed to save IOM template.";
       if (typeof errorData === 'object' && errorData !== null) {
-        // Try to extract specific field errors
         const fieldErrors = Object.entries(errorData)
-            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : value}`)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`) // Ensure value is string
             .join('; ');
         if (fieldErrors) errorMessage = `Validation Error: ${fieldErrors}`;
+      } else if (err instanceof Error) { // Check if it's an Error instance
+        errorMessage = err.message;
       } else if (typeof errorData === 'string') {
         errorMessage = errorData;
       }

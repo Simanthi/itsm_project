@@ -2,6 +2,7 @@ from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.utils import timezone
+from django.db.models import Q # Added to fix Pylance error
 
 from generic_iom.models import IOMCategory, IOMTemplate, GenericIOM
 # For testing advanced workflow, we'll need ApprovalRule and ApprovalStep

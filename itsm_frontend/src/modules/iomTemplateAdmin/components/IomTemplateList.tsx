@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import {
   Box,
   Typography,
-  Button,
+  // Button, // Unused import
   Table,
   TableBody,
   TableCell,
@@ -19,10 +19,10 @@ import {
   Alert,
   // Dialog for delete confirmation will be handled by useUI context
 } from '@mui/material';
-import AddIcon from '@mui/icons-material/Add';
+// import AddIcon from '@mui/icons-material/Add'; // Unused import
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
-import { Link as RouterLink, useNavigate } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom'; // Removed unused useNavigate
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI'; // For confirmations and snackbars
@@ -52,7 +52,7 @@ const headCells: readonly HeadCell[] = [
 
 const IomTemplateListComponent: React.FC = () => {
   const { authenticatedFetch } = useAuth();
-  const navigate = useNavigate();
+  // const navigate = useNavigate(); // Unused variable
   const { showSnackbar, showConfirmDialog } = useUI();
 
   const [templates, setTemplates] = useState<IOMTemplate[]>([]);
