@@ -54,6 +54,12 @@ const CatalogPage = lazy(() => import('./modules/service-catalog/pages/CatalogPa
 const IomTemplateListPage = lazy(() => import('./modules/iomTemplateAdmin/pages/IomTemplateListPage'));
 const IomTemplateFormPage = lazy(() => import('./modules/iomTemplateAdmin/pages/IomTemplateFormPage'));
 
+// Generic IOM User Pages
+const GenericIomListPage = lazy(() => import('./modules/genericIom/pages/GenericIomListPage'));
+const SelectIomTemplatePage = lazy(() => import('./modules/genericIom/pages/SelectIomTemplatePage'));
+const GenericIomFormPage = lazy(() => import('./modules/genericIom/pages/GenericIomFormPage'));
+const GenericIomDetailPage = lazy(() => import('./modules/genericIom/pages/GenericIomDetailPage'));
+
 
 function AppContent() {
   return (
@@ -180,6 +186,13 @@ function AppContent() {
               <Route path="admin/iom-templates" element={<IomTemplateListPage />} />
               <Route path="admin/iom-templates/new" element={<IomTemplateFormPage />} />
               <Route path="admin/iom-templates/edit/:templateId" element={<IomTemplateFormPage />} />
+
+              {/* Generic IOM User Routes */}
+              <Route path="ioms" element={<GenericIomListPage />} />
+              <Route path="ioms/new/select-template" element={<SelectIomTemplatePage />} />
+              <Route path="ioms/new/:templateId" element={<GenericIomFormPage />} /> {/* Create */}
+              <Route path="ioms/edit/:iomId" element={<GenericIomFormPage />} />    {/* Edit */}
+              <Route path="ioms/view/:iomId" element={<GenericIomDetailPage />} />
             </Route>
             {/* Fallback for unmatched routes */}
             <Route path="*" element={<NotFoundPage />} />
