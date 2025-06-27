@@ -9,8 +9,15 @@ import type {
   IOMTemplateCreateData,
   IOMTemplateUpdateData,
   GetIomTemplatesParams,
-  // GenericIOM related types would also go here or in a separate section if this file grows
-} from '../modules/iomTemplateAdmin/types/iomTemplateAdminTypes'; // Path to the new types
+} from '../modules/iomTemplateAdmin/types/iomTemplateAdminTypes';
+
+import type {
+  GenericIOM,
+  GenericIOMCreateData,
+  GenericIOMUpdateData,
+  GetGenericIomsParams,
+  GenericIomSimpleActionPayload,
+} from '../modules/genericIom/types/genericIomTypes'; // Path to the new GenericIOM types
 
 const API_GENERIC_IOM_BASE_PATH = '/api/generic-iom';
 
@@ -100,9 +107,121 @@ export const deleteIomTemplate = async (
 
 
 // --- GenericIOM Instance API Functions ---
-// These would be added later when implementing GenericIOM forms/lists.
-// For now, this file focuses on Template and Category management APIs.
-// Example:
-// import { GenericIOM, GenericIOMCreateData, ... } from '../modules/iomTemplateAdmin/types/iomTemplateAdminTypes';
-// export const createGenericIom = async (authenticatedFetch: AuthenticatedFetch, data: GenericIOMCreateData): Promise<GenericIOM> => { ... }
-// ... etc. ...
+
+export const getGenericIoms = async (
+  authenticatedFetch: AuthenticatedFetch,
+  params?: GetGenericIomsParams
+): Promise<PaginatedResponse<GenericIOM>> => {
+  const queryParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        if (key === 'pageSize') queryParams.append('page_size', String(value));
+        // Example: map frontend param 'iom_template_id' to backend 'iom_template'
+        else if (key === 'iom_template_id') queryParams.append('iom_template', String(value));
+        else if (key === 'created_by_id') queryParams.append('created_by', String(value));
+        else if (Array.isArray(value)) { // Handle array params like status__in
+            value.forEach(v => queryParams.append(`${key}__in`, String(v)));
+        }
+        else queryParams.append(key, String(value));
+      }
+    });
+  }
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<GenericIOM>;
+};
+
+export const getGenericIomById = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as GenericIOM;
+};
+
+export const createGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  data: GenericIOMCreateData
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/`;
+  // Note: If data includes file uploads for GenericIOM (e.g. if a template field is 'file_upload'),
+  // this would need to use FormData instead of JSON. For now, assuming JSON payload.
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })) as GenericIOM;
+};
+
+export const updateGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number,
+  data: GenericIOMUpdateData
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(data),
+  })) as GenericIOM;
+};
+
+export const deleteGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number
+): Promise<void> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/`;
+  await authenticatedFetch(endpoint, { method: 'DELETE' });
+};
+
+// --- Custom Actions for GenericIOM ---
+
+export const submitGenericIomForSimpleApproval = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number,
+  payload?: GenericIomSimpleActionPayload // Optional comments
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/submit_for_simple_approval/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload || {}),
+  })) as GenericIOM;
+};
+
+export const simpleApproveGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number,
+  payload: GenericIomSimpleActionPayload // Comments required/optional based on backend
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/simple_approve/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })) as GenericIOM;
+};
+
+export const simpleRejectGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number,
+  payload: GenericIomSimpleActionPayload // Comments likely mandatory by backend
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/simple_reject/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })) as GenericIOM;
+};
+
+export const publishGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/publish/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    // No body needed for a simple publish action unless API expects one
+  })) as GenericIOM;
+};
