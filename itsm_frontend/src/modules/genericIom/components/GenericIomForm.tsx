@@ -18,8 +18,9 @@ import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
-import { getIomTemplateById } from '../../../api/genericIomApi'; // For fetching template on create
-import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi'; // For IOM CRUD
+import { getIomTemplateById } from '../../../api/genericIomApi';
+import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi';
+import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
 import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 import type { GenericIOM, GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes';
 import DynamicIomFormFieldRenderer from './DynamicIomFormFieldRenderer'; // The dynamic renderer
@@ -69,18 +70,18 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
   const currentIomId = iomIdParam ? parseInt(iomIdParam, 10) : null;
   const currentTemplateIdForCreate = templateIdParam ? parseInt(templateIdParam, 10) : null;
 
-  // API function to get ContentType ID (placeholder - needs actual implementation)
+  // Use the real API call for ContentType ID
   const fetchContentTypeId = useCallback(async (appLabel: string, model: string): Promise<number | null> => {
     if (!authenticatedFetch) return null;
-    // In a real app, you'd call an API endpoint:
-    // const response = await authenticatedFetch(`/api/core/content-type-id/?app_label=${appLabel}&model=${model}`);
-    // For this PoC, let's simulate or assume a known ID for 'assets.asset' if possible,
-    // or return null and handle it.
-    // This is a simplification. A real implementation needs this endpoint.
-    console.warn(`fetchContentTypeId: Simulated for ${appLabel}.${model}. Needs real API endpoint.`);
-    if (appLabel === 'assets' && model === 'asset') return 7; // Example ID, **DO NOT USE IN PRODUCTION**
-    return null;
-  }, [authenticatedFetch]);
+    try {
+      const contentTypeInfo = await fetchContentTypeIdFromApi(authenticatedFetch, appLabel, model);
+      return contentTypeInfo ? contentTypeInfo.id : null;
+    } catch (error) {
+      console.error(`Failed to fetch ContentType ID for ${appLabel}.${model}:`, error);
+      showSnackbar(`Could not resolve type for ${appLabel}.${model}. GFK link may fail.`, 'error');
+      return null;
+    }
+  }, [authenticatedFetch, showSnackbar]);
 
 
   const loadData = useCallback(async () => {
