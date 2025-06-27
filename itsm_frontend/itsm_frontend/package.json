@@ -1,6 +1,0 @@
-{
-  "devDependencies": {
-    "@testing-library/user-event": "^14.6.1",
-    "msw": "^2.10.2"
-  }
-}
