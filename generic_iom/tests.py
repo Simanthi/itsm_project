@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from unittest.mock import patch, MagicMock
+from django.db.models import Q
 
 from .models import GenericIOMIDSequence, IOMCategory, IOMTemplate, GenericIOM
 # To test workflow triggering, we need ApprovalRule and ApprovalStep from procurement
@@ -482,5 +483,3 @@ class GenericIOMSerializerTests(TestCase):
         serializer = GenericIOMSerializer(data=data_with_gfk, context=self.serializer_context)
         self.assertFalse(serializer.is_valid())
         self.assertIn('non_field_errors', serializer.errors)
-
-```
