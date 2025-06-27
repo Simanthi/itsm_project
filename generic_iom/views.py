@@ -54,10 +54,18 @@ class IOMTemplateViewSet(viewsets.ModelViewSet):
         serializer.save(created_by=self.request.user)
 
     def get_queryset(self):
-        # By default, non-staff users only see active templates. Staff see all.
-        if self.request.user.is_staff:
+        user = self.request.user
+        if user.is_staff:
+            # Staff/admins see all templates, could be further filtered by is_active if desired for admin view
             return IOMTemplate.objects.all().order_by('category__name', 'name')
-        return IOMTemplate.objects.filter(is_active=True).order_by('category__name', 'name')
+
+        # Non-staff users see active templates that are either public (no allowed_groups)
+        # or are restricted to a group they are part of.
+        user_groups = user.groups.all()
+        return IOMTemplate.objects.filter(
+            Q(is_active=True),
+            Q(Q(allowed_groups__isnull=True) | Q(allowed_groups__in=user_groups))
+        ).distinct().order_by('category__name', 'name')
 
 
 class GenericIOMViewSet(viewsets.ModelViewSet):

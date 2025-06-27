@@ -106,6 +106,13 @@ class IOMTemplate(models.Model):
         default=True,
         help_text=_("Only active templates can be used to create new IOMs.")
     )
+    allowed_groups = models.ManyToManyField(
+        'auth.Group',
+        blank=True,
+        verbose_name=_("Allowed User Groups"),
+        help_text=_("Groups allowed to use this template. If empty, any authenticated user (who can access template listing) can use it, provided it's active."),
+        related_name="usable_iom_templates"
+    )
 
     class Meta:
         verbose_name = _("IOM Template")

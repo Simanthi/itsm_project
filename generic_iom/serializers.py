@@ -23,6 +23,7 @@ class IOMTemplateSerializer(serializers.ModelSerializer):
             'id', 'name', 'description', 'category', 'category_name',
             'fields_definition', 'approval_type',
             'simple_approval_user', 'simple_approval_group',
+            'allowed_groups', # Added allowed_groups
             'is_active', 'created_by', 'created_by_username',
             'created_at', 'updated_at'
         ]
