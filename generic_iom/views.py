@@ -3,6 +3,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated # IsAdminUser is used by IsTemplateAdmin
 from django.utils import timezone
+from django.db.models import Q # Added for Pylance issue
+from rest_framework import serializers # Added for Pylance issue (serializers.ValidationError)
 # from django.db import transaction # Not explicitly used here yet
 
 from .models import IOMCategory, IOMTemplate, GenericIOM

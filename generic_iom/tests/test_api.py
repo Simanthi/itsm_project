@@ -2,6 +2,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
+from django.db.models import Q # Added for Pylance issue
 
 from generic_iom.models import IOMCategory, IOMTemplate, GenericIOM
 # from .serializers import IOMTemplateSerializer, GenericIOMSerializer # Not directly used in test usually
