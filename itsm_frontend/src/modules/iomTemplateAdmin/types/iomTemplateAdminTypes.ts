@@ -52,6 +52,7 @@ export interface IOMTemplate {
   created_by_username?: string | null; // Read-only
   created_at: string; // ISO date string
   updated_at: string; // ISO date string
+  allowed_groups?: number[]; // Array of Group IDs, for read operations
 }
 
 // Data for creating an IOMTemplate
@@ -63,6 +64,7 @@ export interface IOMTemplateCreateData {
   approval_type: 'none' | 'simple' | 'advanced';
   simple_approval_user?: number | null;
   simple_approval_group?: number | null;
+  allowed_groups?: number[]; // For sending Group IDs during create/update if form handles it
   is_active?: boolean; // Default to true on backend if not provided
 }
 

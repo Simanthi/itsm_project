@@ -43,9 +43,13 @@ class IOMTemplateAdmin(admin.ModelAdmin):
     list_display = ('name', 'category', 'approval_type', 'is_active', 'created_by', 'created_at')
     list_filter = ('category', 'approval_type', 'is_active', 'created_at')
     search_fields = ('name', 'description', 'category__name')
+    filter_horizontal = ('allowed_groups',) # Added for better M2M editing
     fieldsets = (
         (None, {
             'fields': ('name', 'description', 'category', 'is_active')
+        }),
+        ('Access Control', { # New fieldset for allowed_groups
+            'fields': ('allowed_groups',)
         }),
         ('Approval Configuration', {
             'fields': ('approval_type', 'simple_approval_user', 'simple_approval_group')

@@ -10,6 +10,10 @@ from .models import GenericIOMIDSequence, IOMCategory, IOMTemplate, GenericIOM
 # we might mock these out. For integration-style tests, we'd import them.
 # Let's try mocking for now to keep generic_iom tests more isolated.
 # from procurement.models import ApprovalRule, ApprovalStep
+from django.contrib.auth.models import Group
+from django.urls import reverse
+from rest_framework import status
+from rest_framework.test import APITestCase # For API tests
 
 User = get_user_model()
 
@@ -132,6 +136,18 @@ class IOMTemplateTests(TestCase):
         template.save()
         updated_template = IOMTemplate.objects.get(pk=template.pk)
         self.assertIsNone(updated_template.simple_approval_user)
+
+    def test_template_creation_with_allowed_groups(self):
+        group1 = Group.objects.create(name="Testers")
+        group2 = Group.objects.create(name="Developers")
+        template = IOMTemplate.objects.create(
+            name="Group Restricted Template",
+            category=self.category,
+            created_by=self.user
+        )
+        template.allowed_groups.add(group1, group2)
+        self.assertEqual(template.allowed_groups.count(), 2)
+        self.assertIn(group1, template.allowed_groups.all())
 
 
 class GenericIOMTests(TestCase):
@@ -470,9 +486,8 @@ class GenericIOMSerializerTests(TestCase):
         # Missing parent_object_id
         serializer = GenericIOMSerializer(data=data_with_gfk, context=self.serializer_context)
         self.assertFalse(serializer.is_valid())
-        self.assertIn('non_field_errors', serializer.errors) # DRF puts this in non_field_errors or specific field
-                                                            # based on where validation is raised.
-                                                            # Our validator raises general ValidationError.
+        self.assertIn('non_field_errors', serializer.errors)
+
 
     def test_generic_iom_deserialize_gfk_obj_id_without_ct(self):
         linked_category = IOMCategory.objects.create(name="Another Linked Cat")
@@ -482,5 +497,107 @@ class GenericIOMSerializerTests(TestCase):
         serializer = GenericIOMSerializer(data=data_with_gfk, context=self.serializer_context)
         self.assertFalse(serializer.is_valid())
         self.assertIn('non_field_errors', serializer.errors)
+
+
+# --- API Tests for IOMTemplate allowed_groups ---
+class IOMTemplateAPIAccessTests(APITestCase):
+    @classmethod
+    def setUpTestData(cls):
+        cls.admin_user = User.objects.create_superuser(username='api_admin', email='apiadmin@example.com', password='password123')
+        cls.normal_user1 = User.objects.create_user(username='api_user1', email='apiuser1@example.com', password='password123')
+        cls.normal_user2 = User.objects.create_user(username='api_user2', email='apiuser2@example.com', password='password123')
+
+        cls.group_a = Group.objects.create(name="Group A")
+        cls.group_b = Group.objects.create(name="Group B")
+
+        cls.normal_user1.groups.add(cls.group_a)
+        # User2 is not in Group A or B initially for some tests
+
+        cls.category = IOMCategory.objects.create(name="API Access Test Category")
+
+        # Template 1: Public (no groups)
+        cls.template_public = IOMTemplate.objects.create(
+            name="Public Template", category=cls.category, created_by=cls.admin_user, is_active=True
+        )
+        # Template 2: Restricted to Group A
+        cls.template_group_a = IOMTemplate.objects.create(
+            name="Group A Template", category=cls.category, created_by=cls.admin_user, is_active=True
+        )
+        cls.template_group_a.allowed_groups.add(cls.group_a)
+
+        # Template 3: Restricted to Group B
+        cls.template_group_b = IOMTemplate.objects.create(
+            name="Group B Template", category=cls.category, created_by=cls.admin_user, is_active=True
+        )
+        cls.template_group_b.allowed_groups.add(cls.group_b)
+
+        # Template 4: Inactive public template
+        cls.template_inactive = IOMTemplate.objects.create(
+            name="Inactive Public Template", category=cls.category, created_by=cls.admin_user, is_active=False
+        )
+
+    def test_admin_can_set_allowed_groups_on_create(self):
+        self.client.force_authenticate(user=self.admin_user)
+        template_data = {
+            "name": "Admin Created Restricted Template",
+            "category": self.category.pk,
+            "fields_definition": [],
+            "approval_type": "none",
+            "allowed_groups": [self.group_a.pk, self.group_b.pk]
+        }
+        response = self.client.post(reverse('generic_iom:iomtemplate-list'), template_data, format='json')
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created_template = IOMTemplate.objects.get(pk=response.data['id'])
+        self.assertEqual(created_template.allowed_groups.count(), 2)
+        self.assertIn(self.group_a, created_template.allowed_groups.all())
+
+    def test_admin_can_update_allowed_groups(self):
+        self.client.force_authenticate(user=self.admin_user)
+        update_data = {"allowed_groups": [self.group_b.pk]}
+        response = self.client.patch(
+            reverse('generic_iom:iomtemplate-detail', kwargs={'pk': self.template_group_a.pk}),
+            update_data,
+            format='json'
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.template_group_a.refresh_from_db()
+        self.assertEqual(self.template_group_a.allowed_groups.count(), 1)
+        self.assertIn(self.group_b, self.template_group_a.allowed_groups.all())
+        self.assertNotIn(self.group_a, self.template_group_a.allowed_groups.all())
+
+    def test_list_templates_for_user_in_group_a(self):
+        self.client.force_authenticate(user=self.normal_user1) # Belongs to Group A
+        response = self.client.get(reverse('generic_iom:iomtemplate-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        template_names = [t['name'] for t in response.data['results']]
+
+        self.assertIn(self.template_public.name, template_names)
+        self.assertIn(self.template_group_a.name, template_names)
+        self.assertNotIn(self.template_group_b.name, template_names)
+        self.assertNotIn(self.template_inactive.name, template_names) # Inactive templates are not shown
+
+    def test_list_templates_for_user_in_no_relevant_group(self):
+        self.client.force_authenticate(user=self.normal_user2) # Not in Group A or B
+        response = self.client.get(reverse('generic_iom:iomtemplate-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        template_names = [t['name'] for t in response.data['results']]
+
+        self.assertIn(self.template_public.name, template_names)
+        self.assertNotIn(self.template_group_a.name, template_names)
+        self.assertNotIn(self.template_group_b.name, template_names)
+        self.assertNotIn(self.template_inactive.name, template_names)
+
+    def test_admin_sees_all_templates_including_inactive(self):
+        # Current IOMTemplateViewSet get_queryset for staff returns all, including inactive.
+        self.client.force_authenticate(user=self.admin_user)
+        response = self.client.get(reverse('generic_iom:iomtemplate-list'))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        # Based on current viewset logic, admin sees all. If it were filtered by active, this would change.
+        self.assertEqual(len(response.data['results']), IOMTemplate.objects.count())
+        template_names = [t['name'] for t in response.data['results']]
+        self.assertIn(self.template_public.name, template_names)
+        self.assertIn(self.template_group_a.name, template_names)
+        self.assertIn(self.template_group_b.name, template_names)
+        self.assertIn(self.template_inactive.name, template_names)
 
 ```
