@@ -256,7 +256,7 @@ describe('PurchaseRequestMemoForm', () => {
     interface MockApiError extends Error {
       data?: {
         item_description?: string[];
-        [key: string]: any; // Allow other potential error fields
+        [key: string]: unknown; // Changed 'any' to 'unknown'
       };
     }
 
