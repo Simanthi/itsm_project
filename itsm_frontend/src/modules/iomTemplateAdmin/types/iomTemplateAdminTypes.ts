@@ -27,9 +27,7 @@ export interface FieldDefinition {
   options?: Array<{ value: string | number; label: string }>;
   section?: string; // "header" | "body" | "footer"
   readonly?: boolean;
-  // Record<string, any> is often acceptable for HTML attributes due to their diverse nature.
-  // Could be narrowed to Record<string, string | number | boolean | undefined> if desired.
-  attributes?: Record<string, any>;
+  attributes?: Record<string, string | number | boolean | undefined>; // Narrowed type from any
   api_source?: { // For dynamic dropdowns
       endpoint: string;
       value_field: string;
