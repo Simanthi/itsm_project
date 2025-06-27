@@ -1,7 +1,7 @@
 // itsm_frontend/src/api/genericIomApi.ts
 
-import type { AuthenticatedFetch } from '../context/auth/AuthContext'; // Assuming this type is defined here
-import type { PaginatedResponse } from '../types/apiTypes'; // Assuming a global PaginatedResponse type
+import type { AuthenticatedFetch } from '../context/auth/AuthContextDefinition'; // Corrected import path
+import type { PaginatedResponse } from '../modules/procurement/types/procurementTypes'; // Temporary import path
 
 import type {
   IOMCategory,

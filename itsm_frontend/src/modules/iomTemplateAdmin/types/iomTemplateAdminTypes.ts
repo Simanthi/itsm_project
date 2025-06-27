@@ -21,13 +21,15 @@ export interface FieldDefinition {
   label: string;
   type: string; // e.g., "text_short", "textarea", "number", "date", "choice_single", "user_selector_single" etc.
   required?: boolean;
-  defaultValue?: any;
+  defaultValue?: unknown; // Changed from any to unknown for better type safety
   placeholder?: string;
   helpText?: string;
   options?: Array<{ value: string | number; label: string }>;
   section?: string; // "header" | "body" | "footer"
   readonly?: boolean;
-  attributes?: Record<string, any>; // For HTML attributes like min, max, step
+  // Record<string, any> is often acceptable for HTML attributes due to their diverse nature.
+  // Could be narrowed to Record<string, string | number | boolean | undefined> if desired.
+  attributes?: Record<string, any>;
   api_source?: { // For dynamic dropdowns
       endpoint: string;
       value_field: string;
