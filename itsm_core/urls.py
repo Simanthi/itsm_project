@@ -35,5 +35,6 @@ urlpatterns = [
     path('api/changes/', include('changes.urls')), # Uncommented Changes URLs
     path('api/configs/', include('configs.urls')), # Uncommented Configs URLs
     path('api/workflows/', include('workflows.urls')), # Uncommented Workflows URLs
+    path('api/generic-iom/', include('generic_iom.urls')), # Added Generic IOM URLs
     # path('api/reports-analytics/', include('reports_analytics.urls')),
 ]

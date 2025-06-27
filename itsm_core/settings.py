@@ -55,6 +55,7 @@ INSTALLED_APPS = [
     "core_api",
     "procurement",
     'service_catalog.apps.ServiceCatalogConfig',
+    "generic_iom", # Added new app
 ]
 
 MIDDLEWARE = [

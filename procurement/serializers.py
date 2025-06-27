@@ -6,10 +6,20 @@ from .models import (
     ApprovalRule, ApprovalStep, ApprovalDelegation # Import main models
 )
 # Import common models directly from their source
-from .common_models import Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment
-from assets.models import Vendor # For VendorSerializer if used directly with assets.models.Vendor
+from .common_models import Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment # Ensure this is correct if models moved
+from assets.models import Vendor
 from assets.serializers import VendorSerializer
-from django.contrib.auth.models import Group # For Group serializer
+from django.contrib.auth.models import Group
+from django.contrib.contenttypes.models import ContentType # For GFK representation in ApprovalStepSerializer
+
+# Import generic_iom models for M2M fields in ApprovalRuleSerializer
+# This might require careful handling of Django's app loading sequence.
+# If generic_iom.models is not ready when procurement.serializers is loaded, it could fail.
+# A string reference 'generic_iom.IOMTemplate' might be safer if issues arise.
+from generic_iom.models import IOMTemplate, IOMCategory
+# If IOMTemplateSerializer and IOMCategorySerializer are needed for nesting, import them:
+# from generic_iom.serializers import IOMTemplateSerializer, IOMCategorySerializer # Causes circular import
+# For M2M fields, usually PrimaryKeyRelatedField is sufficient for write, StringRelatedField for read.
 
 User = get_user_model()
 

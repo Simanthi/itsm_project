@@ -3,9 +3,17 @@ from django.contrib.auth import get_user_model
 from django.utils.translation import gettext_lazy as _
 from django.utils import timezone
 from assets.models import Vendor # Assuming Vendor model is in assets app
-# Import the new common models
 from .common_models import Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment
-from .sequence_models import ProcurementIDSequence # Import the new sequence model
+from .sequence_models import ProcurementIDSequence
+
+# For GFK support in ApprovalStep and M2M in ApprovalRule
+from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.models import ContentType
+# Need to import from generic_iom app. This creates a dependency.
+# Ensure 'generic_iom' is listed before 'procurement' in INSTALLED_APPS if generic_iom.models
+# are needed at the time procurement.models are loaded (e.g. for direct FK, not string ref).
+# For M2M, string references are fine.
+# from generic_iom.models import IOMTemplate, IOMCategory # Using string reference for M2M to avoid import order issues
 
 User = get_user_model()
 
@@ -17,7 +25,7 @@ class PurchaseRequestMemo(models.Model):
         ('high', _('High')),
     ]
     STATUS_CHOICES = [
-        ('draft', _('Draft')), # New initial state
+        ('draft', _('Draft')),
         ('pending_approval', _('Pending Approval')),
         ('approved', _('Approved')),
         ('rejected', _('Rejected')),
@@ -25,7 +33,6 @@ class PurchaseRequestMemo(models.Model):
         ('cancelled', _('Cancelled')),
     ]
 
-    # Existing fields
     item_description = models.TextField(_("Item Description"))
     quantity = models.PositiveIntegerField(_("Quantity"), default=1)
     reason = models.TextField(_("Reason for Purchase"))
@@ -47,7 +54,7 @@ class PurchaseRequestMemo(models.Model):
         _("Status"),
         max_length=20,
         choices=STATUS_CHOICES,
-        default='draft' # Default to draft for new workflow
+        default='draft'
     )
     approver = models.ForeignKey(
         User,
@@ -55,13 +62,12 @@ class PurchaseRequestMemo(models.Model):
         related_name='approved_purchase_requests',
         null=True,
         blank=True,
-        verbose_name=_("Approver")
+        verbose_name=_("Approver (Final Decider)") # Clarified role
     )
     decision_date = models.DateTimeField(_("Decision Date"), null=True, blank=True)
     approver_comments = models.TextField(_("Approver Comments"), blank=True)
 
-    # New fields for PurchaseRequestMemo
-    iom_id = models.CharField(_("IOM ID"), max_length=20, unique=True, editable=False, blank=True, null=True, help_text="System-generated ID, e.g., IM-YYMMDD-0001.")
+    iom_id = models.CharField(_("IOM ID"), max_length=20, unique=True, editable=False, blank=True, null=True, help_text="System-generated ID, e.g., IM-AA-0001.")
     department = models.ForeignKey(
         Department,
         on_delete=models.SET_NULL,
@@ -93,6 +99,9 @@ class PurchaseRequestMemo(models.Model):
     )
     attachments = models.FileField(_("Attachments"), upload_to='procurement/iom_attachments/', null=True, blank=True)
 
+    # Generic relation to ApprovalSteps
+    # approval_steps_gfk = GenericRelation('procurement.ApprovalStep', content_type_field='content_type', object_id_field='object_id')
+    # No, the GFK is on ApprovalStep. We access it via related_name from ApprovalStep if needed, or filter ApprovalStep by content_type and object_id.
 
     class Meta:
         verbose_name = _("Purchase Request Memo (IOM)")
@@ -102,122 +111,75 @@ class PurchaseRequestMemo(models.Model):
     def __str__(self):
         return f"IOM {self.iom_id if self.iom_id else '(Unsaved)'}: {self.item_description[:50]} by {self.requested_by.username}"
 
-    # Consider adding a pre_save signal or overriding save() to generate iom_id if it's system-generated.
     def save(self, *args, **kwargs):
         is_new = self._state.adding
         old_status = None
-        if not is_new:
+        if not is_new and self.pk:
             try:
-                old_status = PurchaseRequestMemo.objects.get(pk=self.pk).status
+                old_status_instance = PurchaseRequestMemo.objects.get(pk=self.pk)
+                old_status = old_status_instance.status
             except PurchaseRequestMemo.DoesNotExist:
-                pass # Should not happen if self.pk exists
+                pass
 
         if not self.iom_id:
             self.iom_id = ProcurementIDSequence.get_next_id("IM")
 
-        # Set default status to 'draft' if new and no status is provided
         if is_new and not self.status:
             self.status = 'draft'
 
-        super().save(*args, **kwargs) # Save first to get an ID for new instances
+        super().save(*args, **kwargs)
 
-        # Trigger approval workflow if:
-        # 1. It's a new instance and status is 'draft' (or becomes 'pending_approval' directly).
-        # 2. Or if relevant fields changed and it's in a state that allows re-triggering (e.g. 'draft', 'rejected').
-        # For now, let's trigger if it's new and 'draft', or if status changes to 'draft'.
-        # More sophisticated logic for re-triggering on updates can be added.
         if self.status == 'draft' and (is_new or (old_status and old_status != 'draft')):
              self.trigger_approval_workflow()
-        elif is_new and self.status == 'pending_approval': # If status set directly to pending_approval
+        elif is_new and self.status == 'pending_approval':
             self.trigger_approval_workflow()
 
-
     def trigger_approval_workflow(self, force_retrigger=False):
-        """
-        Determines and creates necessary ApprovalStep instances based on ApprovalRules.
-        Determines and creates necessary ApprovalStep instances based on ApprovalRules
-        for a PurchaseRequestMemo (IOM).
-
-        This method is typically called when an IOM is saved in a 'draft' state
-        or when its approval process needs to be explicitly re-triggered.
-
-        Behavior:
-        - If `force_retrigger` is False (default), the workflow is only triggered if the IOM's
-          current status is 'draft'. This prevents accidental re-triggering for IOMs already
-          in an approval process or completed.
-        - Any existing 'pending' or 'delegated' approval steps for this IOM are deleted
-          before new ones are generated. This ensures a clean start for the workflow.
-          Completed steps ('approved', 'rejected', 'skipped') are preserved for history.
-        - It iterates through all active `ApprovalRule`s, ordered by their `order` field.
-        - For each rule, it checks if the IOM's properties (estimated cost, department, project)
-          match the rule's conditions.
-        - If a rule matches, a new `ApprovalStep` is created and linked to the IOM and the rule.
-        - If at least one `ApprovalStep` is created and the IOM was in 'draft' status,
-          the IOM's status is updated to 'pending_approval'.
-        - If no rules match and the IOM was 'draft', it remains 'draft'.
-
-        Args:
-            force_retrigger (bool): If True, the workflow will be triggered regardless of the
-                                    IOM's current status. Use with caution.
-        """
-        # Only proceed if status is 'draft' or if forced
         if self.status != 'draft' and not force_retrigger:
-            # Or if status is 'rejected' and we want to allow re-submission with workflow
-            # For now, simple condition: only from 'draft' or if forced.
             return
 
-        # Delete existing 'pending' or 'delegated' approval steps before regenerating
-        # Approved/rejected steps should remain for history.
-        self.approval_steps.filter(status__in=['pending', 'delegated']).delete()
+        # Delete existing 'pending' or 'delegated' approval steps for this PRM
+        prm_content_type = ContentType.objects.get_for_model(self)
+        ApprovalStep.objects.filter(content_type=prm_content_type, object_id=self.pk, status__in=['pending', 'delegated']).delete()
 
-        applicable_rules = ApprovalRule.objects.filter(is_active=True).order_by('order')
+        # Filter for rules specific to PurchaseRequestMemo
+        applicable_rules = ApprovalRule.objects.filter(
+            rule_type='procurement_memo', # Ensure rule is for PRMs
+            is_active=True
+        ).order_by('order')
+
         created_steps_count = 0
-
         for rule in applicable_rules:
-            # Check amount condition
-            if rule.min_amount is not None and self.estimated_cost < rule.min_amount:
+            # Conditions specific to PurchaseRequestMemo
+            if rule.min_amount is not None and (self.estimated_cost is None or self.estimated_cost < rule.min_amount):
                 continue
-            if rule.max_amount is not None and self.estimated_cost > rule.max_amount:
+            if rule.max_amount is not None and (self.estimated_cost is None or self.estimated_cost > rule.max_amount):
                 continue
-
-            # Check department condition
             if not rule.applies_to_all_departments:
                 if not self.department or not rule.departments.filter(pk=self.department.pk).exists():
                     continue
-
-            # Check project condition
             if not rule.applies_to_all_projects:
                 if not self.project or not rule.projects.filter(pk=self.project.pk).exists():
                     continue
 
-            # If all conditions met, create an ApprovalStep
             ApprovalStep.objects.create(
-                purchase_request_memo=self,
+                content_object=self, # Use GFK
                 approval_rule=rule,
                 step_order=rule.order,
                 assigned_approver_user=rule.approver_user,
                 assigned_approver_group=rule.approver_group,
                 status='pending'
-                # rule_name_snapshot is handled by ApprovalStep's save method
             )
             created_steps_count += 1
 
         if created_steps_count > 0:
-            if self.status == 'draft': # Only change status if it was draft
+            if self.status == 'draft':
                 self.status = 'pending_approval'
-                self.save(update_fields=['status']) # Save again to update status
-                # print(f"IOM {self.iom_id} status changed to 'pending_approval'. {created_steps_count} steps created.")
-        else:
-            # No rules applied. What should happen?
-            # Option 1: Stays 'draft' for manual processing or PO creation.
-            # Option 2: Automatically becomes 'approved' (if no approvals needed by default).
-            # For now, let's assume it stays 'draft' or the user has to explicitly submit it.
-            # If it was 'draft' and no steps, it remains 'draft'.
-            # print(f"IOM {self.iom_id} - no approval rules applied. Status remains '{self.status}'.")
-            pass
+                self.save(update_fields=['status'])
 
 
 class PurchaseOrder(models.Model):
+    # ... (No changes to PurchaseOrder model itself) ...
     PO_STATUS_CHOICES = [
         ('draft', _('Draft')),
         ('pending_approval', _('Pending Approval')),
@@ -235,8 +197,7 @@ class PurchaseOrder(models.Model):
         ('framework_agreement', _('Framework Agreement')),
     ]
 
-    # Existing fields
-    po_number = models.CharField(_("PO Number"), max_length=50, unique=True, editable=False, blank=True, help_text="System-generated PO number, e.g., PO-YYMMDD-0001")
+    po_number = models.CharField(_("PO Number"), max_length=50, unique=True, editable=False, blank=True, help_text="System-generated PO number, e.g., PO-AA-0001")
     internal_office_memo = models.OneToOneField(
         PurchaseRequestMemo,
         on_delete=models.SET_NULL,
@@ -246,7 +207,7 @@ class PurchaseOrder(models.Model):
     )
     vendor = models.ForeignKey(
         Vendor,
-        on_delete=models.PROTECT, # Protect vendor from deletion if POs exist
+        on_delete=models.PROTECT,
         related_name='purchase_orders',
         verbose_name=_("Vendor")
     )
@@ -262,10 +223,8 @@ class PurchaseOrder(models.Model):
     )
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
-    shipping_address = models.TextField(_("Shipping Address"), blank=True) # Consider making this more structured if needed
+    shipping_address = models.TextField(_("Shipping Address"), blank=True)
     notes = models.TextField(_("Notes"), blank=True)
-
-    # New fields for PurchaseOrder
     payment_terms = models.CharField(_("Payment Terms"), max_length=100, blank=True, help_text="e.g., Net 30, Due on Receipt")
     shipping_method = models.CharField(_("Shipping Method"), max_length=100, blank=True)
     billing_address = models.TextField(_("Billing Address"), blank=True, null=True)
@@ -287,34 +246,25 @@ class PurchaseOrder(models.Model):
     revision_number = models.PositiveIntegerField(_("Revision Number"), default=0)
     currency = models.CharField(_("Currency"), max_length=3, default='USD', help_text="e.g., USD, EUR, KES")
 
-
     class Meta:
         verbose_name = _("Purchase Order (PO)")
         verbose_name_plural = _("Purchase Orders (POs)")
         ordering = ['-order_date', '-po_number']
 
     def __str__(self):
-        return f"PO {self.po_number} to {self.vendor.name}"
+        return f"PO {self.po_number or '(Unsaved PO)'} to {self.vendor.name}"
 
     def calculate_total_amount(self):
         total = sum(item.total_price for item in self.order_items.all() if item.total_price is not None)
-        # self.total_amount = total # Best to update this in save() or via signal
         return total
 
-    # Consider adding a pre_save signal or overriding save() to generate po_number if it's system-generated and not user-input.
     def save(self, *args, **kwargs):
         if not self.po_number:
             self.po_number = ProcurementIDSequence.get_next_id("PO")
-        # Ensure total_amount is calculated before saving, especially if items changed
-        # This might be better handled via signals from OrderItem save/delete
-        # or ensure order_items are saved before the PO if creating.
-        # For now, let's assume calculate_total_amount is called where needed.
-        # If items are managed via inline in admin, admin's save_related handles it.
-        # If via serializer, serializer's create/update handles it.
         super().save(*args, **kwargs)
 
-
 class OrderItem(models.Model):
+    # ... (No changes to OrderItem model itself) ...
     LINE_ITEM_STATUS_CHOICES = [
         ('pending', _('Pending')),
         ('partially_received', _('Partially Received')),
@@ -322,8 +272,6 @@ class OrderItem(models.Model):
         ('cancelled', _('Cancelled')),
         ('invoiced', _('Invoiced')),
     ]
-
-    # Existing fields
     purchase_order = models.ForeignKey(
         PurchaseOrder,
         on_delete=models.CASCADE,
@@ -333,9 +281,6 @@ class OrderItem(models.Model):
     item_description = models.CharField(_("Item Description"), max_length=255)
     quantity = models.PositiveIntegerField(_("Quantity"))
     unit_price = models.DecimalField(_("Unit Price"), max_digits=10, decimal_places=2, null=True, blank=True)
-    # asset = models.ForeignKey('assets.Asset', on_delete=models.SET_NULL, null=True, blank=True, related_name='order_line_item') # Keep if asset linking is desired
-
-    # New fields for OrderItem
     product_code = models.CharField(_("Product Code/SKU"), max_length=100, blank=True, null=True)
     gl_account = models.ForeignKey(
         GLAccount,
@@ -352,7 +297,6 @@ class OrderItem(models.Model):
         default='pending'
     )
     tax_rate = models.DecimalField(_("Tax Rate (%)"), max_digits=5, decimal_places=2, null=True, blank=True, help_text="e.g., 16 for 16%")
-
     DISCOUNT_TYPE_CHOICES = [
         ('fixed', _('Fixed Amount')),
         ('percentage', _('Percentage')),
@@ -362,7 +306,7 @@ class OrderItem(models.Model):
         max_length=10,
         choices=DISCOUNT_TYPE_CHOICES,
         default='fixed',
-        null=True, blank=True # Allow null if no discount
+        null=True, blank=True
     )
     discount_value = models.DecimalField(
         _("Discount Value"),
@@ -370,8 +314,6 @@ class OrderItem(models.Model):
         null=True, blank=True,
         help_text="Value of the discount, either fixed amount or percentage (e.g., 10 for 10%)"
     )
-    # Removed: discount_percentage_or_amount
-
     class Meta:
         verbose_name = _("Order Item")
         verbose_name_plural = _("Order Items")
@@ -386,21 +328,19 @@ class OrderItem(models.Model):
         return 0
 
     @property
-    def total_price(self): # This could be total price after discount and tax
+    def total_price(self):
         price = self.total_price_before_tax_discount
-
         if self.discount_value is not None and self.discount_type:
             if self.discount_type == 'fixed':
                 price -= self.discount_value
             elif self.discount_type == 'percentage':
                 price -= (price * self.discount_value / 100)
-
         if self.tax_rate is not None:
             price += (price * self.tax_rate / 100)
-        return max(price, 0) # Ensure price doesn't go below zero
-
+        return max(price, 0)
 
 class CheckRequest(models.Model):
+    # ... (No changes to CheckRequest model itself) ...
     CHECK_REQUEST_STATUS_CHOICES = [
         ('pending_submission', _('Pending Submission')),
         ('pending_approval', _('Pending Accounts Approval')),
@@ -418,8 +358,6 @@ class CheckRequest(models.Model):
         ('credit_card', _('Credit Card')),
         ('other', _('Other')),
     ]
-
-    # Existing fields
     purchase_order = models.ForeignKey(
         PurchaseOrder,
         on_delete=models.PROTECT,
@@ -431,7 +369,7 @@ class CheckRequest(models.Model):
     invoice_date = models.DateField(_("Invoice Date"), null=True, blank=True)
     amount = models.DecimalField(_("Amount"), max_digits=12, decimal_places=2)
     payee_name = models.CharField(_("Payee Name"), max_length=255, help_text="Typically the Vendor name from PO, but can be overridden.")
-    payee_address = models.TextField(_("Payee Address"), blank=True) # Could be pre-filled from Vendor
+    payee_address = models.TextField(_("Payee Address"), blank=True)
     reason_for_payment = models.TextField(_("Reason for Payment / Description"))
     requested_by = models.ForeignKey(
         User,
@@ -459,9 +397,7 @@ class CheckRequest(models.Model):
     payment_date = models.DateField(_("Payment Date"), null=True, blank=True)
     transaction_id = models.CharField(_("Transaction ID / Check Number"), max_length=100, null=True, blank=True)
     payment_notes = models.TextField(_("Payment Notes"), blank=True)
-
-    # New fields for CheckRequest
-    cr_id = models.CharField(_("CR ID"), max_length=20, unique=True, editable=False, blank=True, null=True, help_text="System-generated ID, e.g., CR-YYMMDD-0001.")
+    cr_id = models.CharField(_("CR ID"), max_length=20, unique=True, editable=False, blank=True, null=True, help_text="System-generated ID, e.g., CR-AA-0001.")
     expense_category = models.ForeignKey(
         ExpenseCategory,
         on_delete=models.SET_NULL,
@@ -479,8 +415,6 @@ class CheckRequest(models.Model):
     )
     attachments = models.FileField(_("Attachments"), upload_to='procurement/cr_attachments/', null=True, blank=True)
     currency = models.CharField(_("Currency"), max_length=3, default='USD', help_text="e.g., USD, EUR, KES")
-
-
     class Meta:
         verbose_name = _("Check Request (CR)")
         verbose_name_plural = _("Check Requests (CRs)")
@@ -491,55 +425,75 @@ class CheckRequest(models.Model):
         po_number_str = self.purchase_order.po_number if self.purchase_order else 'N/A'
         return f"CR {cr_id_str} for {self.amount} {self.currency} to {self.payee_name} (PO: {po_number_str})"
 
-    # Consider adding a pre_save signal or overriding save() to generate cr_id if it's system-generated.
     def save(self, *args, **kwargs):
         if not self.cr_id:
             self.cr_id = ProcurementIDSequence.get_next_id("CR")
         super().save(*args, **kwargs)
 
-
-# New Models for Advanced Workflow & Approval Automation
-
 class ApprovalRule(models.Model):
-    """
-    Defines a rule for an approval workflow.
-
-    Each rule specifies conditions (e.g., IOM amount, department, project)
-    and an approver (a specific user or a group). Rules are ordered to create
-    sequential approval chains.
-    """
     name = models.CharField(_("Rule Name"), max_length=255, help_text="Descriptive name for the rule, e.g., 'Dept Head Approval for > $1000'.")
     order = models.PositiveIntegerField(
         _("Order/Sequence"),
         default=10,
         help_text="The order in which this rule/step should be evaluated or applied. Lower numbers come first."
     )
+
+    RULE_TYPE_CHOICES = [
+        ('procurement_memo', _('Procurement Memo (Purchase Request IOM)')),
+        ('generic_iom', _('Generic IOM')),
+    ]
+    rule_type = models.CharField(
+        _("Rule Type"),
+        max_length=20,
+        choices=RULE_TYPE_CHOICES,
+        default='procurement_memo',
+        help_text=_("Specify if this rule applies to Procurement Memos or Generic IOMs.")
+    )
+
+    # Fields for 'procurement_memo' type
     min_amount = models.DecimalField(
-        _("Minimum Amount"),
+        _("Minimum Amount (for Procurement Memo)"),
         max_digits=12, decimal_places=2,
         null=True, blank=True,
-        help_text="Minimum IOM estimated cost for this rule to apply. Leave blank if no minimum."
+        help_text="Minimum IOM estimated cost for this rule to apply. Relevant if type is 'Procurement Memo'."
     )
     max_amount = models.DecimalField(
-        _("Maximum Amount"),
+        _("Maximum Amount (for Procurement Memo)"),
         max_digits=12, decimal_places=2,
         null=True, blank=True,
-        help_text="Maximum IOM estimated cost for this rule to apply. Leave blank if no maximum."
+        help_text="Maximum IOM estimated cost for this rule to apply. Relevant if type is 'Procurement Memo'."
     )
-    applies_to_all_departments = models.BooleanField(_("Applies to All Departments"), default=True)
+    applies_to_all_departments = models.BooleanField(_("Applies to All Departments (for Procurement Memo)"), default=True)
     departments = models.ManyToManyField(
         Department,
         blank=True,
-        verbose_name=_("Specific Departments"),
-        help_text="If 'Applies to All Departments' is unchecked, select applicable departments."
+        verbose_name=_("Specific Departments (for Procurement Memo)"),
+        help_text="If 'Applies to All Departments' is unchecked, select applicable departments. Relevant if type is 'Procurement Memo'."
     )
-    applies_to_all_projects = models.BooleanField(_("Applies to All Projects"), default=True)
+    applies_to_all_projects = models.BooleanField(_("Applies to All Projects (for Procurement Memo)"), default=True)
     projects = models.ManyToManyField(
         Project,
         blank=True,
-        verbose_name=_("Specific Projects"),
-        help_text="If 'Applies to All Projects' is unchecked, select applicable projects."
+        verbose_name=_("Specific Projects (for Procurement Memo)"),
+        help_text="If 'Applies to All Projects' is unchecked, select applicable projects. Relevant if type is 'Procurement Memo'."
     )
+
+    # Fields for 'generic_iom' type
+    # Using string references for models in 'generic_iom' app to avoid direct import issues at model loading time.
+    applicable_iom_templates = models.ManyToManyField(
+        'generic_iom.IOMTemplate',
+        blank=True,
+        verbose_name=_("Applicable Specific IOM Templates (for Generic IOM)"),
+        help_text="If Rule Type is 'Generic IOM', select specific templates this rule applies to. Leave blank if applying via category."
+    )
+    applicable_iom_categories = models.ManyToManyField(
+        'generic_iom.IOMCategory',
+        blank=True,
+        verbose_name=_("Applicable IOM Categories (for Generic IOM)"),
+        help_text="If Rule Type is 'Generic IOM', select categories this rule applies to."
+    )
+    # Future: json_path_condition, expected_value_condition for data_payload in GenericIOM
+
     approver_user = models.ForeignKey(
         User,
         on_delete=models.SET_NULL,
@@ -548,7 +502,7 @@ class ApprovalRule(models.Model):
         verbose_name=_("Specific Approver User")
     )
     approver_group = models.ForeignKey(
-        'auth.Group',  # Use string to avoid circular import if Group model is not yet loaded
+        'auth.Group',
         on_delete=models.SET_NULL,
         null=True, blank=True,
         related_name='approval_rules_group',
@@ -568,7 +522,7 @@ class ApprovalRule(models.Model):
         ordering = ['order', 'name']
 
     def __str__(self):
-        return f"{self.name} (Order: {self.order})"
+        return f"{self.name} (Order: {self.order}, Type: {self.get_rule_type_display()})"
 
     def clean(self):
         from django.core.exceptions import ValidationError
@@ -576,7 +530,7 @@ class ApprovalRule(models.Model):
             raise ValidationError(_("An approval rule cannot have both a specific approver user and an approver group. Please choose one."))
         if not self.approver_user and not self.approver_group:
             raise ValidationError(_("An approval rule must specify either an approver user or an approver group."))
-
+        # Add more validation, e.g. if rule_type is 'procurement_memo', then generic_iom fields should be blank, and vice-versa.
 
 class ApprovalStep(models.Model):
     STATUS_CHOICES = [
@@ -584,18 +538,24 @@ class ApprovalStep(models.Model):
         ('approved', _('Approved')),
         ('rejected', _('Rejected')),
         ('skipped', _('Skipped')),
-        ('delegated', _('Delegated')), # Future use: Step has been delegated to another user.
+        ('delegated', _('Delegated')),
     ]
-    purchase_request_memo = models.ForeignKey(
-        PurchaseRequestMemo,
+
+    # Replaces: purchase_request_memo = models.ForeignKey(PurchaseRequestMemo, ...)
+    content_type = models.ForeignKey(
+        ContentType,
         on_delete=models.CASCADE,
-        related_name='approval_steps',
-        verbose_name=_("Purchase Request Memo (IOM)")
+        verbose_name=_("Content Type of the item being approved (e.g., PurchaseRequestMemo or GenericIOM)")
     )
+    object_id = models.PositiveIntegerField(
+        verbose_name=_("Object ID of the item being approved")
+    )
+    content_object = GenericForeignKey('content_type', 'object_id')
+
     approval_rule = models.ForeignKey(
         ApprovalRule,
-        on_delete=models.SET_NULL, # Keep the step even if rule is deleted, for history
-        null=True, blank=True, # Blank=True allows setting it to None if rule is deleted
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
         verbose_name=_("Originating Approval Rule")
     )
     rule_name_snapshot = models.CharField(_("Rule Name (Snapshot)"), max_length=255, blank=True, help_text="Snapshot of the rule name at time of step creation.")
@@ -620,7 +580,7 @@ class ApprovalStep(models.Model):
         choices=STATUS_CHOICES,
         default='pending'
     )
-    approved_by = models.ForeignKey(
+    approved_by = models.ForeignKey( # This field name might be confusing now, maybe 'actioned_by'?
         User,
         on_delete=models.SET_NULL,
         null=True, blank=True,
@@ -635,30 +595,33 @@ class ApprovalStep(models.Model):
     class Meta:
         verbose_name = _("Approval Step")
         verbose_name_plural = _("Approval Steps")
-        ordering = ['purchase_request_memo', 'step_order', 'created_at']
-        # Unique constraint to prevent duplicate steps for the same IOM and order/rule if re-triggering logic is not careful
-        # unique_together = ('purchase_request_memo', 'approval_rule', 'step_order') # Reconsider if rule can be null
+        # Original ordering: ['purchase_request_memo', 'step_order', 'created_at']
+        # Need to order by GFK components if possible, or just step_order and created_at within an object.
+        # Django doesn't directly support ordering by GenericForeignKey.
+        # We can order by content_type_id, object_id, then step_order.
+        ordering = ['content_type', 'object_id', 'step_order', 'created_at']
+        # unique_together might need reconsideration or a custom validation if we want to ensure
+        # unique step per rule for a given content_object.
+        # unique_together = ('content_type', 'object_id', 'approval_rule', 'step_order') # If rule can't be null
 
     def __str__(self):
-        return f"Step for IOM {self.purchase_request_memo.iom_id if self.purchase_request_memo else 'N/A'} - Order {self.step_order} - Status: {self.get_status_display()}"
+        obj_display = "N/A"
+        if self.content_object:
+            if hasattr(self.content_object, 'iom_id') and self.content_object.iom_id:
+                obj_display = f"PRM {self.content_object.iom_id}"
+            elif hasattr(self.content_object, 'gim_id') and self.content_object.gim_id:
+                obj_display = f"GIM {self.content_object.gim_id}"
+            else:
+                obj_display = f"{self.content_type.model.capitalize()} ID {self.object_id}"
+        return f"Step for {obj_display} - Order {self.step_order} - Status: {self.get_status_display()}"
 
     def save(self, *args, **kwargs):
         if self.approval_rule and not self.rule_name_snapshot:
-            # Store the original rule name in case the rule itself is modified or deleted later.
             self.rule_name_snapshot = self.approval_rule.name
         super().save(*args, **kwargs)
 
-
 class ApprovalDelegation(models.Model):
-    """
-    Allows a user (delegator) to delegate their approval responsibilities
-    to another user (delegatee) for a specified period.
-
-    Note: The logic to automatically apply these delegations (e.g., by re-assigning
-    ApprovalSteps) is not yet implemented in the workflow. This model serves as a
-    foundation for that future enhancement. The `get_active_delegate` static method
-    can be used as a helper for such logic.
-    """
+    # ... (No changes to ApprovalDelegation model itself) ...
     delegator = models.ForeignKey(
         User,
         on_delete=models.CASCADE,
@@ -699,18 +662,12 @@ class ApprovalDelegation(models.Model):
 
     @staticmethod
     def get_active_delegate(user, date_check=None):
-        """
-        Checks if a given user has an active delegation for the given date (or now if None).
-        Returns the delegatee user if an active delegation exists, otherwise None.
-        """
         if date_check is None:
             date_check = timezone.now()
-
         delegation = ApprovalDelegation.objects.filter(
             delegator=user,
             start_date__lte=date_check,
             end_date__gte=date_check,
             is_active=True
-        ).order_by('-start_date').first() # Get the most recent active delegation
-
+        ).order_by('-start_date').first()
         return delegation.delegatee if delegation else None

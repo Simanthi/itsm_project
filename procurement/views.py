@@ -207,10 +207,26 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
         step.comments = comments
         step.save()
 
-        # Check if this approval completes the IOM
-        iom = step.purchase_request_memo
-        pending_steps = iom.approval_steps.filter(status='pending').exists()
-        rejected_steps = iom.approval_steps.filter(status='rejected').exists() # Should not happen if one rejection fails the IOM
+        # Check if this approval completes the IOM (now generic)
+        parent_iom = step.content_object
+
+        # Need to get the related manager for approval_steps based on the GFK
+        # This assumes 'approval_steps_gfk' is how you'd query from the parent_iom side.
+        # This related name needs to be set up on the ApprovalStep's GFK or handled via ContentType.
+        # For now, let's query ApprovalStep directly.
+        from django.contrib.contenttypes.models import ContentType
+        parent_content_type = ContentType.objects.get_for_model(parent_iom)
+
+        pending_steps = ApprovalStep.objects.filter(
+            content_type=parent_content_type,
+            object_id=parent_iom.pk,
+            status='pending'
+        ).exists()
+        rejected_steps = ApprovalStep.objects.filter(
+            content_type=parent_content_type,
+            object_id=parent_iom.pk,
+            status='rejected'
+        ).exists()
 
         if not pending_steps and not rejected_steps:
             # All steps are now actioned (approved or skipped), and none are rejected.

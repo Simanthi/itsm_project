@@ -3,10 +3,15 @@ from .models import (
     PurchaseRequestMemo, PurchaseOrder, OrderItem, CheckRequest,
     Department, Project, Contract, GLAccount, ExpenseCategory, RecurringPayment,
     ProcurementIDSequence, # Import the new sequence model
-    ApprovalRule, ApprovalStep, ApprovalDelegation # Import new approval models
+    ApprovalRule, ApprovalStep, ApprovalDelegation
 )
+# Make sure IOMTemplate and IOMCategory are imported if used directly in fieldsets/filters
+# from generic_iom.models import IOMTemplate, IOMCategory # Not directly used in fields here yet
 from simple_history.admin import SimpleHistoryAdmin
 from django.utils.translation import gettext_lazy as _
+from django.contrib.contenttypes.admin import GenericTabularInline # For GFK inlines
+from django.urls import reverse
+from django.utils.html import format_html
 
 # Admin configuration for ProcurementIDSequence
 @admin.register(ProcurementIDSequence)
