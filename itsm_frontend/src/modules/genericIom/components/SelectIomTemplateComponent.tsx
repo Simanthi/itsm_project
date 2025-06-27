@@ -20,7 +20,7 @@ import CategoryIcon from '@mui/icons-material/Category'; // For categories
 import SearchIcon from '@mui/icons-material/Search';
 import ExpandLess from '@mui/icons-material/ExpandLess';
 import ExpandMore from '@mui/icons-material/ExpandMore';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocation
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -34,7 +34,11 @@ interface GroupedTemplates {
 const SelectIomTemplateComponent: React.FC = () => {
   const { authenticatedFetch } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation(); // Get location to access state
   const { showSnackbar } = useUI();
+
+  // Extract assetContext from location state if present
+  const assetContext = location.state?.assetContext;
 
   const [templates, setTemplates] = useState<IOMTemplate[]>([]);
   const [groupedTemplates, setGroupedTemplates] = useState<GroupedTemplates>({});
@@ -84,9 +88,11 @@ const SelectIomTemplateComponent: React.FC = () => {
     const purchaseRequestMemoTemplateName = "Purchase Request Memo";
 
     if (template.name === purchaseRequestMemoTemplateName) {
-      navigate('/procurement/iom/new');
+      // If PRM template, navigate to its specific form, potentially carrying context if that form can use it
+      navigate('/procurement/iom/new', { state: { assetContext } }); // Pass context along
     } else {
-      navigate(`/ioms/new/${template.id}`);
+      // For generic IOMs, navigate to the generic form, passing templateId and any context
+      navigate(`/ioms/new/${template.id}`, { state: { assetContext } });
     }
   };
 
