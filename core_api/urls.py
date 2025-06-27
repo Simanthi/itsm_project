@@ -5,4 +5,5 @@ from . import views
 
 urlpatterns = [
     path("hello/", views.hello_world, name="hello_world"),
+    path("contenttypes/get-id/", views.ContentTypeLookupView.as_view(), name="contenttype-get-id"),
 ]
