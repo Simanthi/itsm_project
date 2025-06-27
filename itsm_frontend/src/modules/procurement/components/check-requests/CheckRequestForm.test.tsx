@@ -147,7 +147,45 @@ describe('CheckRequestForm', () => {
     const user = userEvent.setup();
 
     const mockPurchaseOrders: PurchaseOrder[] = [
-      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: 1000, status: 'approved', order_date: '2024-01-01', currency: 'USD' },
+      {
+        id: 1,
+        po_number: 'PO-001',
+        vendor: 1,
+        vendor_details: { id: 1, name: 'Test Vendor PO' },
+        total_amount: 1000,
+        status: 'approved',
+        order_date: '2024-01-01',
+        currency: 'USD',
+        created_by: 1,
+        created_by_username: 'testuser',
+        created_at: '2024-01-01T10:00:00Z',
+        updated_at: '2024-01-01T10:00:00Z',
+        order_items: [
+          {
+            id: 101,
+            item_description: 'Test Item 1',
+            quantity: 2,
+            unit_price: 500,
+            total_price: 1000,
+            gl_account_code: '6000',
+            received_quantity: 0,
+            line_item_status: 'pending',
+          }
+        ],
+        // Add other optional fields from PurchaseOrder with null or default if not relevant to this test
+        internal_office_memo: null,
+        expected_delivery_date: null,
+        shipping_address: null,
+        notes: null,
+        payment_terms: null,
+        shipping_method: null,
+        billing_address: null,
+        po_type: null,
+        related_contract: null,
+        related_contract_details: null,
+        attachments: null,
+        revision_number: 0,
+      },
     ];
     const mockExpenseCategories: ExpenseCategory[] = [
       { id: 1, name: 'Office Supplies' },
@@ -274,7 +312,45 @@ describe('CheckRequestForm', () => {
   it('shows an error if required fields are missing on submit (e.g. for 400 bad request)', async () => {
     const user = userEvent.setup();
     const mockPurchaseOrders: PurchaseOrder[] = [
-      { id: 1, po_number: 'PO-001', vendor: 1, vendor_details: { id: 1, name: 'Test Vendor PO' }, total_amount: 1000, status: 'approved', order_date: '2024-01-01', currency: 'USD' },
+      {
+        id: 1,
+        po_number: 'PO-001',
+        vendor: 1,
+        vendor_details: { id: 1, name: 'Test Vendor PO' },
+        total_amount: 1000,
+        status: 'approved',
+        order_date: '2024-01-01',
+        currency: 'USD',
+        created_by: 1,
+        created_by_username: 'testuser',
+        created_at: '2024-01-01T10:00:00Z',
+        updated_at: '2024-01-01T10:00:00Z',
+        order_items: [
+          {
+            id: 101,
+            item_description: 'Test Item 1',
+            quantity: 2,
+            unit_price: 500,
+            total_price: 1000,
+            gl_account_code: '6000',
+            received_quantity: 0,
+            line_item_status: 'pending',
+          }
+        ],
+        // Add other optional fields from PurchaseOrder with null or default if not relevant to this test
+        internal_office_memo: null,
+        expected_delivery_date: null,
+        shipping_address: null,
+        notes: null,
+        payment_terms: null,
+        shipping_method: null,
+        billing_address: null,
+        po_type: null,
+        related_contract: null,
+        related_contract_details: null,
+        attachments: null,
+        revision_number: 0,
+      },
     ];
     const mockExpenseCategories: ExpenseCategory[] = [
       { id: 1, name: 'Office Supplies' },
@@ -285,7 +361,7 @@ describe('CheckRequestForm', () => {
 
     // Ensure createCheckRequest doesn't use a blanket mockResolvedValue from other tests.
     // It should proceed to authenticatedFetch to be caught by MSW.
-    vi.mocked(procurementApi.createCheckRequest).mockImplementation(async (payload, formData) => {
+    vi.mocked(procurementApi.createCheckRequest).mockImplementation(async (_payload, formData) => { // Marked payload as unused
       console.log('[Test Spy] procurementApi.createCheckRequest called in failure test, attempting actual fetch for MSW interception.');
       const { authenticatedFetch } = useAuthHook.useAuth();
       return authenticatedFetch('/api/procurement/check-requests/', { method: 'POST', body: formData });
