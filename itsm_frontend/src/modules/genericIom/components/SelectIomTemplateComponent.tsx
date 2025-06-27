@@ -79,8 +79,15 @@ const SelectIomTemplateComponent: React.FC = () => {
     fetchAndGroupTemplates();
   }, [fetchAndGroupTemplates]);
 
-  const handleTemplateSelect = (templateId: number) => {
-    navigate(`/ioms/new/${templateId}`);
+  const handleTemplateSelect = (template: IOMTemplate) => {
+    // Standard name for the special Purchase Request Memo template
+    const purchaseRequestMemoTemplateName = "Purchase Request Memo";
+
+    if (template.name === purchaseRequestMemoTemplateName) {
+      navigate('/procurement/iom/new');
+    } else {
+      navigate(`/ioms/new/${template.id}`);
+    }
   };
 
   const handleSearchChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -156,7 +163,7 @@ const SelectIomTemplateComponent: React.FC = () => {
                 {filteredGroupedTemplates[categoryName].map((template) => (
                   <ListItemButton
                     key={template.id}
-                    onClick={() => handleTemplateSelect(template.id)}
+                    onClick={() => handleTemplateSelect(template)} // Pass the whole template object
                     sx={{borderBottom: '1px solid #eee', '&:last-child': { borderBottom: 0}}}
                   >
                     <ListItemIcon>
