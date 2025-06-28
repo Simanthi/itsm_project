@@ -1,4 +1,4 @@
-from django.db.models.signals import post_save
+from django.db.models.signals import post_save, pre_save # Import pre_save
 from django.dispatch import receiver
 from django.contrib.auth.models import User, Group # Assuming User is from auth.User
 from django.urls import reverse # For generating URLs to IOMs
@@ -138,7 +138,7 @@ def handle_generic_iom_saved(sender, instance: GenericIOM, created, **kwargs):
             send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, recipients) # Corrected call
 
 # To get previous status for GenericIOM
-@receiver(models.signals.pre_save, sender=GenericIOM)
+@receiver(pre_save, sender=GenericIOM) # Use imported pre_save
 def store_previous_generic_iom_status(sender, instance, **kwargs):
     if instance.pk:
         try:
