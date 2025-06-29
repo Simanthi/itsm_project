@@ -68,7 +68,7 @@ describe('PurchaseOrderForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
+      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] },
       // Ensure this uses the global window.fetch that MSW can intercept
       authenticatedFetch: vi.fn(async (url, options?: RequestInit) => { // Added RequestInit type for options
         console.log(`[TEST MOCK authFetch] Calling URL: ${url} with options:`, options);
