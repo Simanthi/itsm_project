@@ -21,7 +21,7 @@ import { useUI } from '../../../context/UIContext/useUI';
 import { getIomTemplateById } from '../../../api/genericIomApi';
 import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi';
 import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
-import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
+import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
 import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
 import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer'; // FormFieldValue to type-only import
 
