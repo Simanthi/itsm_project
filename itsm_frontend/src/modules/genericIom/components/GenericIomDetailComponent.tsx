@@ -230,7 +230,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const isSimpleApprover = iom.iom_template_details?.approval_type === 'simple' &&
                          (iom.iom_template_details?.simple_approval_user === user?.id ||
                           (user?.groups && iom.iom_template_details?.simple_approval_group &&
-                           user.groups.some(g => g.id === iom.iom_template_details?.simple_approval_group))); // Removed 'as any' and explicit type for g
+                           user.groups.some(g => Number(g) === iom.iom_template_details?.simple_approval_group)));
 
   const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && isSimpleApprover;
 
