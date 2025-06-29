@@ -36,6 +36,7 @@ module.exports = {
     'no-restricted-globals': ['error', 'name', 'length'], // Example: disallow 'name' and 'length' as global variables
     'prefer-const': 'warn', // Suggest using const
     'no-console': 'warn', // Warn about console.log statements
+    '@typescript-eslint/object-curly-spacing': 'off',
   },
   ignorePatterns: ['node_modules/', 'build/', 'dist/', 'public/'], // Directories to ignore
 };
