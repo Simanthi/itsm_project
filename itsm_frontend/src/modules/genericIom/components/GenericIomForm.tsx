@@ -21,13 +21,9 @@ import { useUI } from '../../../context/UIContext/useUI';
 import { getIomTemplateById } from '../../../api/genericIomApi';
 import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi';
 import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
-import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
-import type { GenericIOM, GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes';
-import DynamicIomFormFieldRenderer from './DynamicIomFormFieldRenderer'; // The dynamic renderer
-
-interface GenericIomFormProps {
-  // Props can be used if this form is embedded, but using useParams for page-level form
-}
+import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
+import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
+import DynamicIomFormFieldRenderer, { FormFieldValue } from './DynamicIomFormFieldRenderer'; // The dynamic renderer, FormFieldValue imported
 
 // Define the type for assetContext prop
 interface AssetContextType {
@@ -49,7 +45,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
   const { showSnackbar } = useUI();
 
   const [iomTemplate, setIomTemplate] = useState<IOMTemplate | null>(null);
-  const [initialDataPayload, setInitialDataPayload] = useState<IomDataPayload>({});
+  // const [initialDataPayload, setInitialDataPayload] = useState<IomDataPayload>({}); // Removed unused state
 
   // Form state for standard fields
   const [subject, setSubject] = useState<string>('');
@@ -65,6 +61,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false); // This will be set by iomIdParam
   const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Added isSubmitting state
 
   // Determine mode and IDs from URL params
   const currentIomId = iomIdParam ? parseInt(iomIdParam, 10) : null;
@@ -110,7 +107,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         setIsEditMode(false);
         const fetchedTemplate = await getIomTemplateById(authenticatedFetch, currentTemplateIdForCreate);
         setIomTemplate(fetchedTemplate);
-        let initialPayload: IomDataPayload = {};
+        const initialPayload: IomDataPayload = {}; // Changed let to const
         fetchedTemplate.fields_definition.forEach(field => {
           if (field.defaultValue !== undefined) {
             initialPayload[field.name] = field.defaultValue;
@@ -152,7 +149,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     loadData();
   }, [loadData]);
 
-  const handleDynamicFieldChange = (fieldName: string, value: any) => {
+  const handleDynamicFieldChange = (fieldName: string, value: FormFieldValue) => { // Changed value type to FormFieldValue
     setDynamicFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
@@ -175,8 +172,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     setError(null);
 
     const commonPayload = {
-        subject,
-        subject,
+        subject, // Removed duplicate subject
         data_payload: dynamicFormData,
         to_users: toUsersStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
         to_groups: toGroupsStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),

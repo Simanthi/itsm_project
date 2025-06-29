@@ -30,6 +30,9 @@ import type {
   RecurringPaymentForDropdown,
   // Vendor is typically handled by assetApi, but if a specific dropdown type is needed:
   // VendorForDropdown
+  GetApprovalStepsParams,
+  ApprovalStep,
+  ApprovalActionPayload,
 } from '../modules/procurement/types/procurementTypes';
 
 

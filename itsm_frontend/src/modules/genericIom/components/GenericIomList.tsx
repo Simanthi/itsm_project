@@ -15,7 +15,7 @@ import {
   Tooltip,
   TablePagination,
   CircularProgress,
-  Alert,
+  // Alert, // Removed unused import
   TextField, // For filtering
   MenuItem,
   Select,
@@ -66,11 +66,11 @@ const statusOptions: GenericIomStatus[] = ['draft', 'pending_approval', 'approve
 
 const GenericIomListComponent: React.FC = () => {
   const { authenticatedFetch, user } = useAuth();
-  const { showSnackbar } = useUI(); // showConfirmDialog if delete is added
+  const { showSnackbar, showConfirmDialog } = useUI(); // Added showConfirmDialog
 
   const [ioms, setIoms] = useState<GenericIOM[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // Removed error state
 
   const [totalIoms, setTotalIoms] = useState<number>(0);
   const [page, setPage] = useState<number>(0);
@@ -90,7 +90,7 @@ const GenericIomListComponent: React.FC = () => {
   const fetchIoms = useCallback(async () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
-    setError(null);
+    // setError(null); // Removed as error state is removed
 
     const params: GetGenericIomsParams = {
       page: page + 1,
@@ -118,12 +118,12 @@ const GenericIomListComponent: React.FC = () => {
       setTotalIoms(response.count);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      setError(message || 'Failed to fetch IOMs.');
+      // setError(message || 'Failed to fetch IOMs.'); // Removed
       showSnackbar(`Error fetching IOMs: ${message}`, 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showSnackbar]);
+  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showArchived, showSnackbar]); // Added showArchived
 
   const fetchTemplatesForFilterDropdown = useCallback(async () => {
     if(!authenticatedFetch) return;
