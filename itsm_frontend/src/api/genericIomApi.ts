@@ -225,3 +225,25 @@ export const publishGenericIom = async (
     // No body needed for a simple publish action unless API expects one
   })) as GenericIOM;
 };
+
+export const archiveGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/archive/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    // No body usually needed for archive action unless comments are supported
+  })) as GenericIOM;
+};
+
+export const unarchiveGenericIom = async (
+  authenticatedFetch: AuthenticatedFetch,
+  iomId: number
+): Promise<GenericIOM> => {
+  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/unarchive/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    // No body usually needed for unarchive action
+  })) as GenericIOM;
+};

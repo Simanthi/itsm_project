@@ -22,16 +22,20 @@ import {
   FormControl,
   InputLabel,
   Grid,
+  FormControlLabel, // For Show Archived Checkbox
+  Checkbox, // For Show Archived Checkbox
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material';
 import VisibilityIcon from '@mui/icons-material/Visibility';
 import EditIcon from '@mui/icons-material/Edit';
+import ArchiveIcon from '@mui/icons-material/Archive';
+import UnarchiveIcon from '@mui/icons-material/Unarchive';
 // import DeleteIcon from '@mui/icons-material/Delete'; // Optional: if delete action is added
 import { Link as RouterLink } from 'react-router-dom';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
-import { getGenericIoms, getIomTemplates } from '../../../api/genericIomApi';
+import { getGenericIoms, getIomTemplates, archiveGenericIom, unarchiveGenericIom } from '../../../api/genericIomApi'; // Added archive/unarchive
 import type { GenericIOM, GetGenericIomsParams, GenericIomStatus } from '../types/genericIomTypes';
 import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
@@ -78,8 +82,9 @@ const GenericIomListComponent: React.FC = () => {
   // Filters
   const [templatesForFilter, setTemplatesForFilter] = useState<IOMTemplate[]>([]);
   const [filterSubject, setFilterSubject] = useState<string>('');
-  const [filterStatus, setFilterStatus] = useState<GenericIomStatus | ''>('');
+  const [filterStatus, setFilterStatus] = useState<GenericIomStatus | ''>(''); // Explicitly '' for "All non-archived"
   const [filterTemplateId, setFilterTemplateId] = useState<string>('');
+  const [showArchived, setShowArchived] = useState<boolean>(false);
 
 
   const fetchIoms = useCallback(async () => {
@@ -91,10 +96,21 @@ const GenericIomListComponent: React.FC = () => {
       page: page + 1,
       pageSize: rowsPerPage,
       ordering: `${order === 'desc' ? '-' : ''}${orderBy}`,
-      search: filterSubject || undefined, // Backend search for subject/gim_id/etc.
-      status: filterStatus || undefined,
+      search: filterSubject || undefined,
       iom_template_id: filterTemplateId ? parseInt(filterTemplateId) : undefined,
+      // Adjust status filter based on showArchived
+      // If showArchived is true, and no specific status is selected, we might want all (including archived)
+      // or specifically only archived. For now, if filterStatus is set, it takes precedence.
+      // If filterStatus is empty, and showArchived is true, we fetch 'archived'.
+      // If filterStatus is empty, and showArchived is false, we fetch 'all_except_archived'.
     };
+
+    if (filterStatus) {
+      params.status = filterStatus;
+    } else {
+      params.status = showArchived ? 'archived' : 'all_except_archived'; // Custom backend filter value
+    }
+
 
     try {
       const response = await getGenericIoms(authenticatedFetch, params);
@@ -158,14 +174,38 @@ const GenericIomListComponent: React.FC = () => {
     }
   };
 
-  // TODO: Add handleDelete if needed, similar to IomTemplateList
+  // TODO: Add handleDelete if needed
+
+  const handleArchiveToggle = async (iomToToggle: GenericIOM) => {
+    if (!authenticatedFetch) return;
+    const action = iomToToggle.status === 'archived' ? unarchiveGenericIom : archiveGenericIom;
+    const actionName = iomToToggle.status === 'archived' ? 'unarchived' : 'archived';
+    const successMessage = `IOM "${iomToToggle.subject}" ${actionName} successfully.`;
+    const errorMessage = `Failed to ${actionName} IOM "${iomToToggle.subject}".`;
+
+    showConfirmDialog(
+        `Confirm ${actionName.charAt(0).toUpperCase() + actionName.slice(1)}`,
+        `Are you sure you want to ${actionName} the IOM "${iomToToggle.subject}"?`,
+        async () => {
+            try {
+                await action(authenticatedFetch, iomToToggle.id);
+                showSnackbar(successMessage, 'success');
+                fetchIoms(); // Refresh list
+            } catch (err) {
+                const message = err instanceof Error ? err.message : String(err);
+                showSnackbar(`${errorMessage} ${message}`, 'error');
+            }
+        }
+    );
+  };
+
 
   return (
     <Paper sx={{ width: '100%', mb: 2 }} elevation={2}>
       <Box sx={{ p: 2 }}>
         <Typography variant="h6" gutterBottom>Filter IOMs</Typography>
-        <Grid container spacing={2} alignItems="center">
-          <Grid item xs={12} sm={4}>
+        <Grid container spacing={2} alignItems="flex-end"> {/* Changed to flex-end for button alignment */}
+          <Grid item xs={12} sm={3}>
             <TextField
               fullWidth
               label="Search by Subject/ID"
@@ -175,21 +215,28 @@ const GenericIomListComponent: React.FC = () => {
               size="small"
             />
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <FormControl fullWidth size="small">
               <InputLabel id="status-filter-label">Status</InputLabel>
               <Select
                 labelId="status-filter-label"
-                value={filterStatus}
+                value={showArchived && !filterStatus ? 'archived' : filterStatus} // Reflect 'archived' if showArchived is true and no other status selected
                 label="Status"
-                onChange={(e: SelectChangeEvent<GenericIomStatus | ''>) => setFilterStatus(e.target.value as GenericIomStatus | '')}
+                onChange={(e: SelectChangeEvent<GenericIomStatus | ''>) => {
+                    const newStatus = e.target.value as GenericIomStatus | '';
+                    setFilterStatus(newStatus);
+                    // If a specific status is chosen, 'showArchived' might become irrelevant or sync with it
+                    if (newStatus === 'archived') setShowArchived(true);
+                    else if (newStatus !== '') setShowArchived(false);
+                }}
               >
-                <MenuItem value=""><em>All Statuses</em></MenuItem>
-                {statusOptions.map(s => <MenuItem key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</MenuItem>)}
+                <MenuItem value=""><em>All Active</em></MenuItem> {/* Default to non-archived */}
+                {statusOptions.filter(s => s !== 'archived').map(s => <MenuItem key={s} value={s}>{s.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase())}</MenuItem>)}
+                <MenuItem value="archived">Archived</MenuItem>
               </Select>
             </FormControl>
           </Grid>
-          <Grid item xs={12} sm={4}>
+          <Grid item xs={12} sm={3}>
             <FormControl fullWidth size="small">
               <InputLabel id="template-filter-label">Template</InputLabel>
               <Select
@@ -203,7 +250,25 @@ const GenericIomListComponent: React.FC = () => {
               </Select>
             </FormControl>
           </Grid>
-          {/* Button to apply filters or auto-apply on change (currently auto-applies via useEffect dependency on fetchIoms) */}
+          <Grid item xs={12} sm={3} sx={{ display: 'flex', alignItems: 'center' }}>
+            <FormControlLabel
+                control={
+                <Checkbox
+                    checked={showArchived}
+                    onChange={(e) => {
+                        setShowArchived(e.target.checked);
+                        if (e.target.checked) { // If showing archived, clear specific status unless it's 'archived'
+                            if(filterStatus !== 'archived') setFilterStatus('');
+                        } else { // If hiding archived, ensure status filter isn't 'archived'
+                            if(filterStatus === 'archived') setFilterStatus('');
+                        }
+                    }}
+                    name="showArchived"
+                />
+                }
+                label="Show Archived"
+            />
+          </Grid>
         </Grid>
       </Box>
       <TableContainer>
@@ -265,7 +330,22 @@ const GenericIomListComponent: React.FC = () => {
                         </IconButton>
                       </Tooltip>
                     ) : null}
-                    {/* TODO: Add other actions like Publish, Submit for Approval, etc. based on status and permissions */}
+                    {/* Archive/Unarchive Button */}
+                    {iom.status !== 'archived' &&
+                     (iom.status === 'published' || iom.status === 'cancelled' || iom.status === 'rejected' || iom.status === 'approved' || user?.is_staff) && ( // Archivable states
+                      <Tooltip title="Archive IOM">
+                        <IconButton onClick={() => handleArchiveToggle(iom)} size="small" color="warning">
+                          <ArchiveIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
+                    {iom.status === 'archived' && (user?.is_staff || iom.created_by === user?.id) && ( // Unarchivable by owner or staff
+                      <Tooltip title="Unarchive IOM">
+                        <IconButton onClick={() => handleArchiveToggle(iom)} size="small" color="info">
+                          <UnarchiveIcon />
+                        </IconButton>
+                      </Tooltip>
+                    )}
                   </TableCell>
                 </TableRow>
               ))
