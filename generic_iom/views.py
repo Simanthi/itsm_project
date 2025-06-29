@@ -3,8 +3,9 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAuthenticated # IsAdminUser is used by IsTemplateAdmin
 from django.utils import timezone
-from django.db.models import Q # Added for Pylance issue
-from rest_framework import serializers # Added for Pylance issue (serializers.ValidationError)
+from django.db.models import Q
+from rest_framework import serializers
+from rest_framework.filters import SearchFilter, OrderingFilter # Import SearchFilter
 # from django.db import transaction # Not explicitly used here yet
 
 from .models import IOMCategory, IOMTemplate, GenericIOM
@@ -74,6 +75,15 @@ class GenericIOMViewSet(viewsets.ModelViewSet):
         'parent_content_type', 'simple_approver_action_by'
     ).prefetch_related('to_users', 'to_groups').order_by('-created_at')
     serializer_class = GenericIOMSerializer
+    filter_backends = [SearchFilter, OrderingFilter] # Add SearchFilter and OrderingFilter
+    search_fields = [
+        'gim_id',
+        'subject',
+        'created_by__username',
+        'iom_template__name',
+        'data_payload' # For basic text search within JSONField (behavior is DB dependent)
+    ]
+    ordering_fields = ['gim_id', 'subject', 'iom_template__name', 'status', 'created_by__username', 'created_at', 'published_at']
 
     def get_permissions(self):
         if self.action == 'create':
