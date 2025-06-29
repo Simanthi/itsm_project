@@ -20,6 +20,7 @@ from generic_iom.models import IOMTemplate, IOMCategory
 # If IOMTemplateSerializer and IOMCategorySerializer are needed for nesting, import them:
 # from generic_iom.serializers import IOMTemplateSerializer, IOMCategorySerializer # Causes circular import
 # For M2M fields, usually PrimaryKeyRelatedField is sufficient for write, StringRelatedField for read.
+from generic_iom.models import GenericIOM # Added import for GenericIOM
 
 User = get_user_model()
 

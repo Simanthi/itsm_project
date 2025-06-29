@@ -15,7 +15,7 @@ import {
   Tooltip,
   TablePagination,
   CircularProgress,
-  Alert,
+  // Alert, // Unused import
   TextField, // For filtering
   MenuItem,
   Select,
@@ -70,7 +70,7 @@ const GenericIomListComponent: React.FC = () => {
 
   const [ioms, setIoms] = useState<GenericIOM[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
+  // const [error, setError] = useState<string | null>(null); // Unused state variable
 
   const [totalIoms, setTotalIoms] = useState<number>(0);
   const [page, setPage] = useState<number>(0);
