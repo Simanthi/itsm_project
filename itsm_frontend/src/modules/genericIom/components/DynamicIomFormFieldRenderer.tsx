@@ -10,11 +10,13 @@ import {
   FormHelperText,
   Box,
   Typography,
-  ListItemText,
-  InputAdornment
+
+  ListItemText, // Added import
+  InputAdornment, // Added import
+
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'; // Or your preferred date adapter
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
@@ -28,6 +30,7 @@ interface DynamicFormFieldProps {
   error?: string | null; // For displaying field-specific errors from parent form
 }
 
+// eslint-disable-next-line react/prop-types
 const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
   field,
   value,
@@ -71,12 +74,15 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
         />
       );
     case 'text_area':
+      const rows = typeof field.attributes?.rows === 'number' ? field.attributes.rows : 4;
       return (
         <TextField
           {...commonProps}
           type="text"
           multiline
+
           rows={typeof field.attributes?.rows === 'number' ? field.attributes.rows : 4}
+
           value={value || field.defaultValue || ''}
           placeholder={field.placeholder}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -95,11 +101,14 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
         />
       );
     case 'date':
+      const isValidDateValue = (val: any) => val && !isNaN(new Date(val).getTime());
       return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DatePicker
             label={field.label}
+
             value={(value && (typeof value === 'string' || typeof value === 'number')) ? new Date(value) : (field.defaultValue && (typeof field.defaultValue === 'string' || typeof field.defaultValue === 'number') ? new Date(field.defaultValue) : null)}
+
             onChange={handleDateChange}
             disabled={disabled || field.readonly}
             slotProps={{
@@ -119,7 +128,10 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DateTimePicker
               label={field.label}
+
               value={(value && (typeof value === 'string' || typeof value === 'number')) ? new Date(value) : (field.defaultValue && (typeof field.defaultValue === 'string' || typeof field.defaultValue === 'number') ? new Date(field.defaultValue) : null)}
+
+
               onChange={handleDateTimeChange}
               disabled={disabled || field.readonly}
               slotProps={{

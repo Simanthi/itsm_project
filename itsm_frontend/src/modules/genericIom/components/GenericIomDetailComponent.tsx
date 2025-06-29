@@ -80,7 +80,9 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<string>('');
 
+
   // const navigate = useNavigate(); // For navigating after archive/unarchive - Removed as not fully implemented
+
 
   const fetchIomDetails = useCallback(async () => {
     if (!authenticatedFetch || !iomId) return;
@@ -223,6 +225,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   }
 
   const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
+
 
   // Ensure iom_template_details and its properties are properly checked for existence
   // Also, ensure user.groups is checked for existence before calling .some
