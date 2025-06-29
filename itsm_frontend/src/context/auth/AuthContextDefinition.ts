@@ -6,7 +6,8 @@ export interface AuthUser {
   id: number;
   name: string; // Typically username or full name for display
   role: string; // User's role (e.g., 'user', 'admin')
-  is_staff: boolean; // Added to reflect staff status from backend
+  is_staff: boolean;
+  groups: string[]; // Added to reflect staff status from backend
 }
 
 // Define and export the AuthenticatedFetch type
