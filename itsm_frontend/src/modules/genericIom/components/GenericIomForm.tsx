@@ -23,7 +23,7 @@ import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../
 import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
 import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
 import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
-import DynamicIomFormFieldRenderer, { FormFieldValue } from './DynamicIomFormFieldRenderer'; // The dynamic renderer, FormFieldValue imported
+import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer'; // FormFieldValue to type-only import
 
 // Define the type for assetContext prop
 interface AssetContextType {
@@ -96,7 +96,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         setIomTemplate(templateForEdit);
         setSubject(fetchedIom.subject);
         setDynamicFormData(fetchedIom.data_payload || {});
-        setInitialDataPayload(fetchedIom.data_payload || {});
+        // setInitialDataPayload(fetchedIom.data_payload || {}); // Removed
         setToUsersStr(fetchedIom.to_users?.join(',') || '');
         setToGroupsStr(fetchedIom.to_groups?.join(',') || '');
         setParentContentTypeId(fetchedIom.parent_content_type || null);
@@ -132,7 +132,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
           }
         }
         setDynamicFormData(initialPayload);
-        setInitialDataPayload(initialPayload);
+         // setInitialDataPayload(initialPayload); // Removed
       } else {
         throw new Error("No Template ID for new IOM or IOM ID for editing.");
       }
