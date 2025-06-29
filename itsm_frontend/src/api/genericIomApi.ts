@@ -19,7 +19,7 @@ import type {
   GenericIomSimpleActionPayload,
 } from '../modules/genericIom/types/genericIomTypes';
 
-const API_GENERIC_IOM_BASE_PATH = '/api/generic-iom';
+const API_GENERIC_IOM_BASE_PATH = '/generic-iom';
 
 // --- IOM Category API Functions ---
 
