@@ -319,24 +319,47 @@ class ApprovalRuleSerializer(serializers.ModelSerializer):
             'approval_level_name', 'is_active'
         ]
         # `departments` and `projects` are writable with lists of IDs.
+        # For `generic_iom` type rules:
+        # `applicable_iom_templates` and `applicable_iom_categories` are also writable M2M by ID.
+        # Consider adding their details for read if needed, similar to departments_details.
+
+class ContentObjectRelatedField(serializers.RelatedField):
+    """
+    A custom field to represent the GFK 'content_object'.
+    """
+    def to_representation(self, value):
+        if isinstance(value, PurchaseRequestMemo):
+            return f"PurchaseRequestMemo: {value.iom_id} - {value.item_description[:30]}..."
+        elif isinstance(value, GenericIOM): # Requires GenericIOM to be imported
+            return f"GenericIOM: {value.gim_id} - {value.subject[:30]}..."
+        return f"Unknown: ID {value.pk}"
+
+    # to_internal_value is not needed if this field is read-only for the GFK itself.
+    # Writing to GFK is handled by content_type_id and object_id.
 
 class ApprovalStepSerializer(serializers.ModelSerializer):
-    purchase_request_memo_id = serializers.PrimaryKeyRelatedField(
-        queryset=PurchaseRequestMemo.objects.all(),
-        source='purchase_request_memo'
-    )
-    purchase_request_memo_iom_id = serializers.CharField(source='purchase_request_memo.iom_id', read_only=True)
+    # GFK fields for writing (if needed, though steps are usually system-created)
+    # content_type = serializers.PrimaryKeyRelatedField(queryset=ContentType.objects.all(), write_only=True)
+    # object_id = serializers.IntegerField(write_only=True)
+
+    # Representation for content_object
+    content_object_display = serializers.SerializerMethodField(read_only=True)
+    content_object_url = serializers.SerializerMethodField(read_only=True)
+
+
     approval_rule_name = serializers.CharField(source='approval_rule.name', read_only=True, allow_null=True)
     assigned_approver_user_name = serializers.CharField(source='assigned_approver_user.username', read_only=True, allow_null=True)
     assigned_approver_group_name = serializers.CharField(source='assigned_approver_group.name', read_only=True, allow_null=True)
-    actioned_by_user_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True)
+    actioned_by_user_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True) # 'approved_by' is the field name for actioner
     status_display = serializers.CharField(source='get_status_display', read_only=True)
 
 
     class Meta:
         model = ApprovalStep
         fields = [
-            'id', 'purchase_request_memo_id', 'purchase_request_memo_iom_id',
+            'id',
+            # 'content_type', 'object_id', # Expose if direct write to GFK is needed
+            'content_object_display', 'content_object_url', # Custom representations of the GFK
             'approval_rule', 'approval_rule_name', 'rule_name_snapshot', 'step_order',
             'assigned_approver_user', 'assigned_approver_user_name',
             'assigned_approver_group', 'assigned_approver_group_name',
@@ -344,16 +367,32 @@ class ApprovalStepSerializer(serializers.ModelSerializer):
             'decision_date', 'comments', 'created_at', 'updated_at'
         ]
         read_only_fields = [
-            'purchase_request_memo_iom_id', 'approval_rule_name', 'rule_name_snapshot',
+            'content_object_display', 'content_object_url',
+            'approval_rule_name', 'rule_name_snapshot',
             'assigned_approver_user_name', 'assigned_approver_group_name',
             'actioned_by_user_name', 'status_display',
             'created_at', 'updated_at',
-            # Fields typically set by system/logic, not direct user input via generic endpoint
-            # 'approval_rule', 'step_order', 'assigned_approver_user', 'assigned_approver_group',
-            # 'approved_by', 'decision_date'
         ]
-        # Most fields will be set by the system when steps are created or actioned.
-        # 'comments' might be updatable by an approver when taking action.
+
+    def get_content_object_display(self, obj: ApprovalStep):
+        if obj.content_object:
+            if isinstance(obj.content_object, PurchaseRequestMemo):
+                return f"PRM: {obj.content_object.iom_id or obj.content_object.pk} - {obj.content_object.item_description[:30]}..."
+            elif isinstance(obj.content_object, GenericIOM):
+                return f"GIM: {obj.content_object.gim_id or obj.content_object.pk} - {obj.content_object.subject[:30]}..."
+            return str(obj.content_object)
+        return None
+
+    def get_content_object_url(self, obj: ApprovalStep):
+        # This requires frontend URL structure knowledge or backend reverse for admin
+        # For frontend, it's more direct to construct on frontend from type and ID.
+        # For now, let's return a placeholder or a backend admin URL if useful.
+        if obj.content_object:
+            if isinstance(obj.content_object, PurchaseRequestMemo):
+                return f"/procurement/iom/view/{obj.object_id}" # Example frontend path
+            elif isinstance(obj.content_object, GenericIOM):
+                return f"/ioms/view/{obj.object_id}" # Example frontend path
+        return None
 
 
 class ApprovalDelegationSerializer(serializers.ModelSerializer):
