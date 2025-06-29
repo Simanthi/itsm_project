@@ -154,7 +154,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
         setComments(''); // Clear comments after successful action
       }
     } catch (err: unknown) { // Changed from any to unknown
-      const errorData = (err as any)?.data || err; // Keep as any for now for data access pattern
+      const errorData = (err as { data?: unknown })?.data || err;
       let errorMessage = `Failed to ${actionType} IOM.`;
       if (typeof errorData === 'object' && errorData !== null) {
         errorMessage = Object.values(errorData).flat().join(' ');
@@ -193,7 +193,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
                     navigate('/ioms'); // Uncommented navigation
                 }
             } catch (err: unknown) { // Changed from any to unknown
-                const errorData = (err as any)?.data || err; // Keep as any for now for data access pattern
+                const errorData = (err as { data?: unknown })?.data || err;
                 let errorMessage = `Failed to ${actionName} IOM.`;
                 if (typeof errorData === 'object' && errorData !== null) {
                     errorMessage = Object.values(errorData).flat().join(' ');
@@ -264,13 +264,13 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       {iom.to_users_details && iom.to_users_details.length > 0 && (
         <Box sx={{mb:1}}>
           <Typography variant="subtitle2" component="span"><strong>To Users: </strong></Typography>
-          {iom.to_users_details.map(u => u.username || u.id).join(', ')}
+          {iom.to_users_details.map(u => (typeof u === 'object' && u !== null && u.username) ? u.username : (typeof u === 'object' && u !== null && u.id ? u.id : String(u))).join(', ')}
         </Box>
       )}
       {iom.to_groups_details && iom.to_groups_details.length > 0 && (
          <Box sx={{mb:1}}>
             <Typography variant="subtitle2" component="span"><strong>To Groups: </strong></Typography>
-            {iom.to_groups_details.map(g => g.name || g.id).join(', ')}
+            {iom.to_groups_details.map(g => (typeof g === 'object' && g !== null && g.name) ? g.name : (typeof g === 'object' && g !== null && g.id ? g.id : String(g))).join(', ')}
         </Box>
       )}
        {iom.parent_record_display && (

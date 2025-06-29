@@ -19,15 +19,22 @@ import * as useAuthHook from '../../../../context/auth/useAuth';
 
 type MockPaginatedResponse<T> = PaginatedResponse<T>;
 
-vi.mock('../../../../api/procurementApi', () => ({
-  getCheckRequestById: vi.fn(),
-  createCheckRequest: vi.fn(),
-  updateCheckRequest: vi.fn(),
-  getPurchaseOrders: vi.fn((): Promise<MockPaginatedResponse<PurchaseOrder>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getDepartmentsForDropdown: vi.fn((): Promise<MockPaginatedResponse<Department>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getProjectsForDropdown: vi.fn((): Promise<MockPaginatedResponse<Project>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-  getExpenseCategoriesForDropdown: vi.fn((): Promise<MockPaginatedResponse<ExpenseCategory>> => Promise.resolve({ results: [], count: 0, next: null, previous: null })),
-}));
+vi.mock('../../../../api/procurementApi', async () => {
+  const actualApi = await vi.importActual<typeof procurementApi>('../../../../api/procurementApi');
+  return {
+    ...actualApi, // Spread actual implementations first, then override
+    getCheckRequestById: vi.fn(),
+    createCheckRequest: vi.fn<typeof actualApi.createCheckRequest>(), // Explicitly type this mock
+    updateCheckRequest: vi.fn(),
+    // Mock specific implementations for others if needed, or let them be default vi.fn()
+    // For functions used in beforeEach or directly, ensure they have a default mock implementation:
+    getPurchaseOrders: vi.fn().mockResolvedValue({ results: [], count: 0, next: null, previous: null }),
+    getDepartmentsForDropdown: vi.fn().mockResolvedValue({ results: [], count: 0, next: null, previous: null }),
+    getProjectsForDropdown: vi.fn().mockResolvedValue({ results: [], count: 0, next: null, previous: null }),
+    getExpenseCategoriesForDropdown: vi.fn().mockResolvedValue({ results: [], count: 0, next: null, previous: null }),
+    // Add any other functions from procurementApi that need default mocks or specific vi.fn<type>()
+  };
+});
 
 vi.mock('../../../../api/assetApi', () => ({
   getVendors: vi.fn((): Promise<MockPaginatedResponse<Vendor>> => Promise.resolve({
@@ -72,7 +79,7 @@ describe('CheckRequestForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
+      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] },
       authenticatedFetch: vi.fn(async (url, options) => {
         const rawResponse = await window.fetch(url, options);
         if (!rawResponse.ok) {
@@ -366,11 +373,19 @@ describe('CheckRequestForm', () => {
 
     // Ensure createCheckRequest doesn't use a blanket mockResolvedValue from other tests.
     // It should proceed to authenticatedFetch to be caught by MSW.
-    vi.mocked(procurementApi.createCheckRequest).mockImplementation(async (_payload, formData) => { // Marked payload as unused
-      console.log('[Test Spy] procurementApi.createCheckRequest called in failure test, attempting actual fetch for MSW interception.');
-      const { authenticatedFetch } = useAuthHook.useAuth();
-      return authenticatedFetch('/api/procurement/check-requests/', { method: 'POST', body: formData });
-    });
+    vi.mocked(procurementApi.createCheckRequest).mockImplementation(
+      async (
+        authFetchParam: Parameters<typeof procurementApi.createCheckRequest>[0],
+        formDataParam: Parameters<typeof procurementApi.createCheckRequest>[1]
+      ): Promise<Awaited<ReturnType<typeof procurementApi.createCheckRequest>>> => {
+        console.log('[Test Spy] procurementApi.createCheckRequest called in failure test, attempting actual fetch for MSW interception.');
+        // Use the authFetchParam directly as it's the one passed by the component
+        const result = await authFetchParam('/api/procurement/check-requests/', { method: 'POST', body: formDataParam });
+        // The mocked authenticatedFetch (which authFetchParam is an instance of) returns Promise<any | null>.
+        // We need to cast to CheckRequest if the actual authenticatedFetch is expected to return a typed object.
+        return result as CheckRequest;
+      }
+    );
 
     renderWithProviders(<CheckRequestForm />);
     await waitFor(() => {

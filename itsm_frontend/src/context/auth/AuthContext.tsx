@@ -45,7 +45,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             parsedUser.id !== 0
           ) {
             setToken(storedToken);
-            setUser(parsedUser);
+            setUser({ ...parsedUser, groups: parsedUser.groups || [] });
             setIsAuthenticated(true);
             console.log(
               'AuthContext: Successfully parsed stored user. User ID:',
@@ -128,7 +128,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         // Update React state with the new authentication details.
         setToken(response.token);
-        setUser(response.user);
+        setUser({ ...response.user, groups: response.user.groups || [] });
         setIsAuthenticated(true);
 
         console.log(

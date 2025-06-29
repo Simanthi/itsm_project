@@ -196,7 +196,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         navigate(`/ioms/view/${newIom.id}`);
       }
     } catch (err: unknown) {
-      const errorData = (err as any)?.data || err;
+      const errorData = (err as { data?: unknown })?.data || err;
       let errorMessage = "Failed to save IOM.";
       if (typeof errorData === 'object' && errorData !== null) {
         const fieldErrors = Object.entries(errorData)
