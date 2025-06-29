@@ -756,5 +756,3 @@ class IOMTemplateAPIAccessTests(APITestCase): # This class was already present a
         self.assertIn(self.template_group_a.name, template_names)
         self.assertIn(self.template_group_b.name, template_names)
         self.assertIn(self.template_inactive.name, template_names)
-
-```
