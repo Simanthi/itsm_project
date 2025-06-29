@@ -63,7 +63,8 @@ class IOMTemplate(models.Model):
     fields_definition = models.JSONField(
         _("Fields Definition"),
         help_text=_("JSON schema defining the form fields for this IOM type."),
-        default=list
+        default=list,
+        blank=True # Allow empty list if no fields are defined
     )
 
     APPROVAL_TYPE_CHOICES = [

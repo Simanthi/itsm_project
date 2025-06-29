@@ -2,7 +2,8 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor, within, fireEvent } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
-import * as ReactRouterDom from 'react-router-dom';
+// Import ReactRouterDom for specific mocking if needed, but direct import not always necessary for vi.mock
+import * as ReactRouterDom from 'react-router-dom'; // Keep for vi.mocked
 import { http, HttpResponse } from 'msw';
 import { server } from '../../../../mocks/server';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
@@ -39,12 +40,15 @@ vi.mock('../../../../api/assetApi', () => ({
 
 vi.mock('../../../../context/auth/useAuth');
 
+// Define a stable mock navigate function instance
+const mockNavigateInstance = vi.fn();
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useParams: vi.fn(),
-    useNavigate: vi.fn(() => vi.fn()),
+    useParams: vi.fn(), // Will be specifically mocked in tests as needed
+    useNavigate: () => mockNavigateInstance, // Always returns the same mock function
   };
 });
 
@@ -62,8 +66,10 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 describe('CheckRequestForm', () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
+    vi.clearAllMocks(); // Clears all mocks
+    mockNavigateInstance.mockClear(); // Specifically clear the navigate instance
+    vi.mocked(ReactRouterDom.useParams).mockReturnValue({}); // Default mock for useParams
+
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
       user: { id: 1, name: 'testuser', role: 'admin', is_staff: true },
@@ -303,9 +309,8 @@ describe('CheckRequestForm', () => {
       expect(formDataSent.get('purchase_order')).toBe(String(createdCRData.purchase_order));
       expect(formDataSent.get('expense_category')).toBe(String(createdCRData.expense_category));
       expect(formDataSent.get('invoice_date')).toBe(createdCRData.invoice_date);
-      // Get the mock function returned by useNavigate()
-      const navigateMockFn = vi.mocked(ReactRouterDom.useNavigate).mock.results[0].value;
-      expect(navigateMockFn).toHaveBeenCalledWith('/procurement/check-requests');
+      // Use the stable mockNavigateInstance for assertion
+      expect(mockNavigateInstance).toHaveBeenCalledWith('/procurement/check-requests');
     });
   }, 15000); // Increased timeout for more interactions
 
@@ -430,10 +435,25 @@ describe('CheckRequestForm', () => {
     fireEvent.submit(formElementFailureTest);
     // await user.click(screen.getByRole('button', { name: /Create Request/i }));
 
-    const alert = await screen.findByRole('alert', {}, {timeout: 4000});
-    // Expecting only the amount error based on the modified MSW handler
-    expect(within(alert).getByText(/amount: This field is required./i)).toBeInTheDocument();
+    // const alert = await screen.findByRole('alert', {}, {timeout: 4000});
+    // // Expecting only the amount error based on the modified MSW handler
+    // expect(within(alert).getByText(/amount: This field is required./i)).toBeInTheDocument();
     // expect(within(alert).queryByText(/payee_name: This field may not be blank./i)).not.toBeInTheDocument();
+
+    // Updated assertion to handle multiple alerts:
+    const alerts = await screen.findAllByRole('alert', {}, { timeout: 4000 });
+    expect(alerts.length).toBeGreaterThan(0); // Ensure at least one alert
+
+    // Check if any of the alerts contain the expected message regarding the amount
+    const hasExpectedAmountError = alerts.some(alertElement =>
+      within(alertElement).queryByText((content, element) => {
+        // Match text that includes "amount" and "This field is required" case-insensitively
+        // This is more robust to slight variations in the full error message string.
+        const textMatch = /amount/i.test(content) && /This field is required/i.test(content);
+        return textMatch && element?.textContent?.includes('API Error'); // Optional: ensure it's an API error
+      })
+    );
+    expect(hasExpectedAmountError).toBe(true, 'Expected to find an alert with the "amount is required" error message.');
 
   }, 15000); // Increased timeout
 });

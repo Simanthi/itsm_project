@@ -1,3 +1,5 @@
+from unittest.mock import patch # Ensure patch is imported at the top
+import unittest
 from django.test import TestCase
 from django.contrib.auth import get_user_model
 from django.contrib.contenttypes.models import ContentType
@@ -152,17 +154,10 @@ class GenericIOMModelTest(TestCase):
         step = ApprovalStep.objects.get(content_type=iom_content_type, object_id=iom.pk)
         self.assertEqual(step.assigned_approver_user, self.user)
 
-    def test_gim_id_generation_fallback(self):
-        # Simulate ProcurementIDSequence not being available or failing for "GIM"
-        original_proc_id_seq = None
-        if 'procurement.sequence_models' in sys.modules:
-            original_proc_id_seq = sys.modules['procurement.sequence_models'].ProcurementIDSequence
-            sys.modules['procurement.sequence_models'].ProcurementIDSequence = None
-
-        # Or if ProcurementIDSequence is None from the start due to import error
-        # This test path is tricky to force if the import succeeded globally.
-        # For now, we rely on the print statements in the model's save if it hits fallback.
-        # A more robust test would mock ProcurementIDSequence.get_next_id to raise an Exception.
+    @patch('generic_iom.models.ProcurementIDSequence.get_next_id')
+    def test_gim_id_generation_fallback(self, mock_get_next_id):
+        # Simulate ProcurementIDSequence.get_next_id raising an exception
+        mock_get_next_id.side_effect = Exception("Simulated ID generation error")
 
         iom = GenericIOM.objects.create(
             iom_template=self.template_no_approval,
@@ -170,14 +165,14 @@ class GenericIOMModelTest(TestCase):
             created_by=self.user
         )
         self.assertTrue(iom.gim_id.startswith("GIM-FALLBACK-"))
+        # Ensure the mock was called (it should be, then raise error, then fallback)
+        mock_get_next_id.assert_called_once_with("GIM")
 
-        if original_proc_id_seq: # Restore if we mocked it
-            sys.modules['procurement.sequence_models'].ProcurementIDSequence = original_proc_id_seq
 
     # TODO: Add tests for simple approval status changes (via simulated view actions if needed)
     # TODO: Add tests for parent_record GFK assignment and retrieval
     # TODO: Add tests for M2M fields to_users, to_groups
 
-# Need to import sys and unittest for skipIf and potential mocking
-import sys
-import unittest
+import sys # Need to import sys for potential mocking (though patch is used now)
+# from unittest.mock import patch # Ensure patch is imported at the top (already there)
+# import unittest # Moved to top

@@ -7,7 +7,7 @@ from .common_models import Department, Project, Contract, GLAccount, ExpenseCate
 from .sequence_models import ProcurementIDSequence
 
 # For GFK support in ApprovalStep and M2M in ApprovalRule
-from django.contrib.contenttypes.fields import GenericForeignKey
+from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelation
 from django.contrib.contenttypes.models import ContentType
 # Need to import from generic_iom app. This creates a dependency.
 # Ensure 'generic_iom' is listed before 'procurement' in INSTALLED_APPS if generic_iom.models
@@ -100,7 +100,7 @@ class PurchaseRequestMemo(models.Model):
     attachments = models.FileField(_("Attachments"), upload_to='procurement/iom_attachments/', null=True, blank=True)
 
     # Generic relation to ApprovalSteps
-    # approval_steps_gfk = GenericRelation('procurement.ApprovalStep', content_type_field='content_type', object_id_field='object_id')
+    approval_steps = GenericRelation('procurement.ApprovalStep', content_type_field='content_type', object_id_field='object_id')
     # No, the GFK is on ApprovalStep. We access it via related_name from ApprovalStep if needed, or filter ApprovalStep by content_type and object_id.
 
     class Meta:
@@ -546,9 +546,11 @@ class ApprovalStep(models.Model):
         ContentType,
         on_delete=models.CASCADE,
         verbose_name=_("Content Type of the item being approved (e.g., PurchaseRequestMemo or GenericIOM)")
+        # null=True, blank=True removed, should be non-nullable
     )
     object_id = models.PositiveIntegerField(
         verbose_name=_("Object ID of the item being approved")
+        # null=True, blank=True removed, should be non-nullable
     )
     content_object = GenericForeignKey('content_type', 'object_id')
 

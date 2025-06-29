@@ -158,7 +158,8 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
         # Admins might see all.
         if user.is_staff or user.is_superuser:
             return ApprovalStep.objects.all().select_related(
-                'purchase_request_memo', 'approval_rule',
+                # 'purchase_request_memo', # Removed: content_object is GFK
+                'content_type', 'approval_rule',
                 'assigned_approver_user', 'assigned_approver_group', 'approved_by'
             ).order_by('-created_at')
 
@@ -167,9 +168,10 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
             Q(assigned_approver_user=user) | Q(assigned_approver_group__in=user_groups),
             status='pending' # Typically users only care about pending steps for action
         ).select_related(
-            'purchase_request_memo', 'approval_rule',
+            # 'purchase_request_memo', # Removed: content_object is GFK
+            'content_type', 'approval_rule',
             'assigned_approver_user', 'assigned_approver_group', 'approved_by'
-        ).order_by('purchase_request_memo__iom_id', 'step_order')
+        ).order_by('content_type', 'object_id', 'step_order') # Changed ordering
 
     def _can_action_step(self, user, step):
         """ Helper to check if a user can action a step. """
@@ -231,21 +233,22 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
         if not pending_steps and not rejected_steps:
             # All steps are now actioned (approved or skipped), and none are rejected.
             # Check if all required steps (non-skipped) are approved.
-            all_required_approved = not iom.approval_steps.filter(status__in=['pending', 'rejected']).exclude(status='skipped').exists()
+            # Use parent_iom consistently
+            all_required_approved = not parent_iom.approval_steps.filter(status__in=['pending', 'rejected']).exclude(status='skipped').exists()
 
             if all_required_approved:
                  # Double check if all non-skipped steps are indeed 'approved'
                 are_all_actually_approved = True
-                for s in iom.approval_steps.exclude(status='skipped'):
+                for s in parent_iom.approval_steps.exclude(status='skipped'): # Use parent_iom
                     if s.status != 'approved':
                         are_all_actually_approved = False
                         break
                 if are_all_actually_approved:
-                    iom.status = 'approved'
-                    iom.approver = user # Who took the final approving action for the IOM
-                    iom.decision_date = timezone.now()
-                    iom.approver_comments = f"Final approval step by {user.username}. Step comments: {comments}"
-                    iom.save(update_fields=['status', 'approver', 'decision_date', 'approver_comments'])
+                    parent_iom.status = 'approved' # Use parent_iom
+                    parent_iom.approver = user # Who took the final approving action for the IOM
+                    parent_iom.decision_date = timezone.now()
+                    parent_iom.approver_comments = f"Final approval step by {user.username}. Step comments: {comments}"
+                    parent_iom.save(update_fields=['status', 'approver', 'decision_date', 'approver_comments']) # Use parent_iom
 
         return Response(self.get_serializer(step).data)
 
@@ -277,7 +280,7 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
         step.save()
 
         # Update IOM status to rejected
-        iom = step.purchase_request_memo
+        iom = step.content_object # Changed from purchase_request_memo
         iom.status = 'rejected'
         iom.approver = user # User who rejected
         iom.decision_date = timezone.now()

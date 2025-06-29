@@ -18,7 +18,7 @@ except ImportError:
 
 def get_user_emails(users_queryset):
     """Helper to get emails from a queryset of users, filtering out users without emails."""
-    return list(users_queryset.filter(email__isnull=False, email__exact='').exclude(email='').values_list('email', flat=True))
+    return list(users_queryset.filter(email__isnull=False).exclude(email__exact='').values_list('email', flat=True))
 
 def get_group_member_emails(group_instance):
     """Helper to get emails of all members in a group."""
@@ -69,7 +69,7 @@ def handle_generic_iom_saved(sender, instance: GenericIOM, created, **kwargs):
                 f"Please review and take action here: {iom_url}\n\n"
                 f"Thank you."
             )
-            send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, recipients) # Corrected call
+            send_notification_email(subject, message, recipients)
 
     # Notification 2: Simple Workflow Outcome (Approved/Rejected)
     if previous_status == 'pending_approval' and \
@@ -88,7 +88,7 @@ def handle_generic_iom_saved(sender, instance: GenericIOM, created, **kwargs):
         if instance.simple_approval_comments:
             message += f"\nApprover Comments:\n{instance.simple_approval_comments}\n"
         message += f"\nYou can view the IOM here: {iom_url}\n\nThank you."
-        send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.created_by.email]) # Corrected call
+        send_notification_email(subject, message, [instance.created_by.email])
 
     # Notification 4: Advanced Workflow Final Outcome (Approved/Rejected)
     # This is also handled here, assuming the status change to 'approved'/'rejected'
@@ -110,7 +110,7 @@ def handle_generic_iom_saved(sender, instance: GenericIOM, created, **kwargs):
             f"has been finally {outcome}.\n"
             f"You can view the IOM here: {iom_url}\n\nThank you."
         )
-        send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, [instance.created_by.email]) # Corrected call
+        send_notification_email(subject, message, [instance.created_by.email])
 
 
     # Notification 5: IOM Published
@@ -135,7 +135,7 @@ def handle_generic_iom_saved(sender, instance: GenericIOM, created, **kwargs):
                 f"You can view the IOM here: {iom_url}\n\n"
                 f"Thank you."
             )
-            send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, recipients) # Corrected call
+            send_notification_email(subject, message, recipients)
 
 # To get previous status for GenericIOM
 @receiver(pre_save, sender=GenericIOM) # Use imported pre_save
@@ -197,4 +197,4 @@ def handle_approval_step_created_for_generic_iom_actual(sender, instance, create
                     f"Please review and take action here: {iom_url}\n\n"
                     f"Thank you."
                 )
-                send_notification_email(subject, message, settings.DEFAULT_FROM_EMAIL, recipients) # Corrected call
+                send_notification_email(subject, message, recipients)

@@ -245,7 +245,7 @@ class ApprovalWorkflowSerializersTestCase(TestCase):
         # For this test, we'll assume 'comments' can be updated.
         rule = ApprovalRule.objects.create(name='Rule for Step Ser', order=5, approver_user=self.user1)
         step = ApprovalStep.objects.create(
-            purchase_request_memo=self.iom, approval_rule=rule, step_order=5, assigned_approver_user=self.user1
+            content_object=self.iom, approval_rule=rule, step_order=5, assigned_approver_user=self.user1 # Changed
         )
 
         # Update comments
