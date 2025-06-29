@@ -9,18 +9,18 @@ import {
   Button,
   Divider,
   Chip,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
+  // List, // Unused
+  // ListItem, // Unused
+  // ListItemText, // Unused
+  // ListItemIcon, // Unused
   TextField, // For comments in actions
 } from '@mui/material';
-import DescriptionIcon from '@mui/icons-material/Description';
-import AccountCircleIcon from '@mui/icons-material/AccountCircle';
-import GroupIcon from '@mui/icons-material/Group';
-import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
-import SubjectIcon from '@mui/icons-material/Subject';
-import LabelIcon from '@mui/icons-material/Label';
+// import DescriptionIcon from '@mui/icons-material/Description'; // Unused
+// import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Unused
+// import GroupIcon from '@mui/icons-material/Group'; // Unused
+// import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // Unused
+// import SubjectIcon from '@mui/icons-material/Subject'; // Unused
+// import LabelIcon from '@mui/icons-material/Label'; // Unused
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -71,7 +71,7 @@ const DisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: any}> =
 
 const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ iomId }) => {
   const { authenticatedFetch, user } = useAuth();
-  const { showSnackbar, showConfirmDialog } = useUI();
+  const { showSnackbar /*, showConfirmDialog */ } = useUI(); // showConfirmDialog removed as it's unused
 
   const [iom, setIom] = useState<GenericIOM | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
@@ -80,7 +80,9 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<string>('');
 
-  // const navigate = useNavigate(); // For navigating after archive/unarchive // Removed as it's not used currently
+
+  // const navigate = useNavigate(); // For navigating after archive/unarchive - Removed as not fully implemented
+
 
   const fetchIomDetails = useCallback(async () => {
     if (!authenticatedFetch || !iomId) return;
@@ -223,12 +225,14 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   }
 
   const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
-  // const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple'; // Duplicate removed
 
+
+  // Ensure iom_template_details and its properties are properly checked for existence
+  // Also, ensure user.groups is checked for existence before calling .some
   const isSimpleApprover = iom.iom_template_details?.approval_type === 'simple' &&
                          (iom.iom_template_details?.simple_approval_user === user?.id ||
                           (user?.groups && iom.iom_template_details?.simple_approval_group &&
-                           user.groups.some(g => g.id === iom.iom_template_details?.simple_approval_group))); // Assuming user.groups is {id, name}[]
+                           user.groups.some(g => g.id === iom.iom_template_details.simple_approval_group)));
 
   const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && isSimpleApprover;
 

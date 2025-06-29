@@ -11,9 +11,9 @@ import {
   Alert,
   TextField,
   InputAdornment,
-  Paper,
+  // Paper, // Unused import
   Collapse,
-  IconButton,
+  // IconButton, // Unused import
 } from '@mui/material';
 import DescriptionIcon from '@mui/icons-material/Description'; // For templates
 import CategoryIcon from '@mui/icons-material/Category'; // For categories
@@ -25,7 +25,7 @@ import { useNavigate, useLocation } from 'react-router-dom'; // Added useLocatio
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
 import { getIomTemplates } from '../../../api/genericIomApi';
-import type { IOMTemplate, IOMCategory } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // Using admin types for now
+import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // IOMCategory removed as unused
 
 interface GroupedTemplates {
   [categoryName: string]: IOMTemplate[];
@@ -40,7 +40,7 @@ const SelectIomTemplateComponent: React.FC = () => {
   // Extract assetContext from location state if present
   const assetContext = location.state?.assetContext;
 
-  const [templates, setTemplates] = useState<IOMTemplate[]>([]);
+  // const [templates, setTemplates] = useState<IOMTemplate[]>([]); // Unused variable
   const [groupedTemplates, setGroupedTemplates] = useState<GroupedTemplates>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);

@@ -10,8 +10,10 @@ import {
   FormHelperText,
   Box,
   Typography,
+
   ListItemText, // Added import
   InputAdornment, // Added import
+
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
@@ -78,7 +80,9 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           {...commonProps}
           type="text"
           multiline
-          rows={rows}
+
+          rows={typeof field.attributes?.rows === 'number' ? field.attributes.rows : 4}
+
           value={value || field.defaultValue || ''}
           placeholder={field.placeholder}
           onChange={(e) => onChange(field.name, e.target.value)}
@@ -102,7 +106,9 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DatePicker
             label={field.label}
-            value={isValidDateValue(value) ? new Date(value) : (isValidDateValue(field.defaultValue) ? new Date(field.defaultValue) : null)}
+
+            value={(value && (typeof value === 'string' || typeof value === 'number')) ? new Date(value) : (field.defaultValue && (typeof field.defaultValue === 'string' || typeof field.defaultValue === 'number') ? new Date(field.defaultValue) : null)}
+
             onChange={handleDateChange}
             disabled={disabled || field.readonly}
             slotProps={{
@@ -122,7 +128,10 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DateTimePicker
               label={field.label}
-              value={isValidDateValue(value) ? new Date(value) : (isValidDateValue(field.defaultValue) ? new Date(field.defaultValue) : null)}
+
+              value={(value && (typeof value === 'string' || typeof value === 'number')) ? new Date(value) : (field.defaultValue && (typeof field.defaultValue === 'string' || typeof field.defaultValue === 'number') ? new Date(field.defaultValue) : null)}
+
+
               onChange={handleDateTimeChange}
               disabled={disabled || field.readonly}
               slotProps={{
