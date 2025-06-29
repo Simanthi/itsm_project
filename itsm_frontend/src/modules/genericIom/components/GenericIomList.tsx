@@ -66,7 +66,7 @@ const statusOptions: GenericIomStatus[] = ['draft', 'pending_approval', 'approve
 
 const GenericIomListComponent: React.FC = () => {
   const { authenticatedFetch, user } = useAuth();
-  const { showSnackbar } = useUI(); // showConfirmDialog if delete is added
+  const { showSnackbar, showConfirmDialog } = useUI();
 
   const [ioms, setIoms] = useState<GenericIOM[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
@@ -90,7 +90,7 @@ const GenericIomListComponent: React.FC = () => {
   const fetchIoms = useCallback(async () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
-    setError(null);
+    // setError(null); // setError was removed as error state is unused
 
     const params: GetGenericIomsParams = {
       page: page + 1,
@@ -116,14 +116,14 @@ const GenericIomListComponent: React.FC = () => {
       const response = await getGenericIoms(authenticatedFetch, params);
       setIoms(response.results);
       setTotalIoms(response.count);
-    } catch (err) {
+    } catch (err: unknown) { // Use unknown for error type
       const message = err instanceof Error ? err.message : String(err);
-      setError(message || 'Failed to fetch IOMs.');
+      // setError(message || 'Failed to fetch IOMs.'); // setError was removed
       showSnackbar(`Error fetching IOMs: ${message}`, 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showSnackbar]);
+  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showSnackbar, showArchived]); // Added showArchived
 
   const fetchTemplatesForFilterDropdown = useCallback(async () => {
     if(!authenticatedFetch) return;

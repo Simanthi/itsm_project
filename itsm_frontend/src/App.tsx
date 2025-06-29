@@ -61,7 +61,6 @@ const GenericIomFormPage = lazy(() => import('./modules/genericIom/pages/Generic
 const GenericIomDetailPage = lazy(() => import('./modules/genericIom/pages/GenericIomDetailPage'));
 
 
-// eslint-disable-next-line react/prop-types
 function AppContent() {
   return (
     <>
@@ -203,7 +202,6 @@ function AppContent() {
   );
 }
 
-// eslint-disable-next-line react/prop-types
 function App() {
   return (
     <Router>
