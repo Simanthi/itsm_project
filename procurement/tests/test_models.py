@@ -423,15 +423,16 @@ class ApprovalWorkflowModelsTestCase(TestCase):
         steps = self.iom.approval_steps.all().order_by('step_order')
         self.assertEqual(steps.count(), 2)
 
-        self.assertEqual(steps[0].approval_rule, rule2) # rule2 has lower order (10) if rule1 order was 20
-        self.assertEqual(steps[0].assigned_approver_group, self.group1)
+        # rule1 has order 10, rule2 has order 20. So rule1 comes first.
+        self.assertEqual(steps[0].approval_rule, rule1)
+        self.assertEqual(steps[0].assigned_approver_user, self.user1) # rule1 is assigned to user1
         self.assertEqual(steps[0].status, 'pending')
-        self.assertEqual(steps[0].rule_name_snapshot, rule2.name)
+        self.assertEqual(steps[0].rule_name_snapshot, rule1.name)
 
-        self.assertEqual(steps[1].approval_rule, rule1) # rule1 has higher order (20) if rule1 order was 20
-        self.assertEqual(steps[1].assigned_approver_user, self.user1)
+        self.assertEqual(steps[1].approval_rule, rule2)
+        self.assertEqual(steps[1].assigned_approver_group, self.group1) # rule2 is assigned to group1
         self.assertEqual(steps[1].status, 'pending')
-        self.assertEqual(steps[1].rule_name_snapshot, rule1.name)
+        self.assertEqual(steps[1].rule_name_snapshot, rule2.name)
 
         # Test no matching rules
         iom_no_match = PurchaseRequestMemo.objects.create(

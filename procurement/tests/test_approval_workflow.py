@@ -77,14 +77,16 @@ class ApprovalWorkflowTests(TestCase):
     def test_approval_rule_creation(self):
         rule = ApprovalRule.objects.create(
             name='Test Rule User', order=10, min_amount=50, approver_user=self.approver_user1
+            # rule_type defaults to 'procurement_memo'
         )
-        self.assertEqual(str(rule), 'Test Rule User (Order: 10)')
+        self.assertEqual(str(rule), 'Test Rule User (Order: 10, Type: Procurement Memo (Purchase Request IOM))')
         self.assertTrue(rule.is_active)
 
         rule_group = ApprovalRule.objects.create(
             name='Test Rule Group', order=20, max_amount=1000, approver_group=self.approver_group1
+            # rule_type defaults to 'procurement_memo'
         )
-        self.assertEqual(str(rule_group), 'Test Rule Group (Order: 20)')
+        self.assertEqual(str(rule_group), 'Test Rule Group (Order: 20, Type: Procurement Memo (Purchase Request IOM))')
 
     def test_approval_delegation_creation_and_get_active(self):
         delegation = ApprovalDelegation.objects.create(
