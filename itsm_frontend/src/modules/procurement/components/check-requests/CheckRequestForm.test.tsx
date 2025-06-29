@@ -9,7 +9,7 @@ import { server } from '../../../../mocks/server';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestForm from './CheckRequestForm';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
-import type { CheckRequest, PurchaseOrder, Department, Project, ExpenseCategory, PaginatedResponse } from '../../types/procurementTypes';
+import type { CheckRequest, PurchaseOrder, ExpenseCategory, PaginatedResponse } from '../../types/procurementTypes';
 import type { Vendor } from '../../../assets/types/assetTypes';
 import { formatCurrency } from '../../../../utils/formatters';
 
@@ -468,7 +468,8 @@ describe('CheckRequestForm', () => {
         return !!(element && element.textContent && element.textContent.includes('API Error'));
       })
     );
-    expect(hasExpectedAmountError).toBe(true, 'Expected to find an alert with the "amount is required" error message.');
-
+    if (!hasExpectedAmountError) {
+  throw new Error('Expected to find an alert with the "amount is required" error message.');
+}
   }, 15000); // Increased timeout
 });

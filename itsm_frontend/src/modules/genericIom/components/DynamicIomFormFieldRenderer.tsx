@@ -30,7 +30,6 @@ interface DynamicFormFieldProps {
   error?: string | null;
 }
 
-// eslint-disable-next-line react/prop-types
 const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
   field,
   value,
