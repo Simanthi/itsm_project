@@ -22,7 +22,7 @@ export const loginApi = async (
   password: string,
 ): Promise<{
   token: string;
-  user: { name: string; role: string; id: number; is_staff: boolean }; // Added is_staff
+  user: { name: string; role: string; id: number; is_staff: boolean; groups: string[] }; // Added is_staff
 }> => {
   try {
     // This first call is PUBLIC (no token), so we use the native fetch API.
@@ -43,16 +43,18 @@ export const loginApi = async (
     // Now that we have a token, we can use our new apiClient for the authenticated call.
     // Update the type of loggedInUser to include is_staff
     const loggedInUser: {
-      id: number;
-      name: string;
-      role: string;
-      is_staff: boolean;
-    } = {
-      id: 0,
-      name: username,
-      role: 'user', // Default role, will be updated based on is_staff
-      is_staff: false, // Default is_staff
-    };
+  id: number;
+  name: string;
+  role: string;
+  is_staff: boolean;
+  groups: string[]; // Add this line
+} = {
+  id: 0,
+  name: username,
+  role: 'user', // Default role, will be updated based on is_staff
+  is_staff: false, // Default is_staff
+  groups: [], // Initialize groups as an empty array
+};
 
     try {
       // 👇 CHANGE 3: Use the new apiClient for the authenticated user details fetch.
