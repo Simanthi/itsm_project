@@ -375,6 +375,57 @@ export const cancelCheckRequest = async (
 
 // --- (Optional) OrderItem Functions ---
 // ... (existing commented out OrderItem functions remain unchanged) ...
+
+// --- Approval Step API Functions ---
+
+export const getApprovalSteps = async (
+  authenticatedFetch: AuthenticatedFetch,
+  params?: GetApprovalStepsParams
+): Promise<PaginatedResponse<ApprovalStep>> => {
+  const queryParams = new URLSearchParams();
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        // Map frontend param names to backend if they differ, e.g. content_type_app_label to content_type__app_label
+        if (key === 'pageSize') queryParams.append('page_size', String(value));
+        else if (key === 'content_type_app_label') queryParams.append('content_type__app_label', String(value));
+        else if (key === 'content_type_model') queryParams.append('content_type__model', String(value));
+        else queryParams.append(key, String(value));
+      }
+    });
+  }
+  // Assuming approval steps are under procurement API path
+  const endpoint = `${API_PROCUREMENT_PATH}/approval-steps/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
+  return (await authenticatedFetch(endpoint, { method: 'GET' })) as PaginatedResponse<ApprovalStep>;
+};
+
+export const approveApprovalStep = async (
+  authenticatedFetch: AuthenticatedFetch,
+  stepId: number,
+  payload: ApprovalActionPayload
+): Promise<ApprovalStep> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/approval-steps/${stepId}/approve/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })) as ApprovalStep;
+};
+
+export const rejectApprovalStep = async (
+  authenticatedFetch: AuthenticatedFetch,
+  stepId: number,
+  payload: ApprovalActionPayload // Comments are mandatory for rejection via backend logic
+): Promise<ApprovalStep> => {
+  const endpoint = `${API_PROCUREMENT_PATH}/approval-steps/${stepId}/reject/`;
+  return (await authenticatedFetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  })) as ApprovalStep;
+};
+
+
 /*
 export const getOrderItems = async (
   authenticatedFetch: AuthenticatedFetch,

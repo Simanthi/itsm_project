@@ -434,3 +434,50 @@ export interface RecurringPaymentForDropdown {
 // If procurementApi.ts specifically needs a Vendor type from *this* file for some reason (e.g. a simplified version for a dropdown),
 // it would be defined here. However, PurchaseRequestMemoForm.tsx correctly imports Vendor from assetApi.ts.
 // The errors listed for procurementApi.ts suggest it *expects* these common types (Department, Project etc.) from this file.
+
+
+// --- Approval Step Types ---
+export interface ApprovalStep {
+  id: number;
+  // GFK fields like content_type (ID), object_id are usually not directly exposed or used by frontend.
+  // Instead, custom fields from serializer provide context.
+  content_object_display: string | null; // User-friendly display of the item being approved (e.g., "PRM: IOM-001 - Laptop" or "GIM: GIM-002 - Policy Update")
+  content_object_url: string | null;     // Frontend URL path to view the item being approved
+
+  approval_rule?: number | null;          // ID of the ApprovalRule
+  approval_rule_name?: string | null;
+  rule_name_snapshot?: string | null;
+  step_order: number;
+
+  assigned_approver_user?: number | null; // User ID
+  assigned_approver_user_name?: string | null;
+  assigned_approver_group?: number | null; // Group ID
+  assigned_approver_group_name?: string | null;
+
+  status: 'pending' | 'approved' | 'rejected' | 'skipped' | 'delegated';
+  status_display: string;
+
+  approved_by?: number | null; // User ID of the user who actioned this step
+  actioned_by_user_name?: string | null;
+  decision_date?: string | null; // ISO datetime string
+  comments?: string | null;
+
+  created_at: string; // ISO datetime string
+  updated_at: string; // ISO datetime string
+}
+
+export interface GetApprovalStepsParams {
+  page?: number;
+  pageSize?: number;
+  ordering?: string;
+  status?: 'pending' | 'approved' | 'rejected' | 'skipped' | 'delegated';
+  // To filter by related object (e.g., all steps for a specific GenericIOM or PurchaseRequestMemo)
+  content_type_app_label?: string; // e.g., 'generic_iom' or 'procurement'
+  content_type_model?: string;     // e.g., 'genericiom' or 'purchaserequestmemo'
+  object_id?: number;
+  // Could add a param like assigned_to_me=true for the backend to resolve current user's steps
+}
+
+export interface ApprovalActionPayload {
+  comments: string; // Comments are typically required for rejection, optional for approval
+}
