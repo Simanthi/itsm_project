@@ -42,6 +42,7 @@ import {
 } from '../../../api/genericIomApi';
 import type { GenericIOM, GenericIomSimpleActionPayload } from '../types/genericIomTypes';
 import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
+import type { FormFieldValue } from './DynamicIomFormFieldRenderer'; // Import FormFieldValue
 // TODO: Import types and API function for ApprovalSteps
 
 interface GenericIomDetailComponentProps {
@@ -49,7 +50,7 @@ interface GenericIomDetailComponentProps {
 }
 
 // Helper to display dynamic field values appropriately
-const DisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: any}> = ({ field, value }) => {
+const DisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: FormFieldValue}> = ({ field, value }) => {
     if (value === null || value === undefined || String(value).trim() === '') {
         return <Typography variant="body2" color="textSecondary"><em>Not provided</em></Typography>;
     }
@@ -152,8 +153,8 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
         showSnackbar(successMessage, 'success');
         setComments(''); // Clear comments after successful action
       }
-    } catch (err: any) { // Consider creating a more specific error type for API errors
-      const errorData = err?.data || err;
+    } catch (err: unknown) { // Changed from any to unknown
+      const errorData = (err as any)?.data || err; // Keep as any for now for data access pattern
       let errorMessage = `Failed to ${actionType} IOM.`;
       if (typeof errorData === 'object' && errorData !== null) {
         errorMessage = Object.values(errorData).flat().join(' ');
@@ -189,10 +190,10 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
                 if (actionName === 'archive') {
                     // Optionally navigate away if an archived IOM shouldn't be viewed directly,
                     // or just update UI to reflect new status.
-                    // navigate('/ioms');
+                    navigate('/ioms'); // Uncommented navigation
                 }
-            } catch (err: any) {
-                const errorData = err?.data || err;
+            } catch (err: unknown) { // Changed from any to unknown
+                const errorData = (err as any)?.data || err; // Keep as any for now for data access pattern
                 let errorMessage = `Failed to ${actionName} IOM.`;
                 if (typeof errorData === 'object' && errorData !== null) {
                     errorMessage = Object.values(errorData).flat().join(' ');
@@ -224,12 +225,12 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   }
 
   const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
-  const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
+  // const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple'; // Removed duplicate
 
   const isSimpleApprover = iom.iom_template_details?.approval_type === 'simple' &&
                          (iom.iom_template_details?.simple_approval_user === user?.id ||
-                          (user?.groups && iom.iom_template_details?.simple_approval_group &&
-                           user.groups.some(g => g.id === iom.iom_template_details?.simple_approval_group))); // Assuming user.groups is {id, name}[]
+                          ((user as any)?.groups && iom.iom_template_details?.simple_approval_group && // Added 'as any' for groups temporarily
+                           (user as any).groups.some((g: { id: number }) => g.id === iom.iom_template_details?.simple_approval_group)));
 
   const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && isSimpleApprover;
 

@@ -447,10 +447,10 @@ describe('CheckRequestForm', () => {
     // Check if any of the alerts contain the expected message regarding the amount
     const hasExpectedAmountError = alerts.some(alertElement =>
       within(alertElement).queryByText((content, element) => {
-        // Match text that includes "amount" and "This field is required" case-insensitively
-        // This is more robust to slight variations in the full error message string.
         const textMatch = /amount/i.test(content) && /This field is required/i.test(content);
-        return textMatch && element?.textContent?.includes('API Error'); // Optional: ensure it's an API error
+        if (!textMatch) return false;
+        // Ensure a strict boolean is returned, handling cases where element or textContent might be null
+        return !!(element && element.textContent && element.textContent.includes('API Error'));
       })
     );
     expect(hasExpectedAmountError).toBe(true, 'Expected to find an alert with the "amount is required" error message.');

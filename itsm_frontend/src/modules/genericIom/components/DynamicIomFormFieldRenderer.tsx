@@ -20,7 +20,7 @@ import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
 import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
-export type FormFieldValue = string | number | boolean | string[] | number[] | null | undefined;
+export type FormFieldValue = string | number | boolean | (string | number)[] | null | undefined;
 
 interface DynamicFormFieldProps {
   field: FieldDefinition;
@@ -157,7 +157,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           <Select
             labelId={`${field.name}-select-label`}
             name={field.name}
-            value={value || field.defaultValue || ''}
+            value={ (typeof value === 'string' || typeof value === 'number') ? value : (typeof field.defaultValue === 'string' || typeof field.defaultValue === 'number' ? field.defaultValue : '') }
             label={field.label}
             onChange={(e: SelectChangeEvent<string | number>) => onChange(field.name, e.target.value)}
           >
@@ -189,7 +189,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
               >
                 {field.options?.map((option) => (
                   <MenuItem key={option.value} value={option.value}>
-                    <Checkbox checked={Array.isArray(value) ? value.indexOf(option.value) > -1 : false} />
+                    <Checkbox checked={Array.isArray(value) ? (value as (string | number)[]).indexOf(option.value) > -1 : false} />
                     <ListItemText primary={option.label} />
                   </MenuItem>
                 ))}

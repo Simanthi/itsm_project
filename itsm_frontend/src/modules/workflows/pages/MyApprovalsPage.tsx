@@ -169,6 +169,7 @@ const MyApprovalsPage: React.FC = () => {
           icon={<OpenInNewIcon color="info" />}
           label="View Item"
           component={RouterLink}
+          // @ts-expect-error Property 'to' does not exist on type 'GridActionsCellItemProps' but is passed to RouterLink by MUI's {...other} spread
           to={row.content_object_url || '#'}
           target="_blank"
           disabled={!row.content_object_url}
