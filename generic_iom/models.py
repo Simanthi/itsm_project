@@ -123,6 +123,25 @@ class IOMTemplate(models.Model):
     def __str__(self):
         return self.name
 
+    def clean(self):
+        from django.core.exceptions import ValidationError
+        # Validation for simple approval type
+        if self.approval_type == 'simple' and not self.simple_approval_user and not self.simple_approval_group:
+            raise ValidationError(
+                _("Simple Approver User or Group must be specified if Approval Type is 'Simple'.")
+            )
+
+        # Clear simple approvers if approval type is not 'simple'
+        if self.approval_type != 'simple':
+            self.simple_approval_user = None
+            self.simple_approval_group = None
+
+        # Add other model-level validations here if needed
+
+    def save(self, *args, **kwargs):
+        self.full_clean() # Call full_clean before saving
+        super().save(*args, **kwargs)
+
 class GenericIOM(models.Model):
     STATUS_CHOICES = [
         ('draft', _('Draft')),

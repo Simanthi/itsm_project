@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth import get_user_model
+from django.utils.translation import gettext_lazy as _
 from .models import IOMCategory, IOMTemplate, GenericIOM
 from django.contrib.contenttypes.models import ContentType
 
@@ -40,6 +41,53 @@ class IOMTemplateSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError("Each field definition must contain 'name', 'label', and 'type'.")
             # TODO: Validate field types, options for choice, etc.
         return value
+
+    def validate(self, data):
+        # Determine the effective approval_type (considering instance data for partial updates)
+        approval_type = data.get('approval_type', getattr(self.instance, 'approval_type', None))
+
+        # Get the current values from the instance if it's an update, or use None if create
+        instance_approval_type = getattr(self.instance, 'approval_type', None)
+        instance_simple_user = getattr(self.instance, 'simple_approval_user', None)
+        instance_simple_group = getattr(self.instance, 'simple_approval_group', None)
+
+        # Determine the values after this validation pass, taking into account `data` and current instance state
+        approval_type = data.get('approval_type', instance_approval_type)
+        # For user/group, if they are in `data`, that's what we consider. Otherwise, it's the instance value.
+        # This is important because if they are not in `data` for a partial update, we don't want to assume they are None.
+        simple_approval_user = data.get('simple_approval_user', instance_simple_user)
+        simple_approval_group = data.get('simple_approval_group', instance_simple_group)
+
+
+        if approval_type == 'simple':
+            # If final approval_type is 'simple', one of the approvers must be set.
+            # This check should consider the effective values (from data or instance).
+            current_simple_user = data.get('simple_approval_user', instance_simple_user if self.instance else None)
+            current_simple_group = data.get('simple_approval_group', instance_simple_group if self.instance else None)
+
+            if not current_simple_user and not current_simple_group:
+                error_message = _("Either Simple Approver User or Group is required when Approval Type is 'Simple'.")
+                # Raise errors on the fields that are missing and were expected.
+                # This helps guide the user which field to provide.
+                errors = {}
+                if 'simple_approval_user' in data or 'simple_approval_group' in data : # if user attempted to set them (even to None)
+                    if not current_simple_user : errors['simple_approval_user'] = error_message
+                    if not current_simple_group : errors['simple_approval_group'] = error_message
+                else: # if fields were not in input data at all, and instance values are also None
+                     errors['simple_approval_user'] = error_message
+                     errors['simple_approval_group'] = error_message
+                raise serializers.ValidationError(errors)
+
+        elif approval_type != 'simple':
+            # If the final approval_type is NOT 'simple', then simple_approval_user and
+            # simple_approval_group must be cleared.
+            # We modify `data` here so that `serializer.save()` will update these fields to None.
+            # This handles cases where approval_type changes from 'simple' to something else,
+            # or if it was already not 'simple' but client mistakenly sent values for these fields.
+            data['simple_approval_user'] = None
+            data['simple_approval_group'] = None
+
+        return data
 
 class GenericIOMSerializer(serializers.ModelSerializer):
     created_by_username = serializers.CharField(source='created_by.username', read_only=True, allow_null=True)
