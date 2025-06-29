@@ -23,7 +23,7 @@ export interface GenericIOM {
   id: number;
   gim_id: string | null; // System-generated ID
   iom_template: number; // ID of the IOMTemplate
-  iom_template_details?: Pick<IOMTemplate, 'id' | 'name' | 'fields_definition' | 'approval_type'>; // Expanded details
+  iom_template_details?: Pick<IOMTemplate, 'id' | 'name' | 'fields_definition' | 'approval_type' | 'simple_approval_user' | 'simple_approval_group'>; // Expanded details
   subject: string;
   data_payload: IomDataPayload;
   status: GenericIomStatus;
@@ -75,7 +75,7 @@ export interface GetGenericIomsParams {
   page?: number;
   pageSize?: number;
   ordering?: string;
-  status?: GenericIomStatus | GenericIomStatus[];
+  status?: GenericIomStatus | GenericIomStatus[] | 'all_except_archived'; // Added 'all_except_archived'
   iom_template_id?: number;
   created_by_id?: number;
   search?: string; // For searching subject, gim_id, data_payload content

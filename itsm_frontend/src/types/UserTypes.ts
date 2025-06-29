@@ -10,5 +10,14 @@ export interface User {
   is_active: boolean;
   date_joined: string; // ISO 8601 string (e.g., "2025-06-09T17:47:28.175204Z")
   last_login: string | null; // ISO 8601 string or null
+  groups?: UserGroup[]; // User can belong to multiple groups
   // Add any other user profile fields your backend exposes (e.g., 'role', 'department')
+}
+
+// Define UserGroup if it's not already defined elsewhere (e.g., in a shared types file)
+// This is a common structure for group information linked to a user.
+export interface UserGroup {
+  id: number;
+  name: string;
+  // Add any other group fields if needed, e.g., 'permissions'
 }
