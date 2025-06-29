@@ -4,11 +4,9 @@ import {
   TextField,
   Button,
   Box,
-  // Typography, // Unused import
   CircularProgress,
   Alert,
   Grid,
-  // Paper, // Unused import
   FormControl,
   InputLabel,
   Select,
@@ -28,7 +26,6 @@ import {
   getIomCategories,
 } from '../../../api/genericIomApi';
 import type {
-  // IOMTemplate, // Unused type import - this was correctly identified as unused
   IOMTemplateCreateData, // This is the one Pylance flags as duplicate, ensure it's not re-declared or aliased badly
   IOMTemplateUpdateData,
   IOMCategory,
