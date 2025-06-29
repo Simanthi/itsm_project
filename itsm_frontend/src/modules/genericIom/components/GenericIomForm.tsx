@@ -21,10 +21,13 @@ import { useUI } from '../../../context/UIContext/useUI';
 import { getIomTemplateById } from '../../../api/genericIomApi';
 import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi';
 import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
-// FieldDefinition removed as it's now part of IOMTemplate, GenericIOM removed as it's not directly used for form props
-import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
-import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes';
+import type { IOMTemplate, FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
+import type { GenericIOM, GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes';
 import DynamicIomFormFieldRenderer from './DynamicIomFormFieldRenderer'; // The dynamic renderer
+
+interface GenericIomFormProps {
+  // Props can be used if this form is embedded, but using useParams for page-level form
+}
 
 // Define the type for assetContext prop
 interface AssetContextType {
@@ -37,10 +40,6 @@ interface AssetContextType {
 
 interface GenericIomFormProps {
   assetContext?: AssetContextType | null; // Make it optional
-  // This interface can be expanded if other props are needed.
-  // For now, it primarily serves to define assetContext.
-  // If it were truly empty and assetContext was handled differently,
-  // you might use `React.FC` without explicit props or `React.FC<{}>`.
 }
 
 const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) => {
@@ -50,7 +49,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
   const { showSnackbar } = useUI();
 
   const [iomTemplate, setIomTemplate] = useState<IOMTemplate | null>(null);
-  // const [initialDataPayload, setInitialDataPayload] = useState<IomDataPayload>({}); // Removed as unused
+  const [initialDataPayload, setInitialDataPayload] = useState<IomDataPayload>({});
 
   // Form state for standard fields
   const [subject, setSubject] = useState<string>('');
@@ -64,7 +63,6 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
   const [dynamicFormData, setDynamicFormData] = useState<IomDataPayload>({});
 
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Added for submission state
   const [isEditMode, setIsEditMode] = useState<boolean>(false); // This will be set by iomIdParam
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +99,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         setIomTemplate(templateForEdit);
         setSubject(fetchedIom.subject);
         setDynamicFormData(fetchedIom.data_payload || {});
-        // setInitialDataPayload(fetchedIom.data_payload || {}); // This was removed
+        setInitialDataPayload(fetchedIom.data_payload || {});
         setToUsersStr(fetchedIom.to_users?.join(',') || '');
         setToGroupsStr(fetchedIom.to_groups?.join(',') || '');
         setParentContentTypeId(fetchedIom.parent_content_type || null);
@@ -112,14 +110,14 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         setIsEditMode(false);
         const fetchedTemplate = await getIomTemplateById(authenticatedFetch, currentTemplateIdForCreate);
         setIomTemplate(fetchedTemplate);
-        const initialPayloadFromTemplate: IomDataPayload = {};
+        let initialPayload: IomDataPayload = {};
         fetchedTemplate.fields_definition.forEach(field => {
           if (field.defaultValue !== undefined) {
-            initialPayloadFromTemplate[field.name] = field.defaultValue;
+            initialPayload[field.name] = field.defaultValue;
           }
         });
 
-        // Pre-fill from assetContext if available, potentially overriding template defaults
+        // Pre-fill from assetContext if available
         if (assetContext) {
           setParentObjectId(assetContext.objectId);
           const ctId = await fetchContentTypeId(assetContext.contentTypeAppLabel, assetContext.contentTypeModel);
@@ -129,15 +127,15 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
           // Example pre-filling a data_payload field if template is designed for it
           const assetNameField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_name' || f.name === 'asset_name');
           if (assetNameField && assetContext.assetName) {
-            initialPayloadFromTemplate[assetNameField.name] = assetContext.assetName;
+            initialPayload[assetNameField.name] = assetContext.assetName;
           }
           const assetTagField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_tag' || f.name === 'asset_tag');
           if (assetTagField && assetContext.assetTag) {
-            initialPayloadFromTemplate[assetTagField.name] = assetContext.assetTag;
+            initialPayload[assetTagField.name] = assetContext.assetTag;
           }
         }
-        setDynamicFormData(initialPayloadFromTemplate);
-        // setInitialDataPayload(initialPayloadFromTemplate); // This was unused, removed.
+        setDynamicFormData(initialPayload);
+        setInitialDataPayload(initialPayload);
       } else {
         throw new Error("No Template ID for new IOM or IOM ID for editing.");
       }
@@ -154,7 +152,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     loadData();
   }, [loadData]);
 
-  const handleDynamicFieldChange = (fieldName: string, value: FormFieldValue) => {
+  const handleDynamicFieldChange = (fieldName: string, value: any) => {
     setDynamicFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
@@ -178,6 +176,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
 
     const commonPayload = {
         subject,
+        subject,
         data_payload: dynamicFormData,
         to_users: toUsersStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
         to_groups: toGroupsStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
@@ -200,37 +199,19 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         showSnackbar(`IOM "${newIom.subject}" created successfully!`, 'success');
         navigate(`/ioms/view/${newIom.id}`);
       }
-    } catch (err: any) { // Changed from unknown to any for easier data access
-      const errorData = err?.data || err; // Keep this for potential structured errors
-      let errorMessage = "Failed to save IOM."; // Default message
-
-      // Try to parse more specific error messages from backend
-      if (errorData && typeof errorData === 'object') {
-          // Handle DRF validation errors (often nested)
-          const messages: string[] = [];
-          Object.keys(errorData).forEach(key => {
-              const value = errorData[key];
-              if (Array.isArray(value)) {
-                  messages.push(`${key}: ${value.join(', ')}`);
-              } else if (typeof value === 'string') {
-                  messages.push(`${key}: ${value}`);
-              } else if (typeof value === 'object') { // Nested errors
-                Object.keys(value as object).forEach(nestedKey => {
-                    messages.push(`${key}.${nestedKey}: ${value[nestedKey]}`);
-                });
-              }
-          });
-          if (messages.length > 0) {
-            errorMessage = `Validation Error: ${messages.join('; ')}`;
-          } else if (errorData.detail) { // Handle general DRF error (e.g. from PermissionDenied)
-            errorMessage = errorData.detail;
-          }
-      } else if (err instanceof Error) { // Fallback to generic Error message
-          errorMessage = err.message;
-      } else if (typeof errorData === 'string') { // Simple string error
-          errorMessage = errorData;
+    } catch (err: unknown) {
+      const errorData = (err as any)?.data || err;
+      let errorMessage = "Failed to save IOM.";
+      if (typeof errorData === 'object' && errorData !== null) {
+        const fieldErrors = Object.entries(errorData)
+            .map(([key, value]) => `${key}: ${Array.isArray(value) ? value.join(', ') : String(value)}`)
+            .join('; ');
+        if (fieldErrors) errorMessage = `Validation Error: ${fieldErrors}`;
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof errorData === 'string') {
+        errorMessage = errorData;
       }
-
       setError(errorMessage);
       showSnackbar(errorMessage, 'error');
     } finally {
@@ -242,8 +223,10 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
 
-  // Error display is handled within the form's Alert component or via snackbar
-  // if (error && !isSubmitting) { ... } // This block can be removed
+  if (error && !isSubmitting) { // Show general error if not during submission attempt (already handled by loadData for initial load)
+    // This error state is more for submission errors that are not field-specific.
+    // return <Alert severity="error" sx={{m:2}}>{error}</Alert>;
+  }
 
   if (!iomTemplate) {
     return <Alert severity="warning" sx={{m:2}}>Template information could not be loaded. {error}</Alert>;
