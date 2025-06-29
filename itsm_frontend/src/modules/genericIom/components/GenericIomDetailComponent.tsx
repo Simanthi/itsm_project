@@ -10,9 +10,9 @@ import {
   Button,
   Divider,
   Chip,
-  // List, // Unused
-  // ListItem, // Unused
-  // ListItemText, // Unused
+  List, // Added for displaying steps
+  ListItem, // Added for displaying steps
+  ListItemText, // Added for displaying steps
   // ListItemIcon, // Unused
   TextField, // For comments in actions
 } from '@mui/material';
@@ -28,6 +28,9 @@ import PublishIcon from '@mui/icons-material/Publish';
 import SendIcon from '@mui/icons-material/Send';
 import ArchiveIcon from '@mui/icons-material/Archive';
 import UnarchiveIcon from '@mui/icons-material/Unarchive';
+import PendingActionsIcon from '@mui/icons-material/PendingActions';
+import SkipNextIcon from '@mui/icons-material/SkipNext';
+import ForwardIcon from '@mui/icons-material/Forward'; // Using as a generic for delegated
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -40,10 +43,11 @@ import {
     archiveGenericIom, // Import archive/unarchive
     unarchiveGenericIom
 } from '../../../api/genericIomApi';
+import { getApprovalSteps, approveApprovalStep, rejectApprovalStep } from '../../../api/procurementApi'; // For advanced approvals
 import type { GenericIOM, GenericIomSimpleActionPayload } from '../types/genericIomTypes';
 import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 import type { FormFieldValue } from './DynamicIomFormFieldRenderer'; // Import FormFieldValue
-// TODO: Import types and API function for ApprovalSteps
+import type { ApprovalStep, GetApprovalStepsParams, ApprovalActionPayload } from '../../procurement/types/procurementTypes'; // For advanced approvals
 
 interface GenericIomDetailComponentProps {
   iomId: number;
@@ -82,15 +86,45 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<string>('');
 
+  // State for advanced approval steps
+  const [approvalSteps, setApprovalSteps] = useState<ApprovalStep[]>([]);
+  const [isLoadingApprovalSteps, setIsLoadingApprovalSteps] = useState<boolean>(false);
+  const [approvalStepsError, setApprovalStepsError] = useState<string | null>(null);
+
   const navigate = useNavigate(); // For navigating after archive/unarchive
 
-  const fetchIomDetails = useCallback(async () => {
+  const fetchIomDetailsAndSteps = useCallback(async () => {
     if (!authenticatedFetch || !iomId) return;
     setIsLoading(true);
     setError(null);
+    setApprovalStepsError(null);
+    setApprovalSteps([]); // Reset before fetching
+
     try {
       const fetchedIom = await getGenericIomById(authenticatedFetch, iomId);
       setIom(fetchedIom);
+
+      // If advanced approval, fetch steps
+      if (fetchedIom?.iom_template_details?.approval_type === 'advanced') {
+        setIsLoadingApprovalSteps(true);
+        try {
+          const params: GetApprovalStepsParams = {
+            content_type_app_label: 'generic_iom',
+            content_type_model: 'genericiom', // Ensure this matches backend model name (lowercase)
+            object_id: fetchedIom.id,
+            pageSize: 100, // Assuming not too many steps per IOM
+            ordering: 'step_order', // Order by step_order
+          };
+          const stepsResponse = await getApprovalSteps(authenticatedFetch, params);
+          setApprovalSteps(stepsResponse.results);
+        } catch (stepsErr) {
+          const stepsMessage = stepsErr instanceof Error ? stepsErr.message : "Could not load approval steps.";
+          setApprovalStepsError(stepsMessage);
+          showSnackbar(`Error fetching approval steps: ${stepsMessage}`, 'error');
+        } finally {
+          setIsLoadingApprovalSteps(false);
+        }
+      }
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unknown error occurred";
       setError(`Failed to load IOM details: ${message}`);
@@ -101,10 +135,15 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   }, [authenticatedFetch, iomId, showSnackbar]);
 
   useEffect(() => {
-    fetchIomDetails();
-  }, [fetchIomDetails]);
+    fetchIomDetailsAndSteps();
+  }, [fetchIomDetailsAndSteps]);
 
-  const handleWorkflowAction = async (actionType: 'submit' | 'approve' | 'reject' | 'publish') => {
+
+  const refreshAllData = () => {
+    fetchIomDetailsAndSteps();
+  }
+
+  const handleSimpleWorkflowAction = async (actionType: 'submit' | 'approve' | 'reject' | 'publish') => {
     if (!iom || !authenticatedFetch) return;
 
     setIsActionLoading(true);
@@ -149,11 +188,12 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       }
 
       if (updatedIom) {
-        setIom(updatedIom);
+        // Instead of just setting IOM, refresh all data to get updated steps and IOM status
         showSnackbar(successMessage, 'success');
         setComments(''); // Clear comments after successful action
+        refreshAllData(); // Refresh IOM and its approval steps
       }
-    } catch (err: unknown) { // Changed from any to unknown
+    } catch (err: unknown) {
       const errorData = (err as { data?: unknown })?.data || err;
       let errorMessage = `Failed to ${actionType} IOM.`;
       if (typeof errorData === 'object' && errorData !== null) {
@@ -169,6 +209,53 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       setIsActionLoading(false);
     }
   };
+
+  const handleAdvancedApprovalAction = async (stepId: number, action: 'approve' | 'reject') => {
+    if (!authenticatedFetch) return;
+
+    const currentStep = approvalSteps.find(s => s.id === stepId);
+    if (!currentStep || currentStep.status !== 'pending') {
+      showSnackbar("This step cannot be actioned.", "warning");
+      return;
+    }
+
+    if (action === 'reject' && !comments.trim()) {
+      showSnackbar("Comments are required for rejection.", "warning");
+      setActionError("Comments are required for rejection."); // Show error near comments field
+      return;
+    }
+
+    setIsActionLoading(true);
+    setActionError(null);
+    const payload: ApprovalActionPayload = { comments: comments };
+
+    try {
+      if (action === 'approve') {
+        await approveApprovalStep(authenticatedFetch, stepId, payload);
+        showSnackbar(`Step ${currentStep.step_order} approved successfully.`, 'success');
+      } else {
+        await rejectApprovalStep(authenticatedFetch, stepId, payload);
+        showSnackbar(`Step ${currentStep.step_order} rejected successfully.`, 'success');
+      }
+      setComments(''); // Clear comments after action
+      refreshAllData(); // Refresh IOM and its approval steps
+    } catch (err) {
+      const errorData = (err as { data?: unknown })?.data || err;
+      let errorMessage = `Failed to ${action} step.`;
+      if (typeof errorData === 'object' && errorData !== null) {
+        errorMessage = Object.values(errorData).flat().join(' ');
+      } else if (err instanceof Error) {
+        errorMessage = err.message;
+      } else if (typeof errorData === 'string'){
+        errorMessage = errorData;
+      }
+      setActionError(errorMessage);
+      showSnackbar(errorMessage, 'error');
+    } finally {
+      setIsActionLoading(false);
+    }
+  };
+
 
   const handleArchiveToggleAction = async () => {
     if (!iom || !authenticatedFetch) return;
@@ -304,25 +391,32 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
         {actionError && <Alert severity="error" sx={{mb:1}}>{actionError}</Alert>}
         <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1}}>
             {canSubmitForSimpleApproval && (
-                <Button onClick={() => handleWorkflowAction('submit')} variant="contained" startIcon={<SendIcon />} disabled={isActionLoading}>
+                <Button onClick={() => handleSimpleWorkflowAction('submit')} variant="contained" startIcon={<SendIcon />} disabled={isActionLoading}>
                     {isActionLoading ? <CircularProgress size={20}/> : "Submit for Simple Approval"}
                 </Button>
             )}
 
+            {/* Comments field - shared for simple and advanced approval actions */}
+            {(canPerformSimpleApprovalAction || (iom.iom_template_details?.approval_type === 'advanced' && approvalSteps.some(s => s.status === 'pending'))) && (
+                 <TextField
+                    label="Comments (for Approve/Reject)"
+                    value={comments}
+                    onChange={(e) => setComments(e.target.value)}
+                    multiline rows={2} size="small" fullWidth
+                    helperText={actionError === "Comments are required for rejection." ? actionError : "Comments required for rejection."}
+                    error={actionError === "Comments are required for rejection."}
+                    sx={{mt: (canPerformSimpleApprovalAction ? 0 : 1)}} // Add margin top if it's for advanced workflow and no simple action is shown before it
+                />
+            )}
+
             {canPerformSimpleApprovalAction && (
-                <Paper variant="outlined" sx={{p:1, display: 'flex', flexDirection:'column', gap:1, width: '100%' }}>
-                    <TextField
-                        label="Comments (for Approve/Reject)"
-                        value={comments}
-                        onChange={(e) => setComments(e.target.value)}
-                        multiline rows={2} size="small" fullWidth
-                        helperText={!comments.trim() ? "Comments required for rejection" : ""}
-                    />
+                <Paper variant="outlined" sx={{p:1, display: 'flex', flexDirection:'column', gap:1, width: '100%', mt:1 }}>
+                    {/* Comment field is now outside this block */}
                     <Box sx={{display:'flex', gap:1}}>
-                        <Button onClick={() => handleWorkflowAction('approve')} variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} disabled={isActionLoading}>
+                        <Button onClick={() => handleSimpleWorkflowAction('approve')} variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} disabled={isActionLoading}>
                             {isActionLoading ? <CircularProgress size={20}/> : "Simple Approve"}
                         </Button>
-                        <Button onClick={() => handleWorkflowAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} disabled={isActionLoading || !comments.trim()}>
+                        <Button onClick={() => handleSimpleWorkflowAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} disabled={isActionLoading || !comments.trim()}>
                             {isActionLoading ? <CircularProgress size={20}/> : "Simple Reject"}
                         </Button>
                     </Box>
@@ -330,13 +424,13 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
             )}
 
             {canPublish && (
-                <Button onClick={() => handleWorkflowAction('publish')} variant="contained" color="primary" startIcon={<PublishIcon />} disabled={isActionLoading}>
+                <Button onClick={() => handleSimpleWorkflowAction('publish')} variant="contained" color="primary" startIcon={<PublishIcon />} disabled={isActionLoading}>
                     {isActionLoading ? <CircularProgress size={20}/> : "Publish IOM"}
                 </Button>
             )}
 
             {canArchive && (
-                 <Button onClick={handleArchiveToggleAction} variant="outlined" color="warning" startIcon={<ArchiveIcon />} disabled={isActionLoading}>
+                 <Button onClick={handleArchiveToggleAction} variant="outlined" color="warning" startIcon={<ArchiveIcon />} disabled={isActionLoading || iom.status === 'draft'}> {/* Prevent archiving draft */}
                     {isActionLoading ? <CircularProgress size={20}/> : "Archive IOM"}
                 </Button>
             )}
@@ -354,15 +448,107 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
 
       {/* Placeholder for Advanced Approval Steps Display */}
       {iom.iom_template_details?.approval_type === 'advanced' && (
-        <Box sx={{mt:3}}>
+        <Box sx={{mt:3, p:2, border: '1px solid lightgray', borderRadius: 1}}>
             <Typography variant="h6" gutterBottom>Advanced Approval Workflow</Typography>
-            <Typography color="textSecondary">
-                {/* TODO: Fetch and display ApprovalStep instances related to this IOM.
-                    This will require an API endpoint like /api/procurement/approval-steps/?content_type=<ct_id>&object_id=<iom_pk>
-                    and an ApprovalStepSerializer that handles the GFK.
-                */}
-                Advanced approval steps will be shown here. (Status: {iom.status})
-            </Typography>
+            {isLoadingApprovalSteps && <CircularProgress size={24} />}
+            {approvalStepsError && <Alert severity="error">{approvalStepsError}</Alert>}
+            {!isLoadingApprovalSteps && !approvalStepsError && approvalSteps.length === 0 && (
+                 <Typography color="textSecondary">No approval steps found or generated for this IOM yet.</Typography>
+            )}
+            {!isLoadingApprovalSteps && !approvalStepsError && approvalSteps.length > 0 && (
+                <List dense sx={{ width: '100%'}}>
+                    {approvalSteps.map(step => {
+                        let chipColor: "default" | "primary" | "secondary" | "error" | "info" | "success" | "warning" = "default";
+                        switch (step.status) {
+                            case 'pending': chipColor = 'warning'; break;
+                            case 'approved': chipColor = 'success'; break;
+                            case 'rejected': chipColor = 'error'; break;
+                            case 'delegated': chipColor = 'info'; break;
+                            case 'skipped': chipColor = 'secondary'; break;
+                            default: chipColor = 'default';
+                        }
+
+                        return (
+                            <ListItem
+                                key={step.id}
+                                divider
+                                sx={{
+                                    alignItems: 'flex-start',
+                                    flexDirection: 'column',
+                                    mb: 1,
+                                    border: '1px solid #ddd',
+                                    borderRadius: '4px',
+                                    bgcolor: step.status === 'pending' ? 'action.hover' : 'background.paper'
+                                }}
+                            >
+                                <Box sx={{ display: 'flex', justifyContent: 'space-between', width: '100%', alignItems: 'center', mb: 0.5 }}>
+                                    <Typography variant="subtitle2" component="div" sx={{ fontWeight: 'bold' }}>
+                                        {step.step_order}. {step.rule_name_snapshot || step.approval_rule_name || 'Approval Step'}
+                                    </Typography>
+                                    <Chip
+                                        label={step.status_display || step.status}
+                                        color={chipColor}
+                                        size="small"
+                                        icon={
+                                            step.status === 'pending' ? <PendingActionsIcon fontSize="small" /> :
+                                            step.status === 'approved' ? <CheckCircleOutlineIcon fontSize="small" /> :
+                                            step.status === 'rejected' ? <HighlightOffIcon fontSize="small" /> :
+                                            step.status === 'skipped' ? <SkipNextIcon fontSize="small" /> :
+                                            step.status === 'delegated' ? <ForwardIcon fontSize="small" /> : undefined
+                                        }
+                                    />
+                                </Box>
+
+                                <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                    Assigned: {step.assigned_approver_user_name ? `User: ${step.assigned_approver_user_name}` : step.assigned_approver_group_name ? `Group: ${step.assigned_approver_group_name}` : 'N/A'}
+                                </Typography>
+
+                                {step.actioned_by_user_name && (
+                                    <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.8rem' }}>
+                                        Actioned By: {step.actioned_by_user_name}
+                                        {step.decision_date ? ` on ${new Date(step.decision_date).toLocaleString()}` : ''}
+                                    </Typography>
+                                )}
+
+                                {step.comments && (
+                                    <Typography variant="caption" display="block" sx={{ mt: 0.5, fontStyle: 'italic', whiteSpace: 'pre-wrap', color: 'text.hint', fontSize: '0.75rem' }}>
+                                        Comments: {step.comments}
+                                    </Typography>
+                                )}
+                                {/* Action buttons for Advanced Approval Steps */}
+                                <Box sx={{width: '100%', mt:1, display: 'flex', gap: 1, justifyContent: 'flex-end'}}>
+                                    {(step.status === 'pending' && user &&
+                                     (step.assigned_approver_user === user.id ||
+                                      (step.assigned_approver_group && user.groups?.includes(step.assigned_approver_group)))) && (
+                                        <>
+                                            <Button
+                                                onClick={() => handleAdvancedApprovalAction(step.id, 'approve')}
+                                                variant="outlined"
+                                                color="success"
+                                                size="small"
+                                                startIcon={<CheckCircleOutlineIcon />}
+                                                disabled={isActionLoading}
+                                            >
+                                                Approve Step
+                                            </Button>
+                                            <Button
+                                                onClick={() => handleAdvancedApprovalAction(step.id, 'reject')}
+                                                variant="outlined"
+                                                color="error"
+                                                size="small"
+                                                startIcon={<HighlightOffIcon />}
+                                                disabled={isActionLoading || !comments.trim()}
+                                            >
+                                                Reject Step
+                                            </Button>
+                                        </>
+                                    )}
+                                </Box>
+                            </ListItem>
+                        );
+                    })}
+                </List>
+            )}
         </Box>
       )}
     </Box>
