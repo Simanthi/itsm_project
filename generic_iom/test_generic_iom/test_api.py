@@ -144,9 +144,9 @@ class GenericIOMAPITest(APITestCase):
 
     def test_list_generic_ioms_user_sees_own_and_published(self):
         # User1 creates a draft IOM
-        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User1 Draft", created_by=self.user1, status='draft')
+        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User1 Draft", created_by=self.user1, status='draft', data_payload={"message": "draft msg"})
         # User2 creates a published IOM
-        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User2 Published", created_by=self.user2, status='published')
+        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User2 Published", created_by=self.user2, status='published', data_payload={"message": "published msg"})
 
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(reverse('generic_iom:genericiom-list'))
@@ -159,13 +159,24 @@ class GenericIOMAPITest(APITestCase):
         # For now, this confirms the queryset logic for list view.
 
     def test_retrieve_generic_iom_owner(self):
-        iom = GenericIOM.objects.create(**self.iom_data_valid, created_by=self.user1)
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_no_approval,
+            subject=self.iom_data_valid['subject'],
+            data_payload=self.iom_data_valid['data_payload'],
+            created_by=self.user1
+        )
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
     def test_retrieve_generic_iom_non_owner_published(self):
-        iom = GenericIOM.objects.create(**self.iom_data_valid, created_by=self.user1, status='published')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_no_approval,
+            subject=self.iom_data_valid['subject'],
+            data_payload=self.iom_data_valid['data_payload'],
+            created_by=self.user1,
+            status='published'
+        )
         # user2 is not creator, not direct recipient, not in group recipient.
         # but if published, CanViewGenericIOM allows view if they are recipient or staff.
         # For this test, let's assume user2 is a recipient for simplicity to test CanViewGenericIOM.
@@ -177,7 +188,13 @@ class GenericIOMAPITest(APITestCase):
 
 
     def test_update_generic_iom_owner_draft(self):
-        iom = GenericIOM.objects.create(**self.iom_data_valid, created_by=self.user1, status='draft')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_no_approval,
+            subject=self.iom_data_valid['subject'],
+            data_payload=self.iom_data_valid['data_payload'],
+            created_by=self.user1,
+            status='draft'
+        )
         self.client.force_authenticate(user=self.user1)
         update_data = {"subject": "Updated Subject by Owner", "data_payload": {"message": "Updated content"}}
         response = self.client.patch(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}), update_data, format='json')
@@ -186,14 +203,26 @@ class GenericIOMAPITest(APITestCase):
         self.assertEqual(iom.subject, "Updated Subject by Owner")
 
     def test_update_generic_iom_owner_not_draft_forbidden(self):
-        iom = GenericIOM.objects.create(**self.iom_data_valid, created_by=self.user1, status='published')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_no_approval,
+            subject=self.iom_data_valid['subject'],
+            data_payload=self.iom_data_valid['data_payload'],
+            created_by=self.user1,
+            status='published'
+        )
         self.client.force_authenticate(user=self.user1)
         update_data = {"subject": "Attempt Update Published"}
         response = self.client.patch(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}), update_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN) # Due to IsOwnerOrReadOnlyGenericIOM
 
     def test_submit_for_simple_approval_owner_draft(self):
-        iom = GenericIOM.objects.create(**self.iom_simple_data_valid, created_by=self.user1, status='draft')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_simple_approval,
+            subject=self.iom_simple_data_valid['subject'],
+            data_payload=self.iom_simple_data_valid['data_payload'],
+            created_by=self.user1,
+            status='draft'
+        )
         self.client.force_authenticate(user=self.user1)
         url = reverse('generic_iom:genericiom-submit-for-simple-approval', kwargs={'pk': iom.pk})
         response = self.client.post(url, {}, format='json')
@@ -202,7 +231,13 @@ class GenericIOMAPITest(APITestCase):
         self.assertEqual(iom.status, 'pending_approval')
 
     def test_simple_approve_assigned_user(self):
-        iom = GenericIOM.objects.create(**self.iom_simple_data_valid, created_by=self.user1, status='pending_approval')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_simple_approval,
+            subject=self.iom_simple_data_valid['subject'],
+            data_payload=self.iom_simple_data_valid['data_payload'],
+            created_by=self.user1,
+            status='pending_approval'
+        )
         self.client.force_authenticate(user=self.user2) # user2 is simple_approval_user
         url = reverse('generic_iom:genericiom-simple-approve', kwargs={'pk': iom.pk})
         response = self.client.post(url, {"comments": "Looks good!"}, format='json')
@@ -213,14 +248,26 @@ class GenericIOMAPITest(APITestCase):
         self.assertEqual(iom.simple_approval_comments, "Looks good!")
 
     def test_simple_reject_assigned_user_requires_comments(self):
-        iom = GenericIOM.objects.create(**self.iom_simple_data_valid, created_by=self.user1, status='pending_approval')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_simple_approval,
+            subject=self.iom_simple_data_valid['subject'],
+            data_payload=self.iom_simple_data_valid['data_payload'],
+            created_by=self.user1,
+            status='pending_approval'
+        )
         self.client.force_authenticate(user=self.user2)
         url = reverse('generic_iom:genericiom-simple-reject', kwargs={'pk': iom.pk})
         response = self.client.post(url, {"comments": ""}, format='json') # No comments
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST) # Comments required
 
     def test_publish_iom_no_approval_from_draft_by_owner(self):
-        iom = GenericIOM.objects.create(**self.iom_data_valid, created_by=self.user1, status='draft')
+        iom = GenericIOM.objects.create(
+            iom_template=self.template_no_approval,
+            subject=self.iom_data_valid['subject'],
+            data_payload=self.iom_data_valid['data_payload'],
+            created_by=self.user1,
+            status='draft'
+        )
         self.client.force_authenticate(user=self.user1)
         url = reverse('generic_iom:genericiom-publish', kwargs={'pk': iom.pk})
         response = self.client.post(url, {}, format='json')
@@ -231,7 +278,9 @@ class GenericIOMAPITest(APITestCase):
 
     def test_publish_iom_simple_approval_from_approved_by_owner(self):
         iom = GenericIOM.objects.create(
-            **self.iom_simple_data_valid,
+            iom_template=self.template_simple_approval,
+            subject=self.iom_simple_data_valid['subject'],
+            data_payload=self.iom_simple_data_valid['data_payload'],
             created_by=self.user1,
             status='approved', # Assume it went through simple approval
             simple_approver_action_by=self.user2

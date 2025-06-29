@@ -357,7 +357,9 @@ class ApprovalWorkflowTests(TestCase):
         self.assertEqual(response.data['count'], 1, f"Expected 1 step for user1, got {response.data['count']}")
         if response.data['count'] == 1:
             self.assertEqual(len(response.data['results']), 1)
-            self.assertEqual(response.data['results'][0]['purchase_request_memo_iom_id'], iom_for_user1.iom_id)
+            # self.assertEqual(response.data['results'][0]['purchase_request_memo_iom_id'], iom_for_user1.iom_id) # Old assertion
+            self.assertIn(iom_for_user1.iom_id, response.data['results'][0].get('content_object_display', ''))
+            self.assertIn("PRM", response.data['results'][0].get('content_object_display', ''))
             self.assertEqual(response.data['results'][0]['assigned_approver_user_name'], self.approver_user1.username)
 
 

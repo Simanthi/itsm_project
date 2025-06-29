@@ -1,3 +1,4 @@
+import unittest # Moved to top
 from django.test import TestCase, override_settings
 from django.contrib.auth import get_user_model
 from django.contrib.auth.models import Group
@@ -124,6 +125,7 @@ class GenericIOMSignalTests(TestCase):
             status='pending_approval', # Start as pending
             simple_approver_action_by=self.approver_user
         )
+        mock_send_email.reset_mock() # Reset after create, as create might trigger "submitted" email
         iom.status = 'approved'
         iom.save() # Trigger notification
 
@@ -142,6 +144,7 @@ class GenericIOMSignalTests(TestCase):
             simple_approver_action_by=self.approver_user,
             simple_approval_comments="Not good enough"
         )
+        mock_send_email.reset_mock() # Reset after create
         iom.status = 'rejected'
         iom.save()
 
@@ -226,14 +229,12 @@ class GenericIOMSignalTests(TestCase):
         mock_send_email.assert_called_once()
         args, kwargs = mock_send_email.call_args
         self.assertIn("New IOM Published", args[0])
-        # Expected recipients: recipient_user1, and recipient_user2 (from group)
-        # Note: approver_user (self.approver_user) is also in self.recipient_group via setup.
-        # So, if self.approver_user has an email, it should be in the list.
+        # Expected recipients: recipient_user1 (direct) and recipient_user2 (via recipient_group).
+        # approver_user is NOT part of recipient_group in this test's setup for published notifications.
         expected_emails = {self.recipient_user1.email, self.recipient_user2.email}
-        if self.approver_user.email: # If approver_user (who is in recipient_group) has an email
-            expected_emails.add(self.approver_user.email)
+        # if self.approver_user.email: # This was incorrect; approver_user is not a recipient here.
+        #     expected_emails.add(self.approver_user.email)
 
         self.assertEqual(set(args[2]), expected_emails)
 
-# Need to import unittest for skipIf
-import unittest
+# import unittest # Moved to top

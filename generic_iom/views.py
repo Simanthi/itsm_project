@@ -105,25 +105,56 @@ class GenericIOMViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user
-        if user.is_staff:
-            return GenericIOM.objects.all().select_related(
-                'iom_template__category', 'created_by',
-                'parent_content_type', 'simple_approver_action_by'
-            ).prefetch_related('to_users', 'to_groups').order_by('-created_at')
 
-        # Non-staff users: see IOMs they created, are assigned to, or are in their groups, or published ones they can see
-        # This can get complex. CanViewGenericIOM handles object-level, list needs broader query.
-        # For simplicity now, let's allow users to list IOMs they created or are explicitly/group-wise recipients of.
-        # The CanViewGenericIOM will further filter on retrieve.
-        return GenericIOM.objects.filter(
-            Q(created_by=user) |
-            Q(to_users=user) |
-            Q(to_groups__in=user.groups.all()) |
-            Q(status='published') # Simplification: allow listing of all published, details filtered by CanViewGenericIOM
-        ).distinct().select_related(
+        # Base queryset for all users, further filtered below
+        base_queryset = GenericIOM.objects.all().select_related(
             'iom_template__category', 'created_by',
             'parent_content_type', 'simple_approver_action_by'
-        ).prefetch_related('to_users', 'to_groups').order_by('-created_at')
+        ).prefetch_related('to_users', 'to_groups')
+
+        if user.is_staff:
+            queryset = base_queryset
+        else:
+            user_is_creator = Q(created_by=user)
+            user_is_recipient = Q(to_users=user)
+            user_in_recipient_group = Q(to_groups__in=user.groups.all())
+            is_published = Q(status='published')
+
+            is_simple_approver_for_pending = Q(
+                status='pending_approval',
+                iom_template__approval_type='simple',
+                iom_template__simple_approval_user=user
+            )
+
+            user_groups = user.groups.all()
+            if user_groups.exists():
+                is_in_simple_approval_group_for_pending = Q(
+                    status='pending_approval',
+                    iom_template__approval_type='simple',
+                    iom_template__simple_approval_group__in=user_groups
+                )
+            else:
+                is_in_simple_approval_group_for_pending = Q() # Effectively False if ORed
+
+            q_filters = user_is_creator | \
+                        user_is_recipient | \
+                        user_in_recipient_group | \
+                        is_published | \
+                        is_simple_approver_for_pending | \
+                        is_in_simple_approval_group_for_pending
+
+            queryset = base_queryset.filter(q_filters).distinct()
+
+        # Apply status filtering from query parameters
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            if status_filter == 'all_except_archived':
+                 queryset = queryset.exclude(status='archived')
+            elif status_filter in [s[0] for s in GenericIOM.STATUS_CHOICES]:
+                queryset = queryset.filter(status=status_filter)
+
+        # Default ordering
+        return queryset.order_by('-created_at')
 
 
     def perform_create(self, serializer):
@@ -262,41 +293,9 @@ class GenericIOMViewSet(viewsets.ModelViewSet):
         # TODO: Log or notify
         return Response(GenericIOMSerializer(iom, context={'request': request}).data)
 
-    def get_queryset(self):
-        user = self.request.user
-        queryset = GenericIOM.objects.all().select_related(
-            'iom_template__category', 'created_by',
-            'parent_content_type', 'simple_approver_action_by'
-        ).prefetch_related('to_users', 'to_groups') # Base queryset
+    # get_queryset is now defined above get_permissions, which is fine.
+    # The previous version was missing the override of the queryset attribute, this defines get_queryset() method.
 
-        # Filter by status query param if provided
-        status_filter = self.request.query_params.get('status')
-        if status_filter:
-            if status_filter == 'all_except_archived': # Special case for default view perhaps
-                 queryset = queryset.exclude(status='archived')
-            elif status_filter in [s[0] for s in GenericIOM.STATUS_CHOICES]:
-                queryset = queryset.filter(status=status_filter)
-            # else: ignore invalid status filter or return 400
-
-        # Default filtering for non-staff: exclude archived unless explicitly requested by status filter
-        if not user.is_staff and status_filter != 'archived':
-             queryset = queryset.exclude(status='archived')
-
-
-        # Apply existing visibility filters for non-staff
-        if not user.is_staff:
-            queryset = queryset.filter(
-                Q(created_by=user) |
-                Q(to_users=user) |
-                Q(to_groups__in=user.groups.all()) |
-                # If showing non-archived, published is fine. If specifically asking for archived, this OR might be too broad.
-                # This published OR condition might need to be conditional based on status_filter
-                (Q(status='published') if status_filter != 'archived' else Q())
-            ).distinct()
-
-        # Apply ordering (SearchFilter is already in filter_backends)
-        # Default ordering is by -created_at from model Meta, OrderingFilter will respect that or override.
-        return queryset.order_by('-created_at') # Ensure consistent default ordering
     #     iom = self.get_object()
     #     if iom.iom_template.approval_type != 'advanced':
     #         return Response({"detail": "Advanced approval not applicable for this IOM."}, status=status.HTTP_400_BAD_REQUEST)

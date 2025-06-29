@@ -313,7 +313,7 @@ class ApprovalWorkflowModelsTestCase(TestCase):
     def test_approval_step_save_snapshot(self):
         rule = ApprovalRule.objects.create(name='Initial Rule Name', order=1, approver_user=self.user1)
         step = ApprovalStep(
-            purchase_request_memo=self.iom,
+            content_object=self.iom, # Changed from purchase_request_memo
             approval_rule=rule,
             step_order=rule.order,
             assigned_approver_user=rule.approver_user
@@ -451,7 +451,7 @@ class ApprovalWorkflowModelsTestCase(TestCase):
         self.assertEqual(iom_no_match.status, 'approved') # Status should not change if no steps created
 
         # Test retrigger deletes old pending steps
-        step_to_delete = ApprovalStep.objects.create(purchase_request_memo=self.iom, step_order=5, status='pending')
+        step_to_delete = ApprovalStep.objects.create(content_object=self.iom, step_order=5, status='pending') # Changed
         self.iom.status = 'draft' # Set to draft to allow re-trigger without force
         self.iom.save() # This will re-trigger
         with self.assertRaises(ApprovalStep.DoesNotExist):
