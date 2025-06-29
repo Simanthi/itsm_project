@@ -11,7 +11,7 @@ import {
   Button,
   Divider,
 } from '@mui/material';
-import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Print as PrintIcon } from '@mui/icons-material';
+import { ArrowBack as ArrowBackIcon, Edit as EditIcon, Print as PrintIcon, Description as DescriptionIcon } from '@mui/icons-material';
 // import { useServiceRequests } from '../hooks/useServiceRequests'; // To potentially get a single request if already loaded - REMOVED as unused
 import { type ServiceRequest } from '../types/ServiceRequestTypes';
 import { getServiceRequestById } from '../../../api/serviceRequestApi'; // Direct API call
@@ -147,8 +147,26 @@ const ServiceRequestDetailPage: React.FC = () => {
               color="secondary"
               startIcon={<PrintIcon />}
               onClick={() => navigate('/service-requests/print-preview', { state: { selectedRequestIds: [request.request_id], autoPrint: false } })}
+              sx={{ mr: 1 }}
             >
               Print Preview
+            </Button>
+            <Button
+                variant="outlined"
+                color="info"
+                startIcon={<DescriptionIcon />}
+                onClick={() => {
+                    const parentRecordContext = {
+                        objectId: request.id, // Use the numeric pk for object_id
+                        contentTypeAppLabel: 'service_requests',
+                        contentTypeModel: 'servicerequest',
+                        recordName: request.title,
+                        recordIdentifier: request.request_id, // User-facing ID
+                    };
+                    navigate('/ioms/new/select-template', { state: { parentRecordContext } });
+                }}
+            >
+                Create IOM
             </Button>
           </Box>
         </Box>

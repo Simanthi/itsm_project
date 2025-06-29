@@ -25,9 +25,10 @@ import {
 import EditIcon from '@mui/icons-material/Edit';
 import DeleteIcon from '@mui/icons-material/Delete';
 import AddIcon from '@mui/icons-material/Add';
-import PrintIcon from '@mui/icons-material/Print'; // Import PrintIcon
-import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { useUI } from '../../../context/UIContext/useUI'; // Import useUI
+import PrintIcon from '@mui/icons-material/Print';
+import DescriptionIcon from '@mui/icons-material/Description'; // For Create IOM button
+import { useNavigate } from 'react-router-dom';
+import { useUI } from '../../../context/UIContext/useUI';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import {
@@ -361,6 +362,24 @@ const VendorManagement: React.FC = () => {
                       size="small"
                     >
                       <DeleteIcon />
+                    </IconButton>
+                    <IconButton
+                        onClick={() => {
+                            const parentRecordContext = {
+                                objectId: vendor.id,
+                                contentTypeAppLabel: 'assets', // Vendor model is in 'assets' app
+                                contentTypeModel: 'vendor',    // Model name is 'vendor'
+                                recordName: vendor.name,
+                                recordIdentifier: `Vendor ID: ${vendor.id}`, // Or another unique identifier if available
+                            };
+                            navigate('/ioms/new/select-template', { state: { parentRecordContext } });
+                        }}
+                        disabled={isLoading}
+                        size="small"
+                        color="info"
+                        title="Create IOM for this Vendor"
+                    >
+                        <DescriptionIcon />
                     </IconButton>
                   </TableCell>
                 </TableRow>
