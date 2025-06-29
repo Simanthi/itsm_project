@@ -4,8 +4,7 @@ from django.contrib.contenttypes.models import ContentType
 from django.core.exceptions import ValidationError
 from unittest.mock import patch, MagicMock
 
-# from .models import GenericIOMIDSequence # This model seems to have been removed or refactored
-from .models import IOMCategory, IOMTemplate, GenericIOM
+from .models import GenericIOMIDSequence, IOMCategory, IOMTemplate, GenericIOM
 # To test workflow triggering, we need ApprovalRule and ApprovalStep from procurement
 # This creates a dependency. For pure unit tests of generic_iom models,
 # we might mock these out. For integration-style tests, we'd import them.
@@ -36,74 +35,70 @@ from django.db.models import Q
 # ... (rest of GenericIOMIDSequenceTests tests commented out for brevity if model isn't in generic_iom.models)
 
 
-# # The following class `IOMCategoryTests` seems to be a misnamed remnant of `GenericIOMIDSequenceTests`
-# # as it exclusively tests `GenericIOMIDSequence.get_next_id()`.
-# # Since `GenericIOMIDSequence` model and its direct import have been removed/commented out,
-# # this class definition and its methods are now also commented out to prevent NameErrors.
-# # class IOMCategoryTests(TestCase):
-# #     def test_get_next_id_creation_and_increment(self):
-# #         first_id = GenericIOMIDSequence.get_next_id("TST")
-# #         self.assertEqual(first_id, "TST-AA-0001")
-# #         second_id = GenericIOMIDSequence.get_next_id("TST")
-# #         self.assertEqual(second_id, "TST-AA-0002")
+class IOMCategoryTests(TestCase):
+    def test_get_next_id_creation_and_increment(self):
+        first_id = GenericIOMIDSequence.get_next_id("TST")
+        self.assertEqual(first_id, "TST-AA-0001")
+        second_id = GenericIOMIDSequence.get_next_id("TST")
+        self.assertEqual(second_id, "TST-AA-0002")
 
-# #     def test_get_next_id_numeric_rollover(self):
-# #         # Manually set current_numeric_part to near limit
-# #         seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="NUM")
-# #         seq.current_numeric_part = 9998
-# #         seq.current_alpha_part_char1 = "A"
-# #         seq.current_alpha_part_char2 = "A"
-# #         seq.save()
+    def test_get_next_id_numeric_rollover(self):
+        # Manually set current_numeric_part to near limit
+        seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="NUM")
+        seq.current_numeric_part = 9998
+        seq.current_alpha_part_char1 = "A"
+        seq.current_alpha_part_char2 = "A"
+        seq.save()
 
-# #         id1 = GenericIOMIDSequence.get_next_id("NUM") # AA-9999
-# #         self.assertEqual(id1, "NUM-AA-9999")
-# #         id2 = GenericIOMIDSequence.get_next_id("NUM") # AB-0001
-# #         self.assertEqual(id2, "NUM-AB-0001")
+        id1 = GenericIOMIDSequence.get_next_id("NUM") # AA-9999
+        self.assertEqual(id1, "NUM-AA-9999")
+        id2 = GenericIOMIDSequence.get_next_id("NUM") # AB-0001
+        self.assertEqual(id2, "NUM-AB-0001")
 
-# #     def test_get_next_id_alpha_char2_rollover(self):
-# #         seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="AL2")
-# #         seq.current_numeric_part = 9999
-# #         seq.current_alpha_part_char1 = "A"
-# #         seq.current_alpha_part_char2 = "Y" # Next is Z, then rollover to BA
-# #         seq.save()
+    def test_get_next_id_alpha_char2_rollover(self):
+        seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="AL2")
+        seq.current_numeric_part = 9999
+        seq.current_alpha_part_char1 = "A"
+        seq.current_alpha_part_char2 = "Y" # Next is Z, then rollover to BA
+        seq.save()
 
-# #         id_az = GenericIOMIDSequence.get_next_id("AL2") # AZ-0001 (as it increments num first from 9999 to 1, then alpha)
-# #         self.assertEqual(id_az, "AL2-AZ-0001")
+        id_az = GenericIOMIDSequence.get_next_id("AL2") # AZ-0001 (as it increments num first from 9999 to 1, then alpha)
+        self.assertEqual(id_az, "AL2-AZ-0001")
 
-# #         seq.current_numeric_part = 9999 # Reset num for next test
-# #         seq.current_alpha_part_char1 = "A"
-# #         seq.current_alpha_part_char2 = "Z"
-# #         seq.save()
-# #         id_ba = GenericIOMIDSequence.get_next_id("AL2") # BA-0001
-# #         self.assertEqual(id_ba, "AL2-BA-0001")
+        seq.current_numeric_part = 9999 # Reset num for next test
+        seq.current_alpha_part_char1 = "A"
+        seq.current_alpha_part_char2 = "Z"
+        seq.save()
+        id_ba = GenericIOMIDSequence.get_next_id("AL2") # BA-0001
+        self.assertEqual(id_ba, "AL2-BA-0001")
 
 
-# #     def test_get_next_id_alpha_char1_rollover(self):
-# #         seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="AL1")
-# #         seq.current_numeric_part = 9999
-# #         seq.current_alpha_part_char1 = "Y"
-# #         seq.current_alpha_part_char2 = "Z"
-# #         seq.save()
-# #         id_za = GenericIOMIDSequence.get_next_id("AL1") # ZA-0001
-# #         self.assertEqual(id_za, "AL1-ZA-0001")
+    def test_get_next_id_alpha_char1_rollover(self):
+        seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="AL1")
+        seq.current_numeric_part = 9999
+        seq.current_alpha_part_char1 = "Y"
+        seq.current_alpha_part_char2 = "Z"
+        seq.save()
+        id_za = GenericIOMIDSequence.get_next_id("AL1") # ZA-0001
+        self.assertEqual(id_za, "AL1-ZA-0001")
 
-# #     def test_get_next_id_exhaustion(self):
-# #         seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="EXH")
-# #         seq.current_numeric_part = 9999
-# #         seq.current_alpha_part_char1 = "Z"
-# #         seq.current_alpha_part_char2 = "Z"
-# #         seq.save()
-# #         with self.assertRaises(ValueError) as context:
-# #             GenericIOMIDSequence.get_next_id("EXH")
-# #         self.assertTrue("ID sequence exhausted" in str(context.exception))
+    def test_get_next_id_exhaustion(self):
+        seq, _ = GenericIOMIDSequence.objects.get_or_create(prefix="EXH")
+        seq.current_numeric_part = 9999
+        seq.current_alpha_part_char1 = "Z"
+        seq.current_alpha_part_char2 = "Z"
+        seq.save()
+        with self.assertRaises(ValueError) as context:
+            GenericIOMIDSequence.get_next_id("EXH")
+        self.assertTrue("ID sequence exhausted" in str(context.exception))
 
-# #     def test_default_prefix_gim(self):
-# #         first_id = GenericIOMIDSequence.get_next_id() # Test default "GIM"
-# #         self.assertTrue(first_id.startswith("GIM-AA-"))
+    def test_default_prefix_gim(self):
+        first_id = GenericIOMIDSequence.get_next_id() # Test default "GIM"
+        self.assertTrue(first_id.startswith("GIM-AA-"))
 
 
-class IOMCategoryTests(TestCase): # This is the actual IOMCategory test class (this one should remain)
-    def test_category_creation(self): # This test is valid and does not use GenericIOMIDSequence
+class IOMCategoryTests(TestCase):
+    def test_category_creation(self):
         category = IOMCategory.objects.create(name="IT Operations", description="Category for IT Ops IOMs")
         self.assertEqual(str(category), "IT Operations")
         self.assertEqual(IOMCategory.objects.count(), 1)
@@ -762,4 +757,4 @@ class IOMTemplateAPIAccessTests(APITestCase): # This class was already present a
         self.assertIn(self.template_group_b.name, template_names)
         self.assertIn(self.template_inactive.name, template_names)
 
-# Removed erroneous triple backticks causing syntax error
+```

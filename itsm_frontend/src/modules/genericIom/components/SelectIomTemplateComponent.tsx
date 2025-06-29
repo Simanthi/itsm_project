@@ -3,7 +3,7 @@ import {
   Box,
   Typography,
   List,
-  ListItem,
+  // ListItem, // Unused import
   ListItemButton,
   ListItemText,
   ListItemIcon,
@@ -40,7 +40,7 @@ const SelectIomTemplateComponent: React.FC = () => {
   // Extract assetContext from location state if present
   const assetContext = location.state?.assetContext;
 
-  // const [templates, setTemplates] = useState<IOMTemplate[]>([]); // Unused variable
+  // const [templates, setTemplates] = useState<IOMTemplate[]>([]); // templates state removed
   const [groupedTemplates, setGroupedTemplates] = useState<GroupedTemplates>({});
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -54,7 +54,7 @@ const SelectIomTemplateComponent: React.FC = () => {
     try {
       // Fetch only active templates for users to select from
       const response = await getIomTemplates(authenticatedFetch, { is_active: true, pageSize: 500 }); // Fetch many
-      setTemplates(response.results);
+      // setTemplates(response.results); // templates state was removed
 
       const grouped: GroupedTemplates = {};
       response.results.forEach(template => {

@@ -101,7 +101,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
         setIomTemplate(templateForEdit);
         setSubject(fetchedIom.subject);
         setDynamicFormData(fetchedIom.data_payload || {});
-        setInitialDataPayload(fetchedIom.data_payload || {});
+        // setInitialDataPayload(fetchedIom.data_payload || {}); // This was removed
         setToUsersStr(fetchedIom.to_users?.join(',') || '');
         setToGroupsStr(fetchedIom.to_groups?.join(',') || '');
         setParentContentTypeId(fetchedIom.parent_content_type || null);
@@ -154,7 +154,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     loadData();
   }, [loadData]);
 
-  const handleDynamicFieldChange = (fieldName: string, value: any) => {
+  const handleDynamicFieldChange = (fieldName: string, value: FormFieldValue) => {
     setDynamicFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 

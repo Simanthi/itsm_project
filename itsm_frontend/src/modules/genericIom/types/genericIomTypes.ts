@@ -75,7 +75,7 @@ export interface GetGenericIomsParams {
   page?: number;
   pageSize?: number;
   ordering?: string;
-  status?: GenericIomStatus | GenericIomStatus[];
+  status?: GenericIomStatus | GenericIomStatus[] | 'archived' | 'all_except_archived'; // Allow custom string literals
   iom_template_id?: number;
   created_by_id?: number;
   search?: string; // For searching subject, gim_id, data_payload content

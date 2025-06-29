@@ -16,7 +16,7 @@ from django.contrib.contenttypes.models import ContentType # For GFK representat
 # This might require careful handling of Django's app loading sequence.
 # If generic_iom.models is not ready when procurement.serializers is loaded, it could fail.
 # A string reference 'generic_iom.IOMTemplate' might be safer if issues arise.
-from generic_iom.models import IOMTemplate, IOMCategory, GenericIOM # Added GenericIOM import
+from generic_iom.models import IOMTemplate, IOMCategory
 # If IOMTemplateSerializer and IOMCategorySerializer are needed for nesting, import them:
 # from generic_iom.serializers import IOMTemplateSerializer, IOMCategorySerializer # Causes circular import
 # For M2M fields, usually PrimaryKeyRelatedField is sufficient for write, StringRelatedField for read.
