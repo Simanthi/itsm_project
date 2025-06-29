@@ -248,23 +248,4 @@ export const unarchiveGenericIom = async (
   })) as GenericIOM;
 };
 
-// It seems archiveGenericIom and unarchiveGenericIom were missing. Adding them here.
-export const archiveGenericIom = async (
-  authenticatedFetch: AuthenticatedFetch,
-  iomId: number
-): Promise<GenericIOM> => {
-  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/archive/`;
-  return (await authenticatedFetch(endpoint, {
-    method: 'POST',
-  })) as GenericIOM;
-};
 
-export const unarchiveGenericIom = async (
-  authenticatedFetch: AuthenticatedFetch,
-  iomId: number
-): Promise<GenericIOM> => {
-  const endpoint = `${API_GENERIC_IOM_BASE_PATH}/ioms/${iomId}/unarchive/`;
-  return (await authenticatedFetch(endpoint, {
-    method: 'POST',
-  })) as GenericIOM;
-};
