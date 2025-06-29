@@ -129,12 +129,25 @@ class PurchaseRequestMemo(models.Model):
 
         super().save(*args, **kwargs)
 
-        if self.status == 'draft' and (is_new or (old_status and old_status != 'draft')):
-             self.trigger_approval_workflow()
-        elif is_new and self.status == 'pending_approval':
+        # Workflow trigger logic
+        should_trigger = False
+        if self.status == 'draft':
+            if is_new: # New draft
+                should_trigger = True
+            elif old_status and old_status != 'draft': # Changed to draft
+                should_trigger = True
+            elif not is_new and old_status == 'draft': # Existing draft being saved
+                # This allows re-evaluation of workflow when an existing draft IOM is saved.
+                should_trigger = True
+
+        if should_trigger:
+            self.trigger_approval_workflow()
+        elif is_new and self.status == 'pending_approval': # This case might be redundant now or for specific edge cases
             self.trigger_approval_workflow()
 
     def trigger_approval_workflow(self, force_retrigger=False):
+        # The force_retrigger flag can be used by actions like a "Resubmit" button.
+        # The main check here is if the status is not 'draft', workflow shouldn't run unless forced.
         if self.status != 'draft' and not force_retrigger:
             return
 
