@@ -10,12 +10,21 @@ const GenericIomFormPage: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation(); // Use location to get state
 
-  const assetContext = location.state?.assetContext;
+  // Changed from assetContext to parentRecordContext
+  const parentRecordContext = location.state?.parentRecordContext;
 
   const isEditMode = Boolean(iomId);
+
+  let relatedToInfo = '';
+  if (parentRecordContext) {
+    const modelName = parentRecordContext.contentTypeModel?.replace(/_/g, ' ') || 'Record';
+    const capitalizedModelName = modelName.charAt(0).toUpperCase() + modelName.slice(1);
+    relatedToInfo = `related to ${capitalizedModelName}: ${parentRecordContext.recordName || parentRecordContext.recordIdentifier || `ID ${parentRecordContext.objectId}`}`;
+  }
+
   const pageTitle = isEditMode
     ? 'Edit Internal Office Memo'
-    : `Create New IOM ${templateId ? `(for Template ID: ${templateId})` : ''} ${assetContext?.assetName ? `related to Asset: ${assetContext.assetName}` : ''}`;
+    : `Create New IOM ${templateId ? `(for Template ID: ${templateId})` : ''} ${relatedToInfo}`;
 
   return (
     <Paper sx={{ p: { xs: 2, md: 4 }, m: { xs: 1, md: 2 } }} elevation={3}>
@@ -27,12 +36,12 @@ const GenericIomFormPage: React.FC = () => {
         >
           {isEditMode ? 'Back to View' : (templateId ? 'Back to Template Selection': 'Back to IOMs')}
         </Button>
-        <Typography variant="h5" component="h1">
+        <Typography variant="h5" component="h1" sx={{ flexGrow: 1 }}> {/* Allow title to take space */}
           {pageTitle}
         </Typography>
       </Box>
-      {/* Pass assetContext to the form component if it exists */}
-      <GenericIomFormComponent assetContext={assetContext} />
+      {/* Pass parentRecordContext to the form component if it exists */}
+      <GenericIomFormComponent parentRecordContext={parentRecordContext} />
     </Paper>
   );
 };

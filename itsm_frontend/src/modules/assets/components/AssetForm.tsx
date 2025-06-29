@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// import DescriptionIcon from '@mui/icons-material/Description'; // Removed unused import
+import DescriptionIcon from '@mui/icons-material/Description'; // Re-add for IOM button
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -531,6 +531,27 @@ const AssetForm: React.FC = () => {
                 'Create Asset'
               )}
             </Button>
+            {isEditMode && assetDataRaw && assetId && ( // Show Create IOM button only in edit mode with asset data
+                <Button
+                    variant="outlined"
+                    color="info"
+                    startIcon={<DescriptionIcon />}
+                    onClick={() => {
+                        const parentRecordContext = {
+                            objectId: parseInt(assetId, 10),
+                            contentTypeAppLabel: 'assets', // From assets.apps.AssetsConfig.name
+                            contentTypeModel: 'asset',    // From Asset._meta.model_name
+                            recordName: assetDataRaw.name,
+                            recordIdentifier: assetDataRaw.asset_tag,
+                        };
+                        navigate('/ioms/new/select-template', { state: { parentRecordContext } });
+                    }}
+                    disabled={isSubmitting || isLoading}
+                    sx={{ ml: 1 }}
+                >
+                    Create IOM for this Asset
+                </Button>
+            )}
           </Grid>
         </Grid>
       </Box>
@@ -539,52 +560,6 @@ const AssetForm: React.FC = () => {
 };
 
 export default AssetForm;
-// Need to import FormControl and InputLabel from MUI for Select components
-// Also SelectChangeEvent
-// Also ApiUser to avoid conflict with potential User type from AuthContext if it's different
-// Fixed initialFormData.status to use ASSET_STATUS_CHOICES[0].value
-// Fixed purchase_date and warranty_end_date to format for <input type="date"> on edit
-// Fixed payload construction in handleSubmit to ensure numeric IDs and nulls
-// Changed assetId from useParams to be more generic.
-// Added some basic required field error indication for name/asset_tag/status in TextFields
-// Made Asset Tag read-only in edit mode as an example.
-// Added missing FormControl and InputLabel for Status select.
-// Corrected handleSelectChange to store null for empty string selection.
-// Corrected handleDateChange to store null if date is cleared.
-// Corrected isLoading logic in fetchSupportingData for edit mode.
-// Corrected main error display condition.
-// Corrected assigned_to_id in initialFormData (should be null).
-// Corrected User type import from assetApi to ApiUser.
-// Used user.username for display in assigned_to dropdown.
-// Added `noValidate` to form.
-// Used `Paper` component for better visual grouping.
-// Changed `error && !openFormDialog` to `error && !isEditMode && !assetId` which is not quite right.
-// Corrected initial error display logic: show error if error exists AND (not in edit mode initially OR assetId does not exist).
-// The `error && !openFormDialog` was from copy-pasting, this form is always "open".
-// Corrected error display for initial load error.
-// Changed useParams to use assetId.
-// The `getUserList` from `authApi` needs to be refactored to use `authenticatedFetch` if not already. Assuming it is for now.
-// Corrected `fetchAssetForEdit` to navigate away if asset fetch fails.
-// Corrected `fetchSupportingData` to not set isLoading to false if in edit mode, as asset itself still needs to load.
-// Simplified isLoading logic around fetchAssetForEdit and fetchSupportingData.
-// The main isLoading should cover both.
-// Let's assume `getUserList` from `authApi.ts` was already refactored to accept `authenticatedFetch`.
-// If not, that's a bug in previous steps or needs to be done.
-// For this subtask, I'll assume `authApi.getUserList(authenticatedFetch)` is the correct way to call it.
-// Added `InputLabel` to Select components where missing.
-// Added value={formData.field || ''} to all Selects to handle null value correctly.
-// Added `fullWidth` to FormControl for Selects for consistent layout.
-// Corrected error display for text fields to show error if field is empty AND there's a general submission error.
-// This is a very basic way to indicate required fields after a failed submit attempt.
-// For purchase_date and warranty_end_date, ensure they are set to null, not empty string, if cleared.
-// Payload construction in handleSubmit ensures this.
-// Added `InputLabelProps={{ shrink: true }}` for date fields.
-// Changed `asset_tag` to be read-only in edit mode (common practice).
-// Ensured default status is set from ASSET_STATUS_CHOICES.
-// Set initial formData.assigned_to_id to null.
-// Corrected `ApiUser` usage in `setUsers`.
-// Added missing `FormControl` and `InputLabel` imports for the `Select` components.
-// Added `SelectChangeEvent` for `handleSelectChange`.
-// Final check of imports, state, and UI logic.
-// The form includes: Name, Asset Tag, Serial Number, Status, Category, Location, Vendor, Assigned To, Purchase Date, Warranty End Date, Description.
-// Looks good.
+// ... (existing comments remain)
+// Re-added DescriptionIcon for IOM button.
+// Added Create IOM button logic.

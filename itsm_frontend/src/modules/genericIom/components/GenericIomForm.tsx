@@ -25,20 +25,20 @@ import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminT
 import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
 import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer'; // FormFieldValue to type-only import
 
-// Define the type for assetContext prop
-interface AssetContextType {
+// Define the type for the parent record context
+interface ParentRecordContextType {
   objectId: number;
   contentTypeAppLabel: string;
   contentTypeModel: string;
-  assetName?: string;
-  assetTag?: string;
+  recordName?: string; // Generic name for display
+  recordIdentifier?: string; // Generic identifier for display
 }
 
 interface GenericIomFormProps {
-  assetContext?: AssetContextType | null; // Make it optional
+  parentRecordContext?: ParentRecordContextType | null; // Changed from assetContext
 }
 
-const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) => {
+const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = null }) => { // Changed from assetContext
   const { templateId: templateIdParam, iomId: iomIdParam } = useParams<{ templateId?: string; iomId?: string }>();
   const navigate = useNavigate();
   const { authenticatedFetch } = useAuth();
@@ -114,25 +114,35 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
           }
         });
 
-        // Pre-fill from assetContext if available
-        if (assetContext) {
-          setParentObjectId(assetContext.objectId);
-          const ctId = await fetchContentTypeId(assetContext.contentTypeAppLabel, assetContext.contentTypeModel);
+        // Pre-fill from parentRecordContext if available
+        if (parentRecordContext) {
+          setParentObjectId(parentRecordContext.objectId);
+          const ctId = await fetchContentTypeId(parentRecordContext.contentTypeAppLabel, parentRecordContext.contentTypeModel);
           setParentContentTypeId(ctId);
-          setParentDisplay(`Asset: ${assetContext.assetName || assetContext.assetTag || `ID ${assetContext.objectId}`}`);
+
+          const modelNameDisplay = parentRecordContext.contentTypeModel.replace(/_/g, ' ');
+          const capitalizedModelName = modelNameDisplay.charAt(0).toUpperCase() + modelNameDisplay.slice(1);
+          setParentDisplay(
+            `${capitalizedModelName}: ${parentRecordContext.recordName || parentRecordContext.recordIdentifier || `ID ${parentRecordContext.objectId}`}`
+          );
 
           // Example pre-filling a data_payload field if template is designed for it
-          const assetNameField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_name' || f.name === 'asset_name');
-          if (assetNameField && assetContext.assetName) {
-            initialPayload[assetNameField.name] = assetContext.assetName;
+          // This logic can be expanded based on conventions for field names in templates
+          const recordNameField = fetchedTemplate.fields_definition.find(f =>
+            f.name === 'related_record_name' || f.name === `${parentRecordContext.contentTypeModel}_name`
+          );
+          if (recordNameField && parentRecordContext.recordName) {
+            initialPayload[recordNameField.name] = parentRecordContext.recordName;
           }
-          const assetTagField = fetchedTemplate.fields_definition.find(f => f.name === 'related_asset_tag' || f.name === 'asset_tag');
-          if (assetTagField && assetContext.assetTag) {
-            initialPayload[assetTagField.name] = assetContext.assetTag;
+
+          const recordIdentifierField = fetchedTemplate.fields_definition.find(f =>
+            f.name === 'related_record_identifier' || f.name === `${parentRecordContext.contentTypeModel}_identifier`
+          );
+          if (recordIdentifierField && parentRecordContext.recordIdentifier) {
+            initialPayload[recordIdentifierField.name] = parentRecordContext.recordIdentifier;
           }
         }
         setDynamicFormData(initialPayload);
-         // setInitialDataPayload(initialPayload); // Removed
       } else {
         throw new Error("No Template ID for new IOM or IOM ID for editing.");
       }
@@ -143,7 +153,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, assetContext, fetchContentTypeId]);
+  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, parentRecordContext, fetchContentTypeId]); // Changed assetContext to parentRecordContext
 
   useEffect(() => {
     loadData();
@@ -295,7 +305,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ assetContext = null }) 
             />
           </Grid>
           {/* Parent Record GFK input fields - simplified for PoC, hidden if pre-filled by context */}
-          {!assetContext && !isEditMode && ( // Only show if not pre-filled and not editing (where it's part of fetched data)
+          {!parentRecordContext && !isEditMode && ( // Only show if not pre-filled by context and not editing
             <>
               <Grid item xs={12} sm={6}>
                 <TextField
