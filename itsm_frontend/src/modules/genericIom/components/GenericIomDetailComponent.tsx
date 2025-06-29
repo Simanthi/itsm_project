@@ -24,7 +24,9 @@ import LabelIcon from '@mui/icons-material/Label';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import PublishIcon from '@mui/icons-material/Publish';
-import SendIcon from '@mui/icons-material/Send'; // For submit for approval
+import SendIcon from '@mui/icons-material/Send';
+import ArchiveIcon from '@mui/icons-material/Archive';
+import UnarchiveIcon from '@mui/icons-material/Unarchive';
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
@@ -33,7 +35,9 @@ import {
     submitGenericIomForSimpleApproval,
     simpleApproveGenericIom,
     simpleRejectGenericIom,
-    publishGenericIom
+    publishGenericIom,
+    archiveGenericIom, // Import archive/unarchive
+    unarchiveGenericIom
 } from '../../../api/genericIomApi';
 import type { GenericIOM, GenericIomSimpleActionPayload } from '../types/genericIomTypes';
 import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
@@ -74,7 +78,9 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const [error, setError] = useState<string | null>(null);
   const [actionError, setActionError] = useState<string|null>(null);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
-  const [comments, setComments] = useState<string>(''); // For simple approve/reject actions
+  const [comments, setComments] = useState<string>('');
+
+  const navigate = useNavigate(); // For navigating after archive/unarchive
 
   const fetchIomDetails = useCallback(async () => {
     if (!authenticatedFetch || !iomId) return;
@@ -83,9 +89,6 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     try {
       const fetchedIom = await getGenericIomById(authenticatedFetch, iomId);
       setIom(fetchedIom);
-      // TODO: If approval_type is 'advanced', fetch approval steps here
-      // e.g., const steps = await getApprovalStepsForIom(authenticatedFetch, 'generic_iom', iomId);
-      // setApprovalSteps(steps);
     } catch (err) {
       const message = err instanceof Error ? err.message : "An unknown error occurred";
       setError(`Failed to load IOM details: ${message}`);
@@ -99,48 +102,56 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     fetchIomDetails();
   }, [fetchIomDetails]);
 
-  const handleAction = async (actionType: 'submit' | 'approve' | 'reject' | 'publish') => {
+  const handleWorkflowAction = async (actionType: 'submit' | 'approve' | 'reject' | 'publish') => {
     if (!iom || !authenticatedFetch) return;
 
     setIsActionLoading(true);
     setActionError(null);
-    setComments(''); // Reset comments for next action
 
-    const actionPayload: GenericIomSimpleActionPayload = { comments };
+    const currentComments = comments; // Capture comments at time of action
+    // Do not reset comments state here as it's tied to the TextField for approve/reject
+
+    const actionPayload: GenericIomSimpleActionPayload = { comments: currentComments };
 
     try {
       let updatedIom: GenericIOM | null = null;
       let successMessage = '';
 
-      if (actionType === 'submit') {
-        updatedIom = await submitGenericIomForSimpleApproval(authenticatedFetch, iom.id);
-        successMessage = "IOM submitted for simple approval.";
-      } else if (actionType === 'approve') {
-        if (iom.iom_template_details?.approval_type === 'simple') {
-            updatedIom = await simpleApproveGenericIom(authenticatedFetch, iom.id, actionPayload);
-            successMessage = "IOM simple-approved.";
-        }
-      } else if (actionType === 'reject') {
-        if (!comments.trim() && iom.iom_template_details?.approval_type === 'simple') {
-            showSnackbar("Comments are required for rejection.", "warning");
-            setActionError("Comments are required for rejection.");
-            setIsActionLoading(false);
-            return;
-        }
-        if (iom.iom_template_details?.approval_type === 'simple') {
-            updatedIom = await simpleRejectGenericIom(authenticatedFetch, iom.id, actionPayload);
-            successMessage = "IOM simple-rejected.";
-        }
-      } else if (actionType === 'publish') {
-        updatedIom = await publishGenericIom(authenticatedFetch, iom.id);
-        successMessage = "IOM published successfully.";
+      switch(actionType) {
+        case 'submit':
+            updatedIom = await submitGenericIomForSimpleApproval(authenticatedFetch, iom.id);
+            successMessage = "IOM submitted for simple approval.";
+            break;
+        case 'approve':
+            if (iom.iom_template_details?.approval_type === 'simple') {
+                updatedIom = await simpleApproveGenericIom(authenticatedFetch, iom.id, actionPayload);
+                successMessage = "IOM simple-approved.";
+            }
+            break;
+        case 'reject':
+            if (!currentComments.trim() && iom.iom_template_details?.approval_type === 'simple') {
+                showSnackbar("Comments are required for rejection.", "warning");
+                setActionError("Comments are required for rejection.");
+                setIsActionLoading(false);
+                return;
+            }
+            if (iom.iom_template_details?.approval_type === 'simple') {
+                updatedIom = await simpleRejectGenericIom(authenticatedFetch, iom.id, actionPayload);
+                successMessage = "IOM simple-rejected.";
+            }
+            break;
+        case 'publish':
+            updatedIom = await publishGenericIom(authenticatedFetch, iom.id);
+            successMessage = "IOM published successfully.";
+            break;
       }
 
       if (updatedIom) {
-        setIom(updatedIom); // Refresh IOM data
+        setIom(updatedIom);
         showSnackbar(successMessage, 'success');
+        setComments(''); // Clear comments after successful action
       }
-    } catch (err: any) {
+    } catch (err: any) { // Consider creating a more specific error type for API errors
       const errorData = err?.data || err;
       let errorMessage = `Failed to ${actionType} IOM.`;
       if (typeof errorData === 'object' && errorData !== null) {
@@ -157,6 +168,47 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     }
   };
 
+  const handleArchiveToggleAction = async () => {
+    if (!iom || !authenticatedFetch) return;
+
+    const isCurrentlyArchived = iom.status === 'archived';
+    const apiAction = isCurrentlyArchived ? unarchiveGenericIom : archiveGenericIom;
+    const actionName = isCurrentlyArchived ? 'unarchive' : 'archive';
+
+    showConfirmDialog(
+        `Confirm ${actionName.charAt(0).toUpperCase() + actionName.slice(1)}`,
+        `Are you sure you want to ${actionName} this IOM: "${iom.subject}"?`,
+        async () => {
+            setIsActionLoading(true);
+            setActionError(null);
+            try {
+                const updatedIom = await apiAction(authenticatedFetch, iom.id);
+                setIom(updatedIom);
+                showSnackbar(`IOM successfully ${actionName}d.`, 'success');
+                if (actionName === 'archive') {
+                    // Optionally navigate away if an archived IOM shouldn't be viewed directly,
+                    // or just update UI to reflect new status.
+                    // navigate('/ioms');
+                }
+            } catch (err: any) {
+                const errorData = err?.data || err;
+                let errorMessage = `Failed to ${actionName} IOM.`;
+                if (typeof errorData === 'object' && errorData !== null) {
+                    errorMessage = Object.values(errorData).flat().join(' ');
+                } else if (err instanceof Error) {
+                    errorMessage = err.message;
+                } else if (typeof errorData === 'string'){
+                    errorMessage = errorData;
+                }
+                setActionError(errorMessage);
+                showSnackbar(errorMessage, 'error');
+            } finally {
+                setIsActionLoading(false);
+            }
+        }
+    );
+  };
+
 
   if (isLoading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
@@ -171,11 +223,22 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   }
 
   const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
-  const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && iom.iom_template_details?.approval_type === 'simple' &&
-                                        (iom.iom_template_details?.simple_approval_user === user?.id ||
-                                         (user?.groups && iom.iom_template_details?.simple_approval_group && user.groups.includes(iom.iom_template_details.simple_approval_group)));
+  const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
+
+  const isSimpleApprover = iom.iom_template_details?.approval_type === 'simple' &&
+                         (iom.iom_template_details?.simple_approval_user === user?.id ||
+                          (user?.groups && iom.iom_template_details?.simple_approval_group &&
+                           user.groups.some(g => g.id === iom.iom_template_details?.simple_approval_group))); // Assuming user.groups is {id, name}[]
+
+  const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && isSimpleApprover;
+
   const canPublish = (iom.status === 'draft' && iom.iom_template_details?.approval_type === 'none') ||
-                     (iom.status === 'approved'); // Approved by simple or advanced workflow
+                     (iom.status === 'approved');
+
+  const archivableStatuses: GenericIOM['status'][] = ['published', 'rejected', 'cancelled', 'approved'];
+  const canArchive = archivableStatuses.includes(iom.status) && (user?.is_staff || iom.created_by === user?.id);
+  const canUnarchive = iom.status === 'archived' && (user?.is_staff || iom.created_by === user?.id);
+
 
   return (
     <Box>
@@ -237,38 +300,52 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       <Box sx={{ mt: 3, p:2, border: '1px solid lightgray', borderRadius: 1}}>
         <Typography variant="h6" gutterBottom>Actions</Typography>
         {actionError && <Alert severity="error" sx={{mb:1}}>{actionError}</Alert>}
-
-        {canSubmitForSimpleApproval && (
-            <Button onClick={() => handleAction('submit')} variant="contained" startIcon={<SendIcon />} sx={{mr:1}} disabled={isActionLoading}>
-                {isActionLoading ? <CircularProgress size={20}/> : "Submit for Simple Approval"}
-            </Button>
-        )}
-
-        {canPerformSimpleApproval && (
-            <Box sx={{display: 'flex', alignItems: 'flex-start', gap:1, mb:1}}>
-                <TextField
-                    label="Comments (for Approve/Reject)"
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    multiline rows={2} size="small" sx={{flexGrow:1}}
-                    helperText={iom.status === 'pending_approval' && iom.iom_template_details?.approval_type === 'simple' && !comments.trim() ? "Comments required for rejection" : ""}
-                />
-                <Button onClick={() => handleAction('approve')} variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} sx={{height: 'fit-content', mt: 'auto', mb:'auto'}} disabled={isActionLoading}>
-                    {isActionLoading ? <CircularProgress size={20}/> : "Simple Approve"}
+        <Box sx={{display: 'flex', flexWrap: 'wrap', gap: 1}}>
+            {canSubmitForSimpleApproval && (
+                <Button onClick={() => handleWorkflowAction('submit')} variant="contained" startIcon={<SendIcon />} disabled={isActionLoading}>
+                    {isActionLoading ? <CircularProgress size={20}/> : "Submit for Simple Approval"}
                 </Button>
-                <Button onClick={() => handleAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} sx={{height: 'fit-content', mt: 'auto', mb:'auto'}} disabled={isActionLoading || (!comments.trim() && iom.status === 'pending_approval')}>
-                     {isActionLoading ? <CircularProgress size={20}/> : "Simple Reject"}
+            )}
+
+            {canPerformSimpleApprovalAction && (
+                <Paper variant="outlined" sx={{p:1, display: 'flex', flexDirection:'column', gap:1, width: '100%' }}>
+                    <TextField
+                        label="Comments (for Approve/Reject)"
+                        value={comments}
+                        onChange={(e) => setComments(e.target.value)}
+                        multiline rows={2} size="small" fullWidth
+                        helperText={!comments.trim() ? "Comments required for rejection" : ""}
+                    />
+                    <Box sx={{display:'flex', gap:1}}>
+                        <Button onClick={() => handleWorkflowAction('approve')} variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} disabled={isActionLoading}>
+                            {isActionLoading ? <CircularProgress size={20}/> : "Simple Approve"}
+                        </Button>
+                        <Button onClick={() => handleWorkflowAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} disabled={isActionLoading || !comments.trim()}>
+                            {isActionLoading ? <CircularProgress size={20}/> : "Simple Reject"}
+                        </Button>
+                    </Box>
+                </Paper>
+            )}
+
+            {canPublish && (
+                <Button onClick={() => handleWorkflowAction('publish')} variant="contained" color="primary" startIcon={<PublishIcon />} disabled={isActionLoading}>
+                    {isActionLoading ? <CircularProgress size={20}/> : "Publish IOM"}
                 </Button>
-            </Box>
-        )}
+            )}
 
-        {canPublish && (
-            <Button onClick={() => handleAction('publish')} variant="contained" color="primary" startIcon={<PublishIcon />} disabled={isActionLoading}>
-                {isActionLoading ? <CircularProgress size={20}/> : "Publish IOM"}
-            </Button>
-        )}
+            {canArchive && (
+                 <Button onClick={handleArchiveToggleAction} variant="outlined" color="warning" startIcon={<ArchiveIcon />} disabled={isActionLoading}>
+                    {isActionLoading ? <CircularProgress size={20}/> : "Archive IOM"}
+                </Button>
+            )}
+            {canUnarchive && (
+                 <Button onClick={handleArchiveToggleAction} variant="outlined" color="info" startIcon={<UnarchiveIcon />} disabled={isActionLoading}>
+                    {isActionLoading ? <CircularProgress size={20}/> : "Unarchive IOM"}
+                </Button>
+            )}
+        </Box>
 
-        {!(canSubmitForSimpleApproval || canPerformSimpleApproval || canPublish) && (
+        {!(canSubmitForSimpleApproval || canPerformSimpleApprovalAction || canPublish || canArchive || canUnarchive) && (
             <Typography color="textSecondary">No actions available for this IOM in its current state or based on your permissions.</Typography>
         )}
       </Box>

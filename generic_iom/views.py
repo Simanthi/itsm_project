@@ -211,8 +211,92 @@ class GenericIOMViewSet(viewsets.ModelViewSet):
 
     # Listing ApprovalSteps (advanced workflow) for a GenericIOM
     # This assumes ApprovalStepSerializer is GFK-aware and imported.
-    # @action(detail=True, methods=['get'], url_path='advanced-approval-steps', permission_classes=[CanViewGenericIOM]) # Or more specific
+    # @action(detail=True, methods=['get'], url_path='advanced-approval-steps', permission_classes=[CanViewGenericIOM])
     # def advanced_approval_steps(self, request, pk=None):
+    # ... (existing commented out code for advanced_approval_steps) ...
+
+    @action(detail=True, methods=['post'], permission_classes=[IsOwnerOrReadOnlyGenericIOM]) # Or a more specific "CanArchiveIOM"
+    def archive(self, request, pk=None):
+        iom = self.get_object()
+        if iom.status == 'archived':
+            return Response({'message': 'IOM is already archived.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Define which statuses can be archived. For example, published, rejected, cancelled.
+        # Drafts might not make sense to archive directly, or they could go to 'cancelled' then 'archived'.
+        archivable_statuses = ['published', 'rejected', 'cancelled', 'approved'] # 'approved' might also be archivable if not auto-published
+        if iom.status not in archivable_statuses:
+            return Response(
+                {'error': f"IOMs with status '{iom.status}' cannot be directly archived. Consider cancelling or finalizing first."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        # Optional: Store previous status if unarchive should revert to it.
+        # if not hasattr(iom, '_previous_status_before_archive'): # Avoid overwriting if already set by another process
+        #     iom._previous_status_before_archive = iom.status # Store it temporarily for a signal or further logic
+
+        iom.status = 'archived'
+        iom.save(update_fields=['status'])
+        # TODO: Potentially log this action or send a notification to creator if archived by admin
+        return Response(GenericIOMSerializer(iom, context={'request': request}).data)
+
+    @action(detail=True, methods=['post'], permission_classes=[IsOwnerOrReadOnlyGenericIOM]) # Or "CanUnarchiveIOM"
+    def unarchive(self, request, pk=None):
+        iom = self.get_object()
+        if iom.status != 'archived':
+            return Response({'error': 'IOM is not currently archived.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Determine what status to revert to.
+        # For simplicity, let's revert to 'draft'.
+        # A more complex system might store the previous_status_before_archive.
+        # For now, if it was published, perhaps it should go to 'published' again, or 'draft'.
+        # Let's choose 'draft' as a safe default to allow re-review before re-publishing.
+        previous_meaningful_status = 'draft'
+        # if hasattr(iom, '_previous_status_before_archive') and iom._previous_status_before_archive:
+        #    previous_meaningful_status = iom._previous_status_before_archive
+        #    delattr(iom, '_previous_status_before_archive') # Clean up temporary attribute
+        # elif iom.published_at: # If it was ever published, maybe revert to published?
+        #    previous_meaningful_status = 'published'
+
+        iom.status = previous_meaningful_status
+        iom.save(update_fields=['status'])
+        # TODO: Log or notify
+        return Response(GenericIOMSerializer(iom, context={'request': request}).data)
+
+    def get_queryset(self):
+        user = self.request.user
+        queryset = GenericIOM.objects.all().select_related(
+            'iom_template__category', 'created_by',
+            'parent_content_type', 'simple_approver_action_by'
+        ).prefetch_related('to_users', 'to_groups') # Base queryset
+
+        # Filter by status query param if provided
+        status_filter = self.request.query_params.get('status')
+        if status_filter:
+            if status_filter == 'all_except_archived': # Special case for default view perhaps
+                 queryset = queryset.exclude(status='archived')
+            elif status_filter in [s[0] for s in GenericIOM.STATUS_CHOICES]:
+                queryset = queryset.filter(status=status_filter)
+            # else: ignore invalid status filter or return 400
+
+        # Default filtering for non-staff: exclude archived unless explicitly requested by status filter
+        if not user.is_staff and status_filter != 'archived':
+             queryset = queryset.exclude(status='archived')
+
+
+        # Apply existing visibility filters for non-staff
+        if not user.is_staff:
+            queryset = queryset.filter(
+                Q(created_by=user) |
+                Q(to_users=user) |
+                Q(to_groups__in=user.groups.all()) |
+                # If showing non-archived, published is fine. If specifically asking for archived, this OR might be too broad.
+                # This published OR condition might need to be conditional based on status_filter
+                (Q(status='published') if status_filter != 'archived' else Q())
+            ).distinct()
+
+        # Apply ordering (SearchFilter is already in filter_backends)
+        # Default ordering is by -created_at from model Meta, OrderingFilter will respect that or override.
+        return queryset.order_by('-created_at') # Ensure consistent default ordering
     #     iom = self.get_object()
     #     if iom.iom_template.approval_type != 'advanced':
     #         return Response({"detail": "Advanced approval not applicable for this IOM."}, status=status.HTTP_400_BAD_REQUEST)
