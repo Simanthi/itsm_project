@@ -127,6 +127,7 @@ const MyApprovalsPage: React.FC = () => {
     return new Date(dateString).toLocaleString();
   };
 
+  // eslint-disable-next-line react/prop-types
   const columns: GridColDef<ApprovalStep>[] = [
     {
       field: 'content_object_display',
