@@ -4,6 +4,7 @@
 // or imported into genericIomApi.ts from a shared location.
 
 import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // For nesting template details
+import type { ApprovalStep } from '../../procurement/types/procurementTypes'; // Added for advanced approval steps
 
 // Status choices for GenericIOM - should align with backend model
 export type GenericIomStatus =
@@ -51,7 +52,7 @@ export interface GenericIOM {
   simple_approval_comments?: string | null;
 
   // Placeholder for advanced approval steps if fetched/nested
-  // approval_steps?: any[];
+  approval_steps?: ApprovalStep[]; // Added for storing fetched approval steps for advanced workflows
 }
 
 // Data for creating a new GenericIOM
