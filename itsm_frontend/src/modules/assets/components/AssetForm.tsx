@@ -16,7 +16,7 @@ import {
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-// import DescriptionIcon from '@mui/icons-material/Description'; // For Create IOM button - Unused
+import DescriptionIcon from '@mui/icons-material/Description'; // For Create IOM button
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';

@@ -15,7 +15,7 @@ import {
   Tooltip,
   TablePagination,
   CircularProgress,
-  // Alert, // Unused import
+  Alert,
   TextField, // For filtering
   MenuItem,
   Select,
@@ -66,11 +66,11 @@ const statusOptions: GenericIomStatus[] = ['draft', 'pending_approval', 'approve
 
 const GenericIomListComponent: React.FC = () => {
   const { authenticatedFetch, user } = useAuth();
-  const { showSnackbar, showConfirmDialog } = useUI();
+  const { showSnackbar } = useUI(); // showConfirmDialog if delete is added
 
   const [ioms, setIoms] = useState<GenericIOM[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  // const [error, setError] = useState<string | null>(null); // Unused state variable
+  const [error, setError] = useState<string | null>(null);
 
   const [totalIoms, setTotalIoms] = useState<number>(0);
   const [page, setPage] = useState<number>(0);
@@ -90,7 +90,7 @@ const GenericIomListComponent: React.FC = () => {
   const fetchIoms = useCallback(async () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
-    // setError(null); // setError was removed as error state is unused
+    setError(null);
 
     const params: GetGenericIomsParams = {
       page: page + 1,
@@ -116,14 +116,14 @@ const GenericIomListComponent: React.FC = () => {
       const response = await getGenericIoms(authenticatedFetch, params);
       setIoms(response.results);
       setTotalIoms(response.count);
-    } catch (err: unknown) { // Use unknown for error type
+    } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      // setError(message || 'Failed to fetch IOMs.'); // setError was removed
+      setError(message || 'Failed to fetch IOMs.');
       showSnackbar(`Error fetching IOMs: ${message}`, 'error');
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showSnackbar, showArchived]); // Added showArchived
+  }, [authenticatedFetch, page, rowsPerPage, order, orderBy, filterSubject, filterStatus, filterTemplateId, showSnackbar]);
 
   const fetchTemplatesForFilterDropdown = useCallback(async () => {
     if(!authenticatedFetch) return;

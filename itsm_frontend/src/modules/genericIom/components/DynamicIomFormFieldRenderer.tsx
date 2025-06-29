@@ -10,25 +10,24 @@ import {
   FormHelperText,
   Box,
   Typography,
-  ListItemText,
-  InputAdornment
+  ListItemText, // Added import
+  InputAdornment // Added import
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns'; // Or your preferred date adapter
+import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { DatePicker } from '@mui/x-date-pickers/DatePicker';
 import { DateTimePicker } from '@mui/x-date-pickers/DateTimePicker';
-import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // Assuming FieldDefinition is here
+import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
-// Define a more specific type for the form field value
-export type FormFieldValue = string | number | boolean | string[] | number[] | null | undefined; // Export FormFieldValue
+export type FormFieldValue = string | number | boolean | string[] | number[] | null | undefined;
 
 interface DynamicFormFieldProps {
   field: FieldDefinition;
   value: FormFieldValue;
   onChange: (fieldName: string, value: FormFieldValue) => void;
   disabled?: boolean;
-  error?: string | null; // For displaying field-specific errors from parent form
+  error?: string | null;
 }
 
 // eslint-disable-next-line react/prop-types
@@ -47,10 +46,9 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
     disabled: disabled || field.readonly,
     helperText: error || field.helpText,
     error: Boolean(error),
-    InputLabelProps: { shrink: true }, // Ensure labels shrink correctly, esp for date/time
+    InputLabelProps: { shrink: true },
   };
 
-  // Handle date/datetime value conversion
   const handleDateChange = (date: Date | null) => {
     onChange(field.name, date ? date.toISOString() : null);
   };
@@ -59,50 +57,44 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
     onChange(field.name, dateTime ? dateTime.toISOString() : null);
   };
 
-  // For file inputs, we'd need more complex state management in the parent form
-  // For now, file_upload will be a placeholder or a simple text input for filename.
-
   switch (field.type) {
     case 'text_short':
       return (
         <TextField
           {...commonProps}
           type="text"
-          value={value || field.defaultValue || ''}
+          value={(value as string) || (field.defaultValue as string) || ''}
           placeholder={field.placeholder}
           onChange={(e) => onChange(field.name, e.target.value)}
           inputProps={field.attributes}
         />
       );
     case 'text_area': {
-      // const { rows, ...otherAttributes } = field.attributes || {}; // Example if you need to separate attributes
       return (
         <TextField
           {...commonProps}
           type="text"
           multiline
           rows={field.attributes && typeof field.attributes.rows === 'number' ? field.attributes.rows : 4}
-          value={value as string || field.defaultValue as string || ''}
+          value={(value as string) || (field.defaultValue as string) || ''}
           placeholder={field.placeholder}
           onChange={(e) => onChange(field.name, e.target.value)}
           inputProps={field.attributes}
         />
       );
+    }
     case 'number':
       return (
         <TextField
           {...commonProps}
           type="number"
-          value={value === null || value === undefined ? '' : value} // Handle null/undefined for number input
+          value={value === null || value === undefined ? '' : value}
           placeholder={field.placeholder}
           onChange={(e) => onChange(field.name, e.target.value === '' ? null : parseFloat(e.target.value))}
-          inputProps={field.attributes} // For min, max, step
+          inputProps={field.attributes}
         />
       );
     case 'date': {
-      // const isValidDateValue = (dValue: string | number | FormFieldValue): dValue is string | number => {
-      //   return (typeof dValue === 'string' || typeof dValue === 'number') && !isNaN(new Date(dValue).getTime());
-      // };
       return (
         <LocalizationProvider dateAdapter={AdapterDateFns}>
           <DatePicker
@@ -122,7 +114,8 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           />
         </LocalizationProvider>
       );
-    case 'datetime':
+    }
+    case 'datetime': {
         return (
           <LocalizationProvider dateAdapter={AdapterDateFns}>
             <DateTimePicker
@@ -142,6 +135,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
             />
           </LocalizationProvider>
         );
+      }
     case 'boolean':
       return (
         <FormControlLabel
@@ -164,7 +158,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
             labelId={`${field.name}-select-label`}
             name={field.name}
             value={value || field.defaultValue || ''}
-            label={field.label} // Label prop for Select for proper positioning
+            label={field.label}
             onChange={(e: SelectChangeEvent<string | number>) => onChange(field.name, e.target.value)}
           >
             <MenuItem value=""><em>None</em></MenuItem>
@@ -177,9 +171,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
           {(error || field.helpText) && <FormHelperText>{error || field.helpText}</FormHelperText>}
         </FormControl>
       );
-    case 'choice_multiple':
-        // MUI Select with multiple attribute or CheckboxGroup
-        // This is a simplified version for now, a CheckboxGroup or Autocomplete might be better.
+    case 'choice_multiple': {
         return (
             <FormControl fullWidth error={Boolean(error)} disabled={disabled || field.readonly}>
               <InputLabel id={`${field.name}-multi-select-label`}>{field.label}{field.required ? ' *' : ''}</InputLabel>
@@ -205,35 +197,31 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
               {(error || field.helpText) && <FormHelperText>{error || field.helpText}</FormHelperText>}
             </FormControl>
           );
-
-    // Placeholder for selector types - initially simple text inputs for IDs
+        }
     case 'user_selector_single':
     case 'user_selector_multiple':
     case 'group_selector_single':
     case 'group_selector_multiple':
     case 'asset_selector_single':
     case 'asset_selector_multiple':
-    case 'department_selector': // Assuming single selection for these
+    case 'department_selector':
     case 'project_selector':
       return (
         <TextField
           {...commonProps}
-          type={field.type.includes('multiple') ? 'text' : "number"} // Text for multiple IDs (comma-sep), number for single
+          type={field.type.includes('multiple') ? 'text' : "number"}
           value={value || field.defaultValue || ''}
           placeholder={field.placeholder || (field.type.includes('multiple') ? 'Enter IDs comma-separated' : 'Enter ID')}
           onChange={(e) => onChange(field.name, field.type.includes('multiple') ? e.target.value.split(',').map(s => s.trim()).filter(Boolean) : (e.target.value === '' ? null : Number(e.target.value)))}
           helperText={error || field.helpText || `Placeholder for ${field.label}. API source: ${field.api_source?.endpoint || 'N/A'}`}
         />
       );
-    case 'file_upload':
-        // Basic file input. Real implementation needs state in parent form for the File object.
-        // This renderer would just display the input type="file".
-        // For now, just a text field to input a filename or path as a string.
+    case 'file_upload': {
         return (
             <TextField
                 {...commonProps}
                 type="text"
-                value={value || field.defaultValue || ''} // Or handle File object if parent supports
+                value={(value as string) || (field.defaultValue as string) || ''}
                 placeholder={field.placeholder || "Enter file name or path (actual upload handled by form)"}
                 onChange={(e) => onChange(field.name, e.target.value)}
                 helperText={error || field.helpText || "File upload field. Actual upload mechanism is part of the main form."}
@@ -242,7 +230,7 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
                 }}
             />
         );
-
+      }
     default:
       return (
         <Box sx={{p:1, border: '1px dashed red'}}>

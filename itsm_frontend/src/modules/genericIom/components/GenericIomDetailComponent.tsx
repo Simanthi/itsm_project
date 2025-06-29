@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added useNavigate
 import {
   Box,
   Typography,
@@ -9,8 +10,18 @@ import {
   Button,
   Divider,
   Chip,
-  TextField,
+  // List, // Unused
+  // ListItem, // Unused
+  // ListItemText, // Unused
+  // ListItemIcon, // Unused
+  TextField, // For comments in actions
 } from '@mui/material';
+// import DescriptionIcon from '@mui/icons-material/Description'; // Unused
+// import AccountCircleIcon from '@mui/icons-material/AccountCircle'; // Unused
+// import GroupIcon from '@mui/icons-material/Group'; // Unused
+// import CalendarTodayIcon from '@mui/icons-material/CalendarToday'; // Unused
+// import SubjectIcon from '@mui/icons-material/Subject'; // Unused
+// import LabelIcon from '@mui/icons-material/Label'; // Unused
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import HighlightOffIcon from '@mui/icons-material/HighlightOff';
 import PublishIcon from '@mui/icons-material/Publish';
@@ -26,35 +37,38 @@ import {
     simpleApproveGenericIom,
     simpleRejectGenericIom,
     publishGenericIom,
-    archiveGenericIom,
+    archiveGenericIom, // Import archive/unarchive
     unarchiveGenericIom
 } from '../../../api/genericIomApi';
 import type { GenericIOM, GenericIomSimpleActionPayload } from '../types/genericIomTypes';
-import type { FieldDefinition, IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
-import type { FormFieldValue } from './DynamicIomFormFieldRenderer';
+import type { FieldDefinition } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
+// TODO: Import types and API function for ApprovalSteps
 
 interface GenericIomDetailComponentProps {
   iomId: number;
 }
 
-const DisplayDynamicFieldValue: React.FC<{ field: FieldDefinition; value: FormFieldValue }> = ({ field, value }) => {
-  if (value === null || value === undefined || String(value).trim() === '') {
-    return <Typography variant="body2" color="textSecondary"><em>Not provided</em></Typography>;
-  }
-  if (field.type === 'boolean') {
-    return <Chip label={value ? 'Yes' : 'No'} size="small" />;
-  }
-  if (field.type === 'date' && typeof value === 'string') {
-    return <Typography variant="body2">{new Date(value).toLocaleDateString()}</Typography>;
-  }
-  if (field.type === 'datetime' && typeof value === 'string') {
-    return <Typography variant="body2">{new Date(value).toLocaleString()}</Typography>;
-  }
-  if (Array.isArray(value)) {
-    return <Typography variant="body2">{value.join(', ')}</Typography>;
-  }
-  return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap' }}>{String(value)}</Typography>;
+// Helper to display dynamic field values appropriately
+const DisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: any}> = ({ field, value }) => {
+    if (value === null || value === undefined || String(value).trim() === '') {
+        return <Typography variant="body2" color="textSecondary"><em>Not provided</em></Typography>;
+    }
+    if (field.type === 'boolean') {
+        return <Chip label={value ? 'Yes' : 'No'} size="small" />;
+    }
+    if (field.type === 'date' && typeof value === 'string') {
+        return <Typography variant="body2">{new Date(value).toLocaleDateString()}</Typography>;
+    }
+    if (field.type === 'datetime' && typeof value === 'string') {
+        return <Typography variant="body2">{new Date(value).toLocaleString()}</Typography>;
+    }
+    if (Array.isArray(value)) {
+        return <Typography variant="body2">{value.join(', ')}</Typography>;
+    }
+    // TODO: Handle selector types by fetching related object names if IDs are stored
+    return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap'}}>{String(value)}</Typography>;
 };
+
 
 const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ iomId }) => {
   const { authenticatedFetch, user } = useAuth();
@@ -63,9 +77,11 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   const [iom, setIom] = useState<GenericIOM | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
-  const [actionError, setActionError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string|null>(null);
   const [isActionLoading, setIsActionLoading] = useState<boolean>(false);
   const [comments, setComments] = useState<string>('');
+
+  const navigate = useNavigate(); // For navigating after archive/unarchive
 
   const fetchIomDetails = useCallback(async () => {
     if (!authenticatedFetch || !iomId) return;
@@ -74,7 +90,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     try {
       const fetchedIom = await getGenericIomById(authenticatedFetch, iomId);
       setIom(fetchedIom);
-    } catch (err: unknown) {
+    } catch (err) {
       const message = err instanceof Error ? err.message : "An unknown error occurred";
       setError(`Failed to load IOM details: ${message}`);
       showSnackbar(`Error: ${message}`, 'error');
@@ -93,61 +109,57 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     setIsActionLoading(true);
     setActionError(null);
 
-    const currentComments = comments;
+    const currentComments = comments; // Capture comments at time of action
+    // Do not reset comments state here as it's tied to the TextField for approve/reject
+
     const actionPayload: GenericIomSimpleActionPayload = { comments: currentComments };
 
     try {
       let updatedIom: GenericIOM | null = null;
       let successMessage = '';
 
-      switch (actionType) {
+      switch(actionType) {
         case 'submit':
-          updatedIom = await submitGenericIomForSimpleApproval(authenticatedFetch, iom.id);
-          successMessage = "IOM submitted for simple approval.";
-          break;
+            updatedIom = await submitGenericIomForSimpleApproval(authenticatedFetch, iom.id);
+            successMessage = "IOM submitted for simple approval.";
+            break;
         case 'approve':
-          if (iom.iom_template_details?.approval_type === 'simple') {
-            updatedIom = await simpleApproveGenericIom(authenticatedFetch, iom.id, actionPayload);
-            successMessage = "IOM simple-approved.";
-          }
-          break;
+            if (iom.iom_template_details?.approval_type === 'simple') {
+                updatedIom = await simpleApproveGenericIom(authenticatedFetch, iom.id, actionPayload);
+                successMessage = "IOM simple-approved.";
+            }
+            break;
         case 'reject':
-          if (!currentComments.trim() && iom.iom_template_details?.approval_type === 'simple') {
-            showSnackbar("Comments are required for rejection.", "warning");
-            setActionError("Comments are required for rejection.");
-            setIsActionLoading(false);
-            return;
-          }
-          if (iom.iom_template_details?.approval_type === 'simple') {
-            updatedIom = await simpleRejectGenericIom(authenticatedFetch, iom.id, actionPayload);
-            successMessage = "IOM simple-rejected.";
-          }
-          break;
+            if (!currentComments.trim() && iom.iom_template_details?.approval_type === 'simple') {
+                showSnackbar("Comments are required for rejection.", "warning");
+                setActionError("Comments are required for rejection.");
+                setIsActionLoading(false);
+                return;
+            }
+            if (iom.iom_template_details?.approval_type === 'simple') {
+                updatedIom = await simpleRejectGenericIom(authenticatedFetch, iom.id, actionPayload);
+                successMessage = "IOM simple-rejected.";
+            }
+            break;
         case 'publish':
-          updatedIom = await publishGenericIom(authenticatedFetch, iom.id);
-          successMessage = "IOM published successfully.";
-          break;
+            updatedIom = await publishGenericIom(authenticatedFetch, iom.id);
+            successMessage = "IOM published successfully.";
+            break;
       }
 
       if (updatedIom) {
         setIom(updatedIom);
         showSnackbar(successMessage, 'success');
-        setComments('');
+        setComments(''); // Clear comments after successful action
       }
-    } catch (err: unknown) {
-      const errorData = (err as { data?: Record<string, string[]>; message?: string })?.data || err;
+    } catch (err: any) { // Consider creating a more specific error type for API errors
+      const errorData = err?.data || err;
       let errorMessage = `Failed to ${actionType} IOM.`;
-      if (errorData && typeof errorData === 'object' && !Array.isArray(errorData)) {
-        const messages = Object.entries(errorData).map(([key, value]) => {
-          if (Array.isArray(value)) {
-            return `${key}: ${value.join(', ')}`;
-          }
-          return `${key}: ${value}`;
-        });
-        errorMessage = `Validation Error: ${messages.join('; ')}`;
+      if (typeof errorData === 'object' && errorData !== null) {
+        errorMessage = Object.values(errorData).flat().join(' ');
       } else if (err instanceof Error) {
         errorMessage = err.message;
-      } else if (typeof errorData === 'string') {
+      } else if (typeof errorData === 'string'){
         errorMessage = errorData;
       }
       setActionError(errorMessage);
@@ -158,46 +170,46 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
   };
 
   const handleArchiveToggleAction = async () => {
-    if (!iom || !authenticatedFetch || !showConfirmDialog) return;
+    if (!iom || !authenticatedFetch) return;
 
     const isCurrentlyArchived = iom.status === 'archived';
     const apiAction = isCurrentlyArchived ? unarchiveGenericIom : archiveGenericIom;
     const actionName = isCurrentlyArchived ? 'unarchive' : 'archive';
 
     showConfirmDialog(
-      `Confirm ${actionName.charAt(0).toUpperCase() + actionName.slice(1)}`,
-      `Are you sure you want to ${actionName} this IOM: "${iom.subject}"?`,
-      async () => {
-        setIsActionLoading(true);
-        setActionError(null);
-        try {
-          const updatedIom = await apiAction(authenticatedFetch, iom.id);
-          setIom(updatedIom);
-          showSnackbar(`IOM successfully ${actionName}d.`, 'success');
-        } catch (err: unknown) {
-          const errorData = (err as { data?: Record<string, string[]>; message?: string })?.data || err;
-          let errorMessage = `Failed to ${actionName} IOM.`;
-          if (errorData && typeof errorData === 'object' && !Array.isArray(errorData)) {
-             const messages = Object.entries(errorData).map(([key, value]) => {
-                if (Array.isArray(value)) {
-                    return `${key}: ${value.join(', ')}`;
+        `Confirm ${actionName.charAt(0).toUpperCase() + actionName.slice(1)}`,
+        `Are you sure you want to ${actionName} this IOM: "${iom.subject}"?`,
+        async () => {
+            setIsActionLoading(true);
+            setActionError(null);
+            try {
+                const updatedIom = await apiAction(authenticatedFetch, iom.id);
+                setIom(updatedIom);
+                showSnackbar(`IOM successfully ${actionName}d.`, 'success');
+                if (actionName === 'archive') {
+                    // Optionally navigate away if an archived IOM shouldn't be viewed directly,
+                    // or just update UI to reflect new status.
+                    // navigate('/ioms');
                 }
-                return `${key}: ${value}`;
-             });
-             errorMessage = `Validation Error: ${messages.join('; ')}`;
-          } else if (err instanceof Error) {
-            errorMessage = err.message;
-          } else if (typeof errorData === 'string') {
-            errorMessage = errorData;
-          }
-          setActionError(errorMessage);
-          showSnackbar(errorMessage, 'error');
-        } finally {
-          setIsActionLoading(false);
+            } catch (err: any) {
+                const errorData = err?.data || err;
+                let errorMessage = `Failed to ${actionName} IOM.`;
+                if (typeof errorData === 'object' && errorData !== null) {
+                    errorMessage = Object.values(errorData).flat().join(' ');
+                } else if (err instanceof Error) {
+                    errorMessage = err.message;
+                } else if (typeof errorData === 'string'){
+                    errorMessage = errorData;
+                }
+                setActionError(errorMessage);
+                showSnackbar(errorMessage, 'error');
+            } finally {
+                setIsActionLoading(false);
+            }
         }
-      }
     );
   };
+
 
   if (isLoading) {
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
@@ -211,19 +223,18 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
     return <Alert severity="warning" sx={{ m: 2 }}>IOM details not found.</Alert>;
   }
 
-  const templateDetails = iom.iom_template_details as IOMTemplate | undefined;
+  const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
+  const canSubmitForSimpleApproval = iom.status === 'draft' && iom.iom_template_details?.approval_type === 'simple';
 
-  const canSubmitForSimpleApproval = iom.status === 'draft' && templateDetails?.approval_type === 'simple';
-
-  const isSimpleApprover = user && templateDetails?.approval_type === 'simple' &&
-    (templateDetails?.simple_approval_user === user?.id ||
-      (user.groups && Array.isArray(user.groups) && templateDetails?.simple_approval_group &&
-        user.groups.some((g: { id: number; name: string }) => g.id === templateDetails.simple_approval_group)));
+  const isSimpleApprover = iom.iom_template_details?.approval_type === 'simple' &&
+                         (iom.iom_template_details?.simple_approval_user === user?.id ||
+                          (user?.groups && iom.iom_template_details?.simple_approval_group &&
+                           user.groups.some(g => g.id === iom.iom_template_details?.simple_approval_group))); // Assuming user.groups is {id, name}[]
 
   const canPerformSimpleApprovalAction = iom.status === 'pending_approval' && isSimpleApprover;
 
-  const canPublish = (iom.status === 'draft' && templateDetails?.approval_type === 'none') ||
-    (iom.status === 'approved');
+  const canPublish = (iom.status === 'draft' && iom.iom_template_details?.approval_type === 'none') ||
+                     (iom.status === 'approved');
 
   const archivableStatuses: GenericIOM['status'][] = ['published', 'rejected', 'cancelled', 'approved'];
   const canArchive = archivableStatuses.includes(iom.status) && (user?.is_staff || iom.created_by === user?.id);
@@ -235,7 +246,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       <Grid container spacing={2} sx={{mb: 2}}>
         <Grid item xs={12} md={6}>
           <Typography variant="body1"><strong>IOM ID:</strong> {iom.gim_id}</Typography>
-          <Typography variant="body1"><strong>Template:</strong> {templateDetails?.name || iom.iom_template}</Typography>
+          <Typography variant="body1"><strong>Template:</strong> {iom.iom_template_details?.name || iom.iom_template}</Typography>
           <Typography variant="body1"><strong>Status:</strong> <Chip label={iom.status_display || iom.status} color={iom.status === 'published' ? 'success' : 'default'} size="small" /></Typography>
         </Grid>
         <Grid item xs={12} md={6}>
@@ -272,7 +283,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       <Typography variant="h6" sx={{mt:3, mb:1}}>Details:</Typography>
       <Paper variant="outlined" sx={{ p: 2 }}>
         <Grid container spacing={2}>
-          {templateDetails?.fields_definition.map((fieldDef) => (
+          {iom.iom_template_details?.fields_definition.map((fieldDef) => (
             <Grid item xs={12} md={fieldDef.type === 'text_area' ? 12 : 6} key={fieldDef.name}>
               <Box>
                 <Typography variant="subtitle2" color="textSecondary">{fieldDef.label}:</Typography>
@@ -304,13 +315,13 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
                         value={comments}
                         onChange={(e) => setComments(e.target.value)}
                         multiline rows={2} size="small" fullWidth
-                        helperText={!comments.trim() && templateDetails?.approval_type === 'simple' ? "Comments required for rejection" : ""}
+                        helperText={!comments.trim() ? "Comments required for rejection" : ""}
                     />
                     <Box sx={{display:'flex', gap:1}}>
                         <Button onClick={() => handleWorkflowAction('approve')} variant="outlined" color="success" startIcon={<CheckCircleOutlineIcon />} disabled={isActionLoading}>
                             {isActionLoading ? <CircularProgress size={20}/> : "Simple Approve"}
                         </Button>
-                        <Button onClick={() => handleWorkflowAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} disabled={isActionLoading || (!comments.trim() && templateDetails?.approval_type === 'simple')}>
+                        <Button onClick={() => handleWorkflowAction('reject')} variant="outlined" color="error" startIcon={<HighlightOffIcon />} disabled={isActionLoading || !comments.trim()}>
                             {isActionLoading ? <CircularProgress size={20}/> : "Simple Reject"}
                         </Button>
                     </Box>
@@ -341,7 +352,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
       </Box>
 
       {/* Placeholder for Advanced Approval Steps Display */}
-      {templateDetails?.approval_type === 'advanced' && (
+      {iom.iom_template_details?.approval_type === 'advanced' && (
         <Box sx={{mt:3}}>
             <Typography variant="h6" gutterBottom>Advanced Approval Workflow</Typography>
             <Typography color="textSecondary">
