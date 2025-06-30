@@ -22,7 +22,15 @@ export const loginApi = async (
   password: string,
 ): Promise<{
   token: string;
-  user: { name: string; role: string; id: number; is_staff: boolean; groups: string[] }; // Added is_staff
+  user: {
+    name: string;
+    role: string;
+    id: number;
+    is_staff: boolean;
+    groups: string[];
+    department_id?: number | null; // Added
+    department_name?: string | null; // Added
+  };
 }> => {
   try {
     // This first call is PUBLIC (no token), so we use the native fetch API.
@@ -47,35 +55,49 @@ export const loginApi = async (
   name: string;
   role: string;
   is_staff: boolean;
-  groups: string[]; // Add this line
+  groups: string[];
+  department_id?: number | null; // Added
+  department_name?: string | null; // Added
 } = {
   id: 0,
   name: username,
   role: 'user', // Default role, will be updated based on is_staff
   is_staff: false, // Default is_staff
   groups: [], // Initialize groups as an empty array
+  department_id: null, // Initialize
+  department_name: null, // Initialize
 };
 
     try {
       // 👇 CHANGE 3: Use the new apiClient for the authenticated user details fetch.
       const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/?username=${username}`;
-      const paginatedUserResponse = await apiClient<PaginatedResponse<User>>(
+      const paginatedUserResponse = await apiClient<PaginatedResponse<User>>( // User type now includes department fields
         endpoint,
         token,
       );
 
       if (paginatedUserResponse && paginatedUserResponse.results.length > 0) {
-        const currentUser = paginatedUserResponse.results[0];
+        const currentUser = paginatedUserResponse.results[0]; // currentUser is of type User from UserTypes.ts
         loggedInUser.id = currentUser.id;
         loggedInUser.name =
           currentUser.first_name && currentUser.last_name
             ? `${currentUser.first_name} ${currentUser.last_name}`
             : currentUser.username;
-        loggedInUser.is_staff = currentUser.is_staff; // Store is_staff status
-        loggedInUser.role = currentUser.is_staff ? 'admin' : 'user'; // Update role based on is_staff
+        loggedInUser.is_staff = currentUser.is_staff;
+        loggedInUser.role = currentUser.is_staff ? 'admin' : 'user';
+        // Assign department info if available from backend - this assumes backend serializer for User now includes these
+        loggedInUser.department_id = currentUser.department_id || null;
+        loggedInUser.department_name = currentUser.department_name || null;
+        // loggedInUser.groups should be populated from currentUser.groups if structure matches
+        // Assuming currentUser.groups is [{id: number, name: string}, ...] and we need string[] of names
+        // This part needs to be confirmed based on actual UserSerializer output for groups
+        if (currentUser.groups && Array.isArray(currentUser.groups)) {
+            loggedInUser.groups = currentUser.groups.map(g => g.name); // Assuming group objects have a 'name' property
+        }
+
       } else {
         console.warn(
-          `loginApi: Could not find user details for username: ${username}. Defaulting role to 'user' and is_staff to false.`,
+          `loginApi: Could not find user details for username: ${username}. Defaulting role to 'user', is_staff to false, and no department info.`,
         );
       }
     } catch (userFetchError) {

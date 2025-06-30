@@ -11,7 +11,9 @@ export interface User {
   date_joined: string; // ISO 8601 string (e.g., "2025-06-09T17:47:28.175204Z")
   last_login: string | null; // ISO 8601 string or null
   groups?: UserGroup[]; // User can belong to multiple groups
-  // Add any other user profile fields your backend exposes (e.g., 'role', 'department')
+  department_id?: number | null; // Added for user's department
+  department_name?: string | null; // Added for user's department name
+  // Add any other user profile fields your backend exposes (e.g., 'role')
 }
 
 // Define UserGroup if it's not already defined elsewhere (e.g., in a shared types file)
