@@ -38,9 +38,24 @@ def load_sample_iom_templates(apps, schema_editor):
     except Exception as e:
         print(f"Warning: Could not fetch a default user for 'created_by': {e}. Templates might have no creator if model requires it.")
 
+    # --- Pre-create all necessary groups ---
+    all_group_names = set()
+    for td in SAMPLE_IOM_TEMPLATES_DATA:
+        approval_cfg = td.get("approval_config", {})
+        if approval_cfg.get("simple_approver_groupname"):
+            all_group_names.add(approval_cfg["simple_approver_groupname"])
+        for group_name in td.get("allowed_group_names", []):
+            all_group_names.add(group_name)
+
+    for group_name in all_group_names:
+        group, created = Group.objects.get_or_create(name=group_name)
+        if created:
+            print(f"Created auth.Group: {group_name}")
+    # --- End pre-creating groups ---
+
     category_cache = {}
     user_cache = {}
-    group_cache = {}
+    group_cache = {} # Will be populated by get_or_create, or get after pre-creation
 
     for template_data in SAMPLE_IOM_TEMPLATES_DATA:
         category_name = template_data.get("category_name", "General")
