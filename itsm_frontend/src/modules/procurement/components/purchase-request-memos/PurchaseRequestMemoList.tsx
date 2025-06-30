@@ -46,6 +46,8 @@ import type {
   GetPurchaseRequestMemosParams,
 } from '../../types';
 import { useNavigate } from 'react-router-dom';
+import { getIomTemplates } from '../../../../api/genericIomApi'; // For fetching the PRM template ID
+import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // Type for IOMTemplate
 
 type Order = 'asc' | 'desc';
 
@@ -73,6 +75,32 @@ const PurchaseRequestMemoList: React.FC = () => {
     'approved' | 'rejected' | null
   >(null);
   const [decisionComments, setDecisionComments] = useState<string>('');
+  const [purchaseRequestTemplateId, setPurchaseRequestTemplateId] = useState<number | null>(null);
+  const [isFetchingTemplateId, setIsFetchingTemplateId] = useState<boolean>(false);
+
+
+  const fetchPurchaseRequestTemplateId = useCallback(async () => {
+    if (!authenticatedFetch) return;
+    setIsFetchingTemplateId(true);
+    try {
+      const response = await getIomTemplates(authenticatedFetch, { name: "Purchase Request", pageSize: 1 });
+      if (response.results && response.results.length > 0) {
+        setPurchaseRequestTemplateId(response.results[0].id);
+      } else {
+        showSnackbar("Error: 'Purchase Request' IOM Template not found. Please ensure it's created.", "error");
+        console.error("'Purchase Request' IOM Template not found.");
+      }
+    } catch (err) {
+      showSnackbar("Failed to fetch Purchase Request template ID.", "error");
+      console.error("Failed to fetch Purchase Request template ID:", err);
+    } finally {
+      setIsFetchingTemplateId(false);
+    }
+  }, [authenticatedFetch, showSnackbar]);
+
+  useEffect(() => {
+    fetchPurchaseRequestTemplateId();
+  }, [fetchPurchaseRequestTemplateId]);
 
   const fetchMemos = useCallback(async () => {
     if (!authenticatedFetch) return;
@@ -129,7 +157,12 @@ const PurchaseRequestMemoList: React.FC = () => {
   };
 
   const handleCreateNew = () => {
-    navigate('/procurement/iom/new'); // Corrected path to match App.tsx route
+    if (purchaseRequestTemplateId) {
+      navigate(`/ioms/new/form/${purchaseRequestTemplateId}`);
+    } else {
+      showSnackbar("Cannot create new request: 'Purchase Request' template ID not found.", "error");
+      console.error("Attempted to create new PRM without a valid purchaseRequestTemplateId.");
+    }
   };
 
   const handleViewMemoDetails = (memoId: number) => {
@@ -289,8 +322,9 @@ const PurchaseRequestMemoList: React.FC = () => {
         startIcon={<AddIcon />}
         onClick={handleCreateNew}
         sx={{ mb: 2 }}
+        disabled={isFetchingTemplateId || !purchaseRequestTemplateId}
       >
-        Create New Request
+        {isFetchingTemplateId ? "Loading Template..." : "Create New Request"}
       </Button>
       <Button
         variant="outlined"

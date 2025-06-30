@@ -215,8 +215,18 @@ class PurchaseOrder(models.Model):
         PurchaseRequestMemo,
         on_delete=models.SET_NULL,
         null=True, blank=True,
-        related_name='purchase_order',
-        verbose_name=_("Internal Office Memo")
+        related_name='purchase_order_legacy', # Changed related_name to avoid clash if we rename or reuse
+        verbose_name=_("Original Purchase Request Memo (Legacy)")
+    )
+    # New field to link to GenericIOM based Purchase Requests
+    generic_iom_purchase_request = models.ForeignKey(
+        'generic_iom.GenericIOM',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='purchase_orders_via_generic_iom',
+        verbose_name=_("Generic IOM Purchase Request"),
+        help_text=_("Link to the Generic IOM that represents the purchase request, if applicable.")
     )
     vendor = models.ForeignKey(
         Vendor,
