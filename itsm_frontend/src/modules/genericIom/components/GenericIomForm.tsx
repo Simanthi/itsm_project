@@ -24,6 +24,7 @@ import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/core
 import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
 import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
 import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer'; // FormFieldValue to type-only import
+import IomPreviewRenderer from './IomPreviewRenderer'; // Import the new preview component
 
 // Define the type for the parent record context
 interface ParentRecordContextType {
@@ -61,7 +62,8 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isEditMode, setIsEditMode] = useState<boolean>(false); // This will be set by iomIdParam
   const [error, setError] = useState<string | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState<boolean>(false); // Added isSubmitting state
+  const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
+  const [isPreviewing, setIsPreviewing] = useState<boolean>(false); // New state for preview mode
 
   // Determine mode and IDs from URL params
   const currentIomId = iomIdParam ? parseInt(iomIdParam, 10) : null;
@@ -260,10 +262,45 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     return <Alert severity="warning" sx={{m:2}}>Template information could not be loaded. {error}</Alert>;
   }
 
+  // If in preview mode, render the preview (Step 3 will create IomPreviewRenderer)
+  if (isPreviewing) {
+    return (
+      <Box sx={{p:2}}>
+        {/* Use the IomPreviewRenderer component */}
+        <IomPreviewRenderer
+            iomTemplate={iomTemplate}
+            dataPayload={dynamicFormData}
+            subject={subject}
+            toUsersStr={toUsersStr}
+            toGroupsStr={toGroupsStr}
+            parentRecordDisplay={parentDisplay}
+        />
+        <Box sx={{mt: 2, display: 'flex', gap: 1}}>
+            <Button
+                variant="outlined"
+                onClick={() => setIsPreviewing(false)}
+            >
+                Back to Form
+            </Button>
+            <Button
+                onClick={handleSubmit as React.MouseEventHandler<HTMLButtonElement>}
+                variant="contained"
+                color="primary"
+                disabled={isSubmitting || isLoading}
+                >
+                {isSubmitting ? <CircularProgress size={24} /> : (isEditMode ? 'Update IOM' : 'Create IOM')}
+            </Button>
+        </Box>
+      </Box>
+    );
+  }
+
+  // Standard form rendering
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box component="form" onSubmit={handleSubmit} noValidate>
         {error && <Alert severity="error" sx={{ mb: 2 }}>{error}</Alert>}
+
         <Grid container spacing={3}>
           <Grid item xs={12}>
             <Typography variant="h6" gutterBottom>Template: {iomTemplate.name}</Typography>
@@ -356,7 +393,14 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
             </>
           )}
 
-          <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Grid item xs={12} sx={{ mt: 2, display: 'flex', justifyContent: 'flex-end', gap: 1 }}>
+            <Button
+              variant="outlined"
+              onClick={() => setIsPreviewing(true)}
+              disabled={isSubmitting || isLoading}
+            >
+              Preview IOM
+            </Button>
             <Button
               type="submit"
               variant="contained"
