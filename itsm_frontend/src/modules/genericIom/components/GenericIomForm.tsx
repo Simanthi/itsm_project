@@ -187,8 +187,9 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     setDynamicFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
+  // Make event optional to allow calling without it from preview button
+  const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
+    if(event) event.preventDefault(); // Prevent default only if event is passed
     if (!authenticatedFetch || !iomTemplate) {
       setError("Form not ready or authentication error.");
       return;

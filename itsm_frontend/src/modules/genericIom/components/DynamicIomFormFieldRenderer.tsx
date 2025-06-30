@@ -320,8 +320,9 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
       const fetchDepartments = async (
         authFetch: typeof authenticatedFetch,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        inputValue?: string, // Departments list is usually not searched via free text for now
-        apiParams?: Record<string, string|number>
+        _inputValue?: string, // Mark as unused for now
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _apiParams?: Record<string, string|number> // Mark as unused for now
       ): Promise<PaginatedResponse<Department> | Department[]> => {
         // getDepartmentsForDropdown returns PaginatedResponse<Department>
         // No specific search input for now, fetches all (up to page_size in API)
@@ -353,11 +354,12 @@ const DynamicIomFormFieldRenderer: React.FC<DynamicFormFieldProps> = ({
       const fetchProjects = async (
         authFetch: typeof authenticatedFetch,
         // eslint-disable-next-line @typescript-eslint/no-unused-vars
-        inputValue?: string, // Projects list is usually not searched via free text for now
-        apiParams?: Record<string, string|number>
+        _inputValue?: string, // Mark as unused for now
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        _apiParams?: Record<string, string|number> // Mark as unused for now
       ): Promise<PaginatedResponse<Project> | Project[]> => {
         // getProjectsForDropdown returns PaginatedResponse<Project>
-        const response = await getProjectsForDropdown(authFetch /*, { pageSize: apiParams?.pageSize as number || 200 } */); // pageSize is hardcoded in API
+        const response = await getProjectsForDropdown(authFetch /*, { pageSize: _apiParams?.pageSize as number || 200 } */); // pageSize is hardcoded in API
         return response;
       };
 
