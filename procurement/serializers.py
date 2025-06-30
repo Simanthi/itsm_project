@@ -23,6 +23,12 @@ from generic_iom.models import IOMTemplate, IOMCategory, GenericIOM
 
 User = get_user_model()
 
+# A simple serializer for GenericIOM to be nested in PurchaseOrderSerializer
+class SimpleGenericIOMSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GenericIOM
+        fields = ['id', 'gim_id', 'subject', 'status'] # Basic info
+
 # Serializers for Common Models (basic, can be expanded)
 class DepartmentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -119,7 +125,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
     order_items = OrderItemSerializer(many=True, required=False) # Not required if order_items_json is used
     vendor_details = VendorSerializer(source='vendor', read_only=True) # Assuming VendorSerializer exists and is suitable
     created_by_username = serializers.CharField(source='created_by.username', read_only=True)
-    internal_office_memo_details = PurchaseRequestMemoSerializer(source='internal_office_memo', read_only=True)
+    internal_office_memo_details = PurchaseRequestMemoSerializer(source='internal_office_memo', read_only=True, allow_null=True)
+    generic_iom_purchase_request_details = SimpleGenericIOMSerializer(source='generic_iom_purchase_request', read_only=True, allow_null=True)
     related_contract_details = serializers.StringRelatedField(source='related_contract', read_only=True)
     # For handling JSON string input for order items, e.g. from multipart forms
     order_items_json = serializers.CharField(write_only=True, required=False, allow_blank=True, help_text="JSON string of order items.")
@@ -129,7 +136,8 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
         model = PurchaseOrder
         fields = [
             'id', 'po_number',
-            'internal_office_memo', 'internal_office_memo_details',
+            'internal_office_memo', 'internal_office_memo_details', # Legacy PRM link
+            'generic_iom_purchase_request', 'generic_iom_purchase_request_details', # New GenericIOM PRM link
             'vendor', 'vendor_details',
             'order_date', 'expected_delivery_date',
             'total_amount', 'status',
@@ -144,7 +152,7 @@ class PurchaseOrderSerializer(serializers.ModelSerializer):
             'po_number', # Assuming system-generated
             'total_amount', # Calculated
             'created_by_username', 'created_at', 'updated_at',
-            'vendor_details', 'internal_office_memo_details', 'related_contract_details'
+            'vendor_details', 'internal_office_memo_details', 'generic_iom_purchase_request_details', 'related_contract_details'
         ]
         # `created_by` is typically set in the view.
 
