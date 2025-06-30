@@ -12,7 +12,7 @@ import {
   Chip,
   List, // Added for displaying steps
   ListItem, // Added for displaying steps
-  ListItemText, // Added for displaying steps
+  // ListItemText, // Removed unused import
   // ListItemIcon, // Unused
   TextField, // For comments in actions
 } from '@mui/material';
@@ -519,7 +519,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
                                 <Box sx={{width: '100%', mt:1, display: 'flex', gap: 1, justifyContent: 'flex-end'}}>
                                     {(step.status === 'pending' && user &&
                                      (step.assigned_approver_user === user.id ||
-                                      (step.assigned_approver_group && user.groups?.includes(step.assigned_approver_group)))) && (
+                                      (step.assigned_approver_group_name && user.groups?.includes(step.assigned_approver_group_name)))) && (
                                         <>
                                             <Button
                                                 onClick={() => handleAdvancedApprovalAction(step.id, 'approve')}

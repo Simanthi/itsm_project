@@ -77,7 +77,7 @@ export const loginApi = async (
       );
 
       if (paginatedUserResponse && paginatedUserResponse.results.length > 0) {
-        const currentUser = paginatedUserResponse.results[0]; // currentUser is of type User from UserTypes.ts
+        const currentUser = paginatedUserResponse.results[0] as User; // Explicitly cast to the imported User type
         loggedInUser.id = currentUser.id;
         loggedInUser.name =
           currentUser.first_name && currentUser.last_name
@@ -85,9 +85,20 @@ export const loginApi = async (
             : currentUser.username;
         loggedInUser.is_staff = currentUser.is_staff;
         loggedInUser.role = currentUser.is_staff ? 'admin' : 'user';
+
         // Assign department info if available from backend - this assumes backend serializer for User now includes these
-        loggedInUser.department_id = currentUser.department_id || null;
-        loggedInUser.department_name = currentUser.department_name || null;
+        // Defensive check for properties, though optional chaining on User type should suffice if type is correct
+        if ('department_id' in currentUser && currentUser.department_id !== undefined) {
+            loggedInUser.department_id = currentUser.department_id;
+        } else {
+            loggedInUser.department_id = null;
+        }
+        if ('department_name' in currentUser && currentUser.department_name !== undefined) {
+            loggedInUser.department_name = currentUser.department_name;
+        } else {
+            loggedInUser.department_name = null;
+        }
+
         // loggedInUser.groups should be populated from currentUser.groups if structure matches
         // Assuming currentUser.groups is [{id: number, name: string}, ...] and we need string[] of names
         // This part needs to be confirmed based on actual UserSerializer output for groups
@@ -118,15 +129,21 @@ export const getUserList = async (
   authenticatedFetch: (
     endpoint: string,
     options?: RequestInit,
-  ) => Promise<unknown>, // Changed Promise<any> to Promise<unknown>
-): Promise<User[]> => {
+  ) => Promise<unknown>,
+  params?: { search?: string; page?: number; page_size?: number } // Added params for search/pagination
+): Promise<User[]> => { // It actually returns User[] not PaginatedResponse directly due to .results
   // Token check is now handled by authenticatedFetch
   try {
-    const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/`;
-    // Use authenticatedFetch instead of apiClient directly
+    const queryParams = new URLSearchParams();
+    if (params?.search) queryParams.append('search', params.search);
+    if (params?.page) queryParams.append('page', String(params.page));
+    if (params?.page_size) queryParams.append('page_size', String(params.page_size));
+
+    const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
+
     const paginatedUsersData = (await authenticatedFetch(
       endpoint,
-    )) as PaginatedResponse<User>;
+    )) as PaginatedResponse<User>; // Assuming backend returns this structure
 
     return paginatedUsersData?.results || [];
   } catch (error) {

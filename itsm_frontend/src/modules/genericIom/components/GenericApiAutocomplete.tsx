@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Autocomplete, TextField, CircularProgress, Chip } from '@mui/material';
+import { Autocomplete, TextField, CircularProgress, Chip, Checkbox } from '@mui/material'; // Added Checkbox
 import type { AuthenticatedFetch } from '../../../context/auth/AuthContextDefinition'; // Adjust path as needed
 import { useDebounce } from '../../../hooks/useDebounce'; // Assuming a debounce hook exists or will be created
 

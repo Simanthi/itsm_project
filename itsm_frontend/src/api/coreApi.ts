@@ -44,7 +44,8 @@ export const getContentTypeId = async (
     // If the error is a 404, we can specifically return null.
     // This depends on how authenticatedFetch and apiClient handle errors.
     // For now, assume if an error is caught, it means not found or other issue.
-    if (error?.status === 404) {
+    // Explicitly type error as unknown for better practice
+    if (error && typeof error === 'object' && 'status' in error && error.status === 404) {
       console.warn(`ContentType not found for ${appLabel}.${modelName}`);
       return null;
     }
@@ -86,7 +87,6 @@ interface PaginatedGroupResponse {
 export const getAuthGroups = async (
   authenticatedFetch: AuthenticatedFetch,
   search?: string,
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   params?: { page?: number; pageSize?: number }
 ): Promise<PaginatedGroupResponse> => {
   const queryParams = new URLSearchParams();
