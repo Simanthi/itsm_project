@@ -3,9 +3,10 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework import status, viewsets, filters
 from django.contrib.contenttypes.models import ContentType
-from .serializers import ContentTypeSerializer
+from django.contrib.auth.models import Group
+from .serializers import ContentTypeSerializer, GroupSerializer
 from rest_framework.permissions import IsAuthenticated
 
 
@@ -46,3 +47,14 @@ class ContentTypeLookupView(APIView):
                 {"error": f"An unexpected error occurred: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
+
+class GroupViewSet(viewsets.ReadOnlyModelViewSet):
+    """
+    A ViewSet for listing and retrieving user groups.
+    Supports searching by group name.
+    """
+    queryset = Group.objects.all().order_by('name')
+    serializer_class = GroupSerializer
+    permission_classes = [IsAuthenticated]
+    filter_backends = [filters.SearchFilter]
+    search_fields = ['name']
