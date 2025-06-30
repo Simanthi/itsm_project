@@ -58,3 +58,65 @@ export const getContentTypeId = async (
 //   const endpoint = `${API_CORE_BASE_PATH}/some-other-endpoint/`;
 //   return await authenticatedFetch(endpoint);
 // };
+
+// --- Group Types and Functions ---
+// Basic Group type for selection
+export interface AuthGroup {
+  id: number;
+  name: string;
+}
+
+// Placeholder for PaginatedResponse if not imported globally
+interface PaginatedGroupResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: AuthGroup[];
+}
+
+/**
+ * Fetches a list of authentication groups.
+ * TODO: This is a placeholder. A real backend endpoint (e.g., /api/core/groups/ or /api/auth/groups/)
+ * and corresponding Django View/Serializer for django.contrib.auth.models.Group are needed.
+ * @param authenticatedFetch The authenticated fetch function.
+ * @param searchOptional Optional search string for filtering group names.
+ * @param params Optional additional parameters like page, pageSize.
+ * @returns A Promise that resolves to a list of AuthGroup objects.
+ */
+export const getAuthGroups = async (
+  authenticatedFetch: AuthenticatedFetch,
+  search?: string,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  params?: { page?: number; pageSize?: number } // To match expected signature for GenericApiAutocomplete
+): Promise<PaginatedGroupResponse | AuthGroup[]> => { // To match GenericApiAutocomplete's expected return
+  // const queryParams = new URLSearchParams();
+  // if (search) queryParams.append('search', search);
+  // if (params?.page) queryParams.append('page', String(params.page));
+  // if (params?.pageSize) queryParams.append('page_size', String(params.pageSize));
+  // const endpoint = `${API_CORE_BASE_PATH}/groups/${queryParams.toString() ? '?' : ''}${queryParams.toString()}`;
+  // console.log(`Placeholder: Would fetch from ${endpoint}`);
+
+  // For now, returning a dummy response structure or an empty array.
+  // Replace with actual API call when backend endpoint is ready.
+  console.warn(
+    `getAuthGroups is using placeholder data. Backend endpoint required at /api/core/groups/ or similar for django.contrib.auth.models.Group. Search term: ${search}`
+  );
+
+  // Simulate a paginated response structure if your GenericApiAutocomplete expects it
+  // Otherwise, just return AuthGroup[]
+  const placeholderGroups: AuthGroup[] = [
+    // { id: 1, name: 'Admins (Placeholder)' },
+    // { id: 2, name: 'Editors (Placeholder)' }
+  ];
+
+  // If GenericApiAutocomplete handles both PaginatedResponse and T[], returning T[] is simpler for placeholder
+  // return placeholderGroups;
+
+  // If PaginatedResponse is strictly needed by GenericApiAutocomplete:
+   return Promise.resolve({
+     count: placeholderGroups.length,
+     next: null,
+     previous: null,
+     results: placeholderGroups,
+   });
+};
