@@ -41,7 +41,7 @@ interface GenericIomFormProps {
 const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = null }) => { // Changed from assetContext
   const { templateId: templateIdParam, iomId: iomIdParam } = useParams<{ templateId?: string; iomId?: string }>();
   const navigate = useNavigate();
-  const { authenticatedFetch } = useAuth();
+  const { authenticatedFetch, user } = useAuth(); // Destructure user from useAuth()
   const { showSnackbar } = useUI();
 
   const [iomTemplate, setIomTemplate] = useState<IOMTemplate | null>(null);
@@ -142,6 +142,28 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
             initialPayload[recordIdentifierField.name] = parentRecordContext.recordIdentifier;
           }
         }
+
+        // Auto-populate 'from_department' or 'sender_department' if user has department_name
+        // And if the template has a field with such a conventional name.
+        if (user?.department_name) {
+            const fromDepartmentField = fetchedTemplate.fields_definition.find(
+                f => f.name === 'from_department' || f.name === 'sender_department'
+            );
+            if (fromDepartmentField && initialPayload[fromDepartmentField.name] === undefined) { // Only populate if not already set by defaultValue
+                initialPayload[fromDepartmentField.name] = user.department_name;
+            }
+        }
+        // Auto-populate 'from_user' or 'sender_user_name' if user has a name
+        if (user?.name) { // Assuming user.name is 'FirstName LastName' or similar from AuthContext
+            const fromUserField = fetchedTemplate.fields_definition.find(
+                f => f.name === 'from_user' || f.name === 'sender_user_name' || f.name === 'created_by_name_field' // Common conventional names
+            );
+            if (fromUserField && initialPayload[fromUserField.name] === undefined) {
+                 initialPayload[fromUserField.name] = user.name;
+            }
+        }
+
+
         setDynamicFormData(initialPayload);
       } else {
         throw new Error("No Template ID for new IOM or IOM ID for editing.");
@@ -153,7 +175,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, parentRecordContext, fetchContentTypeId]); // Changed assetContext to parentRecordContext
+  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, parentRecordContext, fetchContentTypeId, user]); // Added user to dependency array
 
   useEffect(() => {
     loadData();
