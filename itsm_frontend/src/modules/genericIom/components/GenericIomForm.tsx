@@ -284,10 +284,11 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                 Back to Form
             </Button>
             <Button
-                onClick={handleSubmit as React.MouseEventHandler<HTMLButtonElement>}
+                type="submit" // Explicitly set as submit button
                 variant="contained"
                 color="primary"
                 disabled={isSubmitting || isLoading}
+                // onClick handler removed, form's onSubmit will be used
                 >
                 {isSubmitting ? <CircularProgress size={24} /> : (isEditMode ? 'Update IOM' : 'Create IOM')}
             </Button>
