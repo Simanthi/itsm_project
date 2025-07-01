@@ -2,27 +2,36 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase, APIClient
 from django.contrib.auth import get_user_model
-from django.db.models import Q # Added for Pylance issue
+from django.db.models import Q
 
 from generic_iom.models import IOMCategory, IOMTemplate, GenericIOM
-# from .serializers import IOMTemplateSerializer, GenericIOMSerializer # Not directly used in test usually
 
 User = get_user_model()
 
 class IOMTemplateAPITest(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.admin_user = User.objects.create_superuser(username='admin', email='admin@example.com', password='password123')
-        cls.normal_user = User.objects.create_user(username='user', email='user@example.com', password='password123')
-        cls.category = IOMCategory.objects.create(name="API Test Category")
+        cls.admin_user = User.objects.create_superuser(username='admin_api_generic', email='admin_api_generic@example.com', password='password123')
+        cls.normal_user = User.objects.create_user(username='user_api_generic', email='user_api_generic@example.com', password='password123')
+
+        # Count existing categories due to data migration before creating a new one for tests
+        # This avoids clashes if "API Test Category" is created by data migration
+        existing_categories_count = IOMCategory.objects.count()
+        cls.category_name = f"API Test Category {existing_categories_count + 1}"
+        cls.category = IOMCategory.objects.create(name=cls.category_name)
+
         cls.template_data = {
             "name": "API Test Template",
             "category": cls.category.pk,
             "fields_definition": [{"name": "title", "label": "Title", "type": "text", "required": True}],
             "approval_type": "none",
         }
+
+        # Count existing templates before creating one for tests
+        existing_templates_count = IOMTemplate.objects.count()
+        cls.template_name = f"Existing Template {existing_templates_count + 1}"
         cls.template = IOMTemplate.objects.create(
-            name="Existing Template",
+            name=cls.template_name,
             category=cls.category,
             created_by=cls.admin_user,
             fields_definition=[{"name": "body", "label": "Body", "type": "textarea"}],
@@ -34,7 +43,10 @@ class IOMTemplateAPITest(APITestCase):
         self.client.force_authenticate(user=self.normal_user)
         response = self.client.get(reverse('generic_iom:iomtemplate-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(response.data['results']) >= 1) # Should see 'Existing Template'
+        # Check if at least the template created in setUpTestData is present
+        # The total number can vary due to data migrations
+        self.assertTrue(any(t['name'] == self.template_name for t in response.data['results']))
+
 
     def test_list_templates_unauthenticated(self):
         self.client.force_authenticate(user=None)
@@ -43,9 +55,10 @@ class IOMTemplateAPITest(APITestCase):
 
     def test_create_template_admin(self):
         self.client.force_authenticate(user=self.admin_user)
+        initial_template_count = IOMTemplate.objects.count()
         response = self.client.post(reverse('generic_iom:iomtemplate-list'), self.template_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(IOMTemplate.objects.count(), 2) # Existing + new one
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        self.assertEqual(IOMTemplate.objects.count(), initial_template_count + 1)
         self.assertEqual(response.data['name'], "API Test Template")
         self.assertEqual(response.data['created_by'], self.admin_user.pk)
 
@@ -71,32 +84,42 @@ class IOMTemplateAPITest(APITestCase):
         self.assertFalse(self.template.is_active)
 
     def test_delete_template_admin(self):
+        # Create a new template specifically for this test to delete
+        # to avoid issues with cls.template being used by other tests if tests run in parallel or different order
+        template_to_delete = IOMTemplate.objects.create(
+            name="Template To Delete For Test",
+            category=self.category,
+            created_by=self.admin_user
+        )
         self.client.force_authenticate(user=self.admin_user)
-        response = self.client.delete(reverse('generic_iom:iomtemplate-detail', kwargs={'pk': self.template.pk}))
+        initial_template_count = IOMTemplate.objects.count()
+
+        response = self.client.delete(reverse('generic_iom:iomtemplate-detail', kwargs={'pk': template_to_delete.pk}))
         self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT)
-        self.assertEqual(IOMTemplate.objects.count(), 0) # Initial template deleted
+        self.assertEqual(IOMTemplate.objects.count(), initial_template_count - 1)
+        self.assertFalse(IOMTemplate.objects.filter(pk=template_to_delete.pk).exists())
 
 class GenericIOMAPITest(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.user1 = User.objects.create_user(username='user1', password='password123')
-        cls.user2 = User.objects.create_user(username='user2', password='password123') # For simple approval
-        cls.admin_user = User.objects.create_superuser(username='adminapi', password='password123')
+        cls.user1 = User.objects.create_user(username='user1_giom_api', password='password123')
+        cls.user2 = User.objects.create_user(username='user2_giom_api', password='password123')
+        cls.admin_user = User.objects.create_superuser(username='adminapi_giom_api', password='password123')
 
-        cls.category = IOMCategory.objects.create(name="API IOM Category")
+        cls.category = IOMCategory.objects.create(name="API IOM Test Category")
         cls.template_no_approval = IOMTemplate.objects.create(
-            name="No Approval API Template",
+            name="No Approval API Test Template",
             created_by=cls.admin_user,
             category=cls.category,
             approval_type='none',
             fields_definition=[{"name": "message", "label": "Message", "type": "textarea"}]
         )
         cls.template_simple_approval = IOMTemplate.objects.create(
-            name="Simple Approval API Template",
+            name="Simple Approval API Test Template",
             created_by=cls.admin_user,
             category=cls.category,
             approval_type='simple',
-            simple_approval_user=cls.user2, # user2 is the approver
+            simple_approval_user=cls.user2,
             fields_definition=[{"name": "detail", "label": "Detail", "type": "text", "required": True}]
         )
         cls.iom_data_valid = {
@@ -116,7 +139,7 @@ class GenericIOMAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         self.assertEqual(response.data['subject'], "API Test IOM Subject")
         self.assertEqual(response.data['created_by'], self.user1.pk)
-        self.assertEqual(response.data['status'], 'draft') # Default status
+        self.assertEqual(response.data['status'], 'draft')
         self.assertIsNotNone(response.data['gim_id'])
 
     def test_create_generic_iom_inactive_template_forbidden(self):
@@ -124,17 +147,18 @@ class GenericIOMAPITest(APITestCase):
         self.template_no_approval.save()
         self.client.force_authenticate(user=self.user1)
         response = self.client.post(reverse('generic_iom:genericiom-list'), self.iom_data_valid, format='json')
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST) # Or specific error from perform_create
-        # The actual error might be a ValidationError from perform_create, leading to 400
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertTrue('inactive template' in str(response.data).lower())
+        self.template_no_approval.is_active = True # Reset for other tests
+        self.template_no_approval.save()
 
 
     def test_create_generic_iom_missing_required_payload_field(self):
         self.client.force_authenticate(user=self.user1)
         invalid_payload_data = {
-            "iom_template": self.template_simple_approval.pk, # This template has "detail" as required
+            "iom_template": self.template_simple_approval.pk,
             "subject": "Missing Payload Test",
-            "data_payload": {"wrong_field": "some data"} # "detail" is missing
+            "data_payload": {"wrong_field": "some data"}
         }
         response = self.client.post(reverse('generic_iom:genericiom-list'), invalid_payload_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -143,20 +167,16 @@ class GenericIOMAPITest(APITestCase):
 
 
     def test_list_generic_ioms_user_sees_own_and_published(self):
-        # User1 creates a draft IOM
-        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User1 Draft", created_by=self.user1, status='draft', data_payload={"message": "draft msg"})
-        # User2 creates a published IOM
-        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User2 Published", created_by=self.user2, status='published', data_payload={"message": "published msg"})
+        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User1 Draft GIOM", created_by=self.user1, status='draft', data_payload={"message": "draft msg"})
+        GenericIOM.objects.create(iom_template=self.template_no_approval, subject="User2 Published GIOM", created_by=self.user2, status='published', data_payload={"message": "published msg"})
 
         self.client.force_authenticate(user=self.user1)
         response = self.client.get(reverse('generic_iom:genericiom-list'))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
         subjects_seen = [item['subject'] for item in response.data['results']]
-        self.assertIn("User1 Draft", subjects_seen)
-        self.assertIn("User2 Published", subjects_seen) # Due to simplified list queryset for published
-        # More precise check if CanViewGenericIOM was fully applied at list level would be harder here.
-        # For now, this confirms the queryset logic for list view.
+        self.assertIn("User1 Draft GIOM", subjects_seen)
+        self.assertIn("User2 Published GIOM", subjects_seen)
 
     def test_retrieve_generic_iom_owner(self):
         iom = GenericIOM.objects.create(
@@ -174,15 +194,12 @@ class GenericIOMAPITest(APITestCase):
             iom_template=self.template_no_approval,
             subject=self.iom_data_valid['subject'],
             data_payload=self.iom_data_valid['data_payload'],
-            created_by=self.user1,
+            created_by=self.user1, # Created by user1
             status='published'
         )
-        # user2 is not creator, not direct recipient, not in group recipient.
-        # but if published, CanViewGenericIOM allows view if they are recipient or staff.
-        # For this test, let's assume user2 is a recipient for simplicity to test CanViewGenericIOM.
-        iom.to_users.add(self.user2)
+        iom.to_users.add(self.user2) # user2 is a recipient
 
-        self.client.force_authenticate(user=self.user2)
+        self.client.force_authenticate(user=self.user2) # Authenticated as user2
         response = self.client.get(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
@@ -196,11 +213,11 @@ class GenericIOMAPITest(APITestCase):
             status='draft'
         )
         self.client.force_authenticate(user=self.user1)
-        update_data = {"subject": "Updated Subject by Owner", "data_payload": {"message": "Updated content"}}
+        update_data = {"subject": "Updated Subject by Owner GIOM", "data_payload": {"message": "Updated content"}}
         response = self.client.patch(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}), update_data, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         iom.refresh_from_db()
-        self.assertEqual(iom.subject, "Updated Subject by Owner")
+        self.assertEqual(iom.subject, "Updated Subject by Owner GIOM")
 
     def test_update_generic_iom_owner_not_draft_forbidden(self):
         iom = GenericIOM.objects.create(
@@ -211,9 +228,9 @@ class GenericIOMAPITest(APITestCase):
             status='published'
         )
         self.client.force_authenticate(user=self.user1)
-        update_data = {"subject": "Attempt Update Published"}
+        update_data = {"subject": "Attempt Update Published GIOM"}
         response = self.client.patch(reverse('generic_iom:genericiom-detail', kwargs={'pk': iom.pk}), update_data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN) # Due to IsOwnerOrReadOnlyGenericIOM
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_submit_for_simple_approval_owner_draft(self):
         iom = GenericIOM.objects.create(
@@ -238,7 +255,7 @@ class GenericIOMAPITest(APITestCase):
             created_by=self.user1,
             status='pending_approval'
         )
-        self.client.force_authenticate(user=self.user2) # user2 is simple_approval_user
+        self.client.force_authenticate(user=self.user2)
         url = reverse('generic_iom:genericiom-simple-approve', kwargs={'pk': iom.pk})
         response = self.client.post(url, {"comments": "Looks good!"}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
@@ -257,8 +274,8 @@ class GenericIOMAPITest(APITestCase):
         )
         self.client.force_authenticate(user=self.user2)
         url = reverse('generic_iom:genericiom-simple-reject', kwargs={'pk': iom.pk})
-        response = self.client.post(url, {"comments": ""}, format='json') # No comments
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST) # Comments required
+        response = self.client.post(url, {"comments": ""}, format='json')
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
     def test_publish_iom_no_approval_from_draft_by_owner(self):
         iom = GenericIOM.objects.create(
@@ -282,17 +299,12 @@ class GenericIOMAPITest(APITestCase):
             subject=self.iom_simple_data_valid['subject'],
             data_payload=self.iom_simple_data_valid['data_payload'],
             created_by=self.user1,
-            status='approved', # Assume it went through simple approval
+            status='approved',
             simple_approver_action_by=self.user2
         )
-        self.client.force_authenticate(user=self.user1) # Owner publishes
+        self.client.force_authenticate(user=self.user1)
         url = reverse('generic_iom:genericiom-publish', kwargs={'pk': iom.pk})
         response = self.client.post(url, {}, format='json')
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         iom.refresh_from_db()
         self.assertEqual(iom.status, 'published')
-
-    # TODO: Add tests for advanced approval workflow through API (harder, involves setting up rules)
-    # TODO: Test parent_record GFK creation/update via API
-    # TODO: Test to_users, to_groups M2M updates via API
-    # TODO: Test permissions more exhaustively for each action and user type.

@@ -1,10 +1,12 @@
 # itsm_project/api/views.py
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.permissions import AllowAny
 
 
 class HelloApiView(APIView):
     """Test API View."""
+    permission_classes = [AllowAny]  # Explicitly set permissions
 
     def get(self, request, format=None):
         """Returns a list of APIView features."""

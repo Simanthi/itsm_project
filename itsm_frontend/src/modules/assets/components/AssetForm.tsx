@@ -376,11 +376,13 @@ const AssetForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth required error={!formData.status && !!error}>
-              <InputLabel>Status</InputLabel>
+              <InputLabel id="asset-status-label">Status</InputLabel>
               <Select
+                labelId="asset-status-label"
+                id="asset-status-select"
                 name="status"
                 value={formData.status}
-                label="Status"
+                label="Status" // MUI uses this to ensure label floats correctly, and can contribute to accessible name
                 onChange={handleSelectChange}
               >
                 {ASSET_STATUS_CHOICES.map((option) => (
@@ -393,8 +395,10 @@ const AssetForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <InputLabel>Category</InputLabel>
+              <InputLabel id="asset-category-label">Category</InputLabel>
               <Select
+                labelId="asset-category-label"
+                id="asset-category-select"
                 name="category_id"
                 value={formData.category_id ?? ''}
                 label="Category"
@@ -413,8 +417,10 @@ const AssetForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <InputLabel>Location</InputLabel>
+              <InputLabel id="asset-location-label">Location</InputLabel>
               <Select
+                labelId="asset-location-label"
+                id="asset-location-select"
                 name="location_id"
                 value={formData.location_id || ''}
                 label="Location"
@@ -433,8 +439,10 @@ const AssetForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <InputLabel>Vendor</InputLabel>
+              <InputLabel id="asset-vendor-label">Vendor</InputLabel>
               <Select
+                labelId="asset-vendor-label"
+                id="asset-vendor-select"
                 name="vendor_id"
                 value={formData.vendor_id || ''}
                 label="Vendor"
@@ -453,8 +461,10 @@ const AssetForm: React.FC = () => {
           </Grid>
           <Grid item xs={12} sm={6}>
             <FormControl fullWidth>
-              <InputLabel>Assigned To</InputLabel>
+              <InputLabel id="asset-assigned-to-label">Assigned To</InputLabel>
               <Select
+                labelId="asset-assigned-to-label"
+                id="asset-assigned-to-select"
                 name="assigned_to_id"
                 value={formData.assigned_to_id || ''}
                 label="Assigned To"
