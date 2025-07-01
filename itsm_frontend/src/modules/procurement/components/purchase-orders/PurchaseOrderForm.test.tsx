@@ -1,5 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react'; // Added within
+import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
 import { UIContextProvider as UIProvider } from '../../../../context/UIContext/UIContextProvider';
@@ -156,13 +157,126 @@ describe('PurchaseOrderForm', () => {
 
   it('validates required fields on submit', async () => {
     renderWithProviders(<PurchaseOrderForm />);
-    fireEvent.click(screen.getByRole('button', { name: /Create Purchase Order/i }));
+    const user = userEvent.setup();
 
+    // Wait for form to be generally ready (e.g., vendor dropdown populated)
+    const vendorAutocomplete = screen.getByLabelText(/Vendor/i);
+    fireEvent.mouseDown(vendorAutocomplete); // Open dropdown
+    await screen.findByText('Test Vendor 1 (MSW)'); // Wait for an option
+    fireEvent.keyDown(vendorAutocomplete, { key: 'Escape' }); // Close dropdown
+
+    const formElement = await screen.findByRole('form', { name: /Create Purchase Order Form/i }); // Keep this to ensure form initially renders
+    const submitButton = screen.getByRole('button', { name: /Create Purchase Order/i });
+
+    // Clear Vendor (if possible, or ensure it's not selected)
+    // For Autocomplete, clearing might involve finding the clear button if it exists,
+    // or ensuring no selection is made. For this test, we'll assume vendor is not yet selected.
+    // If vendor is pre-selected or required to clear, this part needs adjustment.
+    // For now, we will rely on the default state of Autocomplete being null/empty for vendor.
+
+    // Clear Order Date
+    const orderDateInput = within(formElement).getAllByLabelText(/Date/i).find(input => input.getAttribute('name') === 'order_date');
+    if (orderDateInput) {
+        fireEvent.change(orderDateInput, { target: { value: '' } });
+    }
+
+    await user.click(submitButton);
+
+    const expectedErrorMessage = /Vendor and Order Date are required./i;
+    // Expect the error message to appear on the screen
+    // (it will be in an Alert, potentially replacing the form if `error && !isSubmitting` causes an early return)
     await waitFor(() => {
-      // Example: expect(screen.getByText(/Vendor is required/i)).toBeInTheDocument();
-      // This depends on how errors are displayed. For now, this test is a placeholder.
-      // It will pass if no unhandled error occurs during click.
+      // Ensure the text is present (it is, in two places)
+      const errorMessages = screen.getAllByText(expectedErrorMessage);
+      expect(errorMessages.length).toBeGreaterThanOrEqual(1);
+
+      // Now find the specific alert that is severity="error" and contains this text
+      const errorAlert = errorMessages.find(el => {
+        const alertRoot = el.closest('[role="alert"]');
+        // MUI Alert with severity="error" usually has class 'MuiAlert-standardError'
+        return alertRoot && alertRoot.classList.contains('MuiAlert-standardError');
+      });
+      expect(errorAlert).toBeInTheDocument(); // Check that we found our specific alert
+
+    }, { timeout: 5000 });
+
+    expect(mockNavigate).not.toHaveBeenCalled();
+  });
+
+  it('validates order items on submit', async () => {
+    renderWithProviders(<PurchaseOrderForm />);
+    const user = userEvent.setup();
+
+    // Fill required header fields
+    const vendorAutocomplete = screen.getByLabelText(/Vendor/i);
+    fireEvent.mouseDown(vendorAutocomplete);
+    await screen.findByText('Test Vendor 1 (MSW)');
+    fireEvent.click(screen.getByText('Test Vendor 1 (MSW)'));
+
+    const orderDateInput = screen.getAllByLabelText(/Date/i).find(input => input.getAttribute('name') === 'order_date');
+    if (orderDateInput) {
+      fireEvent.change(orderDateInput, { target: { value: '2024-08-01' } });
+    }
+
+    const formElement = await screen.findByRole('form', { name: /Create Purchase Order Form/i });
+    const submitButton = screen.getByRole('button', { name: /Create Purchase Order/i });
+
+    // Test Case 1: Empty item description
+    let itemDescriptionInputs = within(formElement).getAllByRole('textbox').filter(input => input.getAttribute('name') === 'item_description');
+    fireEvent.change(itemDescriptionInputs[0], { target: { value: '' } }); // Empty description
+
+    let quantityInputs = within(formElement).getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'quantity');
+    fireEvent.change(quantityInputs[0], { target: { value: '1' } });
+
+    let unitPriceInputs = within(formElement).getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'unit_price');
+    fireEvent.change(unitPriceInputs[0], { target: { value: '10' } });
+
+    await user.click(submitButton);
+
+    const expectedItemErrorMessage = /All order items must have a description, valid quantity, and valid unit price./i;
+    await waitFor(() => {
+      expect(screen.getByText(expectedItemErrorMessage)).toBeInTheDocument();
     });
+    const alert1 = screen.getByText(expectedItemErrorMessage).closest('[role="alert"]');
+    expect(alert1).toBeInTheDocument();
+    expect(alert1).toHaveClass('MuiAlert-standardError');
+    expect(mockNavigate).not.toHaveBeenCalled();
+
+
+    // Test Case 2: Invalid quantity (e.g., 0)
+    // Reset item description to valid, make quantity invalid
+    itemDescriptionInputs = within(formElement).getAllByRole('textbox').filter(input => input.getAttribute('name') === 'item_description');
+    fireEvent.change(itemDescriptionInputs[0], { target: { value: 'Valid Item' } });
+
+    quantityInputs = within(formElement).getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'quantity');
+    fireEvent.change(quantityInputs[0], { target: { value: '0' } }); // Invalid quantity
+
+    await user.click(submitButton);
+    await waitFor(() => {
+      expect(screen.getByText(expectedItemErrorMessage)).toBeInTheDocument();
+    });
+    const alert2 = screen.getByText(expectedItemErrorMessage).closest('[role="alert"]');
+    expect(alert2).toBeInTheDocument();
+    expect(alert2).toHaveClass('MuiAlert-standardError');
+    expect(mockNavigate).not.toHaveBeenCalled(); // Corrected assertion
+
+
+    // Test Case 3: Invalid unit price (e.g., -1)
+    // Reset quantity to valid, make unit price invalid
+    quantityInputs = within(formElement).getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'quantity');
+    fireEvent.change(quantityInputs[0], { target: { value: '1' } });
+
+    unitPriceInputs = within(formElement).getAllByRole('spinbutton').filter(input => input.getAttribute('name') === 'unit_price');
+    fireEvent.change(unitPriceInputs[0], { target: { value: '-10' } }); // Invalid unit price
+
+    await user.click(submitButton);
+    await waitFor(() => {
+      expect(screen.getByText(expectedItemErrorMessage)).toBeInTheDocument();
+    });
+    const alert3 = screen.getByText(expectedItemErrorMessage).closest('[role="alert"]');
+    expect(alert3).toBeInTheDocument();
+    expect(alert3).toHaveClass('MuiAlert-standardError');
+    expect(mockNavigate).not.toHaveBeenCalled(); // Corrected assertion
   });
 
   it('submits the form successfully in create mode', async () => {

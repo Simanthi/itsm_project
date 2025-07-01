@@ -348,26 +348,30 @@ const CheckRequestForm: React.FC = () => {
     setError(null);
 
     // Basic Validations
+    console.log('[DEBUG] In handleSubmit, before PO/Reason validation:',
+                'PO:', formData.purchase_order,
+                'Reason:', formData.reason_for_payment,
+                'Condition met?:', (!formData.purchase_order && !formData.reason_for_payment));
     if (!formData.purchase_order && !formData.reason_for_payment) {
       // Allow if reason_for_payment is provided even without PO
       showSnackbar('Either Purchase Order or a detailed Reason for Payment is required.', 'error');
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Ensure isSubmitting is reset
       return;
     }
     if (typeof formData.amount !== 'string' || !formData.amount.trim()) {
       showSnackbar('Amount is required and must be a valid number.', 'error');
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Ensure isSubmitting is reset
       return;
     }
     const parsedAmount = parseFloat(formData.amount.trim());
     if (isNaN(parsedAmount) || parsedAmount <= 0) {
       showSnackbar('Amount must be a valid positive number.', 'error');
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Ensure isSubmitting is reset
       return;
     }
     if (!formData.payee_name) {
       showSnackbar('Payee Name is required.', 'error');
-      setIsSubmitting(false);
+      setIsSubmitting(false); // Ensure isSubmitting is reset
       return;
     }
     // Invoice date is good practice but might be optional for non-PO requests
@@ -525,7 +529,7 @@ const CheckRequestForm: React.FC = () => {
         </Alert>
       )}
 
-      <form onSubmit={handleSubmit} aria-label="Check Request Form">
+      <form onSubmit={handleSubmit} aria-label={isEditMode ? (viewOnly ? "View Check Request Form" : "Edit Check Request Form") : "Create Check Request Form"}>
         <Grid container spacing={3}>
           {/* Basic Information */}
           <Grid item xs={12} md={6}>

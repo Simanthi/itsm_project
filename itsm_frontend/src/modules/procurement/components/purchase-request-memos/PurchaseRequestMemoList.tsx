@@ -64,8 +64,9 @@ const PurchaseRequestMemoList: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
-  const [sortConfigKey, setSortConfigKey] = useState<string>('-request_date'); // Default sort by request_date desc
-  const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc');
+  // Store the raw key, direction is separate
+  const [sortConfigKey, setSortConfigKey] = useState<string>('request_date');
+  const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc'); // Default sort by request_date desc
   const [selectedMemoIds, setSelectedMemoIds] = useState<number[]>([]);
 
   const [openDecisionDialog, setOpenDecisionDialog] = useState<boolean>(false);
@@ -150,10 +151,16 @@ const PurchaseRequestMemoList: React.FC = () => {
     setPage(0);
   };
 
-  const handleSortRequest = (property: string) => {
-    const isAsc = sortConfigKey === property && sortConfigDirection === 'asc';
-    setSortConfigDirection(isAsc ? 'desc' : 'asc');
-    setSortConfigKey(property);
+  const handleSortRequest = (property: string) => { // property is the raw key e.g. 'iom_id'
+    const isCurrentProperty = sortConfigKey === property;
+    if (isCurrentProperty) {
+      // If it's the current sort column, toggle direction
+      setSortConfigDirection(sortConfigDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If it's a new sort column, set key and default to ascending
+      setSortConfigKey(property);
+      setSortConfigDirection('asc');
+    }
   };
 
   const handleCreateNew = () => {
@@ -428,118 +435,62 @@ const PurchaseRequestMemoList: React.FC = () => {
                   aria-checked={isSelected}
                   tabIndex={-1}
                   selected={isSelected}
-                >
-                  <TableCell padding="checkbox">
-                    <Checkbox
+                ><TableCell padding="checkbox"><Checkbox
                       checked={isSelected}
                       onChange={(event) =>
                         handleRowCheckboxChange(event, memo.id)
                       }
                       inputProps={{
-                        'aria-labelledby': `memo-checkbox-${memo.id}`,
+                        'aria-label': `Select memo ${memo.iom_id || memo.id}`,
                       }}
-                    />
-                  </TableCell>
-              <TableCell>{memo.iom_id || memo.id}</TableCell> {/* Display iom_id or fallback to id */}
-                  <TableCell
-                // id={`memo-checkbox-${memo.id}`} // id should be unique, iom_id is better if available
+                    /></TableCell><TableCell>{memo.iom_id || memo.id}</TableCell><TableCell
                     sx={{
                       maxWidth: 300,
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                       whiteSpace: 'nowrap',
                     }}
-                  >
-                    <Tooltip title={memo.item_description}>
-                      <span>{memo.item_description}</span>
-                    </Tooltip>
-                  </TableCell>
-                  <TableCell>
-                    <Chip label={memo.priority?.toUpperCase()} size="small"
+                  ><Tooltip title={memo.item_description}><span>{memo.item_description}</span></Tooltip></TableCell><TableCell><Chip label={memo.priority?.toUpperCase()} size="small"
                           color={memo.priority === 'high' ? 'error' : memo.priority === 'medium' ? 'warning' : 'default'}
-                    />
-                  </TableCell>
-                  <TableCell>{memo.department_name || '-'}</TableCell>
-                  <TableCell>{memo.requested_by_username}</TableCell>
-                  <TableCell>
-                    {new Date(memo.request_date).toLocaleDateString()}
-                  </TableCell>
-                  <TableCell>
-                    <Chip
+                    /></TableCell><TableCell>{memo.department_name || '-'}</TableCell><TableCell>{memo.requested_by_username}</TableCell><TableCell>{new Date(memo.request_date).toLocaleDateString()}</TableCell><TableCell><Chip
                       label={memo.status
                         .replace(/_/g, ' ')
                         .replace(/\b\w/g, (l) => l.toUpperCase())}
                       color={getStatusChipColor(memo.status)}
                       size="small"
-                    />
-                  </TableCell>
-                  <TableCell>
-                    {memo.estimated_cost != null
-                      ? `$${Number(memo.estimated_cost).toFixed(2)}` // Consider using formatCurrency helper if it handles different currencies
-                      : '-'}
-                  </TableCell>
-                  {/* Removed Approver from main list view for brevity, available in detail view */}
-                  <TableCell align="right">
-                    <Tooltip title="View Details">
-                      <IconButton
+                    /></TableCell><TableCell>{memo.estimated_cost != null
+                      ? `$${Number(memo.estimated_cost).toFixed(2)}`
+                      : '-'}</TableCell><TableCell align="right"><Tooltip title="View Details"><IconButton
                         onClick={() => handleViewMemoDetails(memo.id)}
                         size="small"
-                      >
-                        <VisibilityIcon />
-                      </IconButton>
-                    </Tooltip>
-                    {memo.status === 'pending' &&
+                      ><VisibilityIcon /></IconButton></Tooltip>{memo.status === 'pending' &&
                       (user?.id === memo.requested_by || !!user?.is_staff) && (
-                        <Tooltip title="Edit Memo">
-                          <IconButton
+                        <Tooltip title="Edit Memo"><IconButton
                             onClick={() => handleEditMemo(memo.id)}
                             size="small"
-                          >
-                            <EditIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    {memo.status === 'pending' &&
+                          ><EditIcon /></IconButton></Tooltip>
+                      )}{memo.status === 'pending' &&
                       (user?.id === memo.requested_by || !!user?.is_staff) && (
-                        <Tooltip title="Cancel Request">
-                          <IconButton
+                        <Tooltip title="Cancel Request"><IconButton
                             onClick={() => handleOpenCancelDialog(memo)}
                             size="small"
                             color="warning"
-                          >
-                            <CancelIcon />
-                          </IconButton>
-                        </Tooltip>
-                      )}
-                    {/* Show approve/reject only for staff and if pending */}
-                    {memo.status === 'pending' && !!user?.is_staff && (
-                      <>
-                        <Tooltip title="Approve Request">
-                          <IconButton
+                          ><CancelIcon /></IconButton></Tooltip>
+                      )}{memo.status === 'pending' && !!user?.is_staff && (
+                      <><Tooltip title="Approve Request"><IconButton
                             onClick={() =>
                               handleOpenDecisionDialog(memo, 'approved')
                             }
                             size="small"
                             color="success"
-                          >
-                            <CheckCircleOutlineIcon />
-                          </IconButton>
-                        </Tooltip>
-                        <Tooltip title="Reject Request">
-                          <IconButton
+                          ><CheckCircleOutlineIcon /></IconButton></Tooltip><Tooltip title="Reject Request"><IconButton
                             onClick={() =>
                               handleOpenDecisionDialog(memo, 'rejected')
                             }
                             size="small"
                             color="error"
-                          >
-                            <HighlightOffIcon />
-                          </IconButton>
-                        </Tooltip>
-                      </>
-                    )}
-                  </TableCell>
-                </TableRow>
+                          ><HighlightOffIcon /></IconButton></Tooltip></>
+                    )}</TableCell></TableRow>
               );
             })}
           </TableBody>

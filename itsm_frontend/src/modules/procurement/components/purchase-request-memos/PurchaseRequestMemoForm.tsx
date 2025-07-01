@@ -380,8 +380,8 @@ const PurchaseRequestMemoForm: React.FC = () => {
             : 'Create New Purchase Request'}
         </Typography>
       </Box>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        {error && isSubmitting && (
+      <Box component="form" onSubmit={handleSubmit} noValidate aria-label={isEditMode ? (viewOnly ? "View Purchase Request Memo Form" : "Edit Purchase Request Memo Form") : "Create New Purchase Request Memo Form"}>
+        {error && ( // Display alert if error state is set, regardless of isSubmitting
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>

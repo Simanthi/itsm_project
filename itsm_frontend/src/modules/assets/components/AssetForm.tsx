@@ -331,7 +331,7 @@ const AssetForm: React.FC = () => {
             : 'Create New Asset'}
         </Typography>
       </Box>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
+      <Box component="form" onSubmit={handleSubmit} noValidate aria-label={isEditMode ? "Edit Asset Form" : "Create New Asset Form"}>
         {error && (
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
