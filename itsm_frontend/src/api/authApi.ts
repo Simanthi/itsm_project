@@ -8,6 +8,9 @@ import { apiClient } from './apiClient';
 // We no longer need these base URLs here as they are handled in apiClient or used directly
 const SECURITY_ACCESS_ENDPOINT = '/security-access';
 
+// Re-export User type for consumers of this module
+export type { User };
+
 interface PaginatedResponse<T> {
   count: number;
   next: string | null;
