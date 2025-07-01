@@ -11,7 +11,6 @@ import * as assetApi from '../../../api/assetApi';
 import * as authApi from '../../../api/authApi';
 import * as useAuthHook from '../../../context/auth/useAuth';
 import type { AssetCategory, Location, Vendor as AssetVendorType, PaginatedResponse } from '../types/assetTypes';
-// AssetData removed as it's unused according to lint, if still needed, re-add. For now, assuming it's covered by other types or not strictly typed in test mocks.
 import type { User as ApiUserType } from '../../../api/authApi';
 
 vi.mock('../../../api/assetApi');
@@ -31,14 +30,15 @@ const mockAssetCategories: PaginatedResponse<AssetCategory> = {
   count: 1, next: null, previous: null, results: [{ id: 1, name: 'Laptops', description: 'Portable computers' }]
 };
 const mockLocations: PaginatedResponse<Location> = {
-  count: 1, next: null, previous: null, results: [{ id: 1, name: 'Main Office', address: '123 Main St' }]
+  count: 1, next: null, previous: null, results: [{ id: 1, name: 'Main Office' /* address removed */ }]
 };
 const mockVendors: PaginatedResponse<AssetVendorType> = {
   count: 1, next: null, previous: null, results: [{ id: 1, name: 'TechSupplier Inc.', contact_person: 'John Doe', phone_number: '555-1234' }]
 };
+const today = new Date().toISOString();
 const mockUsers: ApiUserType[] = [
-  { id: 1, username: 'testuser', first_name: 'Test', last_name: 'User', email: 'test@example.com', is_staff: false, groups: [] },
-  { id: 2, username: 'adminuser', first_name: 'Admin', last_name: 'User', email: 'admin@example.com', is_staff: true, groups: [] }
+  { id: 1, username: 'testuser', first_name: 'Test', last_name: 'User', email: 'test@example.com', is_staff: false, groups: [], is_active: true, date_joined: today, last_login: today },
+  { id: 2, username: 'adminuser', first_name: 'Admin', last_name: 'User', email: 'admin@example.com', is_staff: true, groups: [], is_active: true, date_joined: today, last_login: today }
 ];
 
 const mockRawAssetDataForEdit = {
@@ -84,7 +84,7 @@ describe('AssetForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'currentuser', role: 'user', is_staff: false, groups: [] }, // Changed username to name
+      user: { id: 1, name: 'currentuser', role: 'user', is_staff: false, groups: [] },
       authenticatedFetch: vi.fn(async (url, options) => {
         const res = await window.fetch(url, options);
         return res.json();
@@ -161,7 +161,13 @@ describe('AssetForm', () => {
     const user = userEvent.setup();
     renderWithProviders(<AssetForm />);
 
-    const missingFieldsForm = await screen.findByRole('form', {}, { timeout: 5000 });
+    await waitFor(() => {
+      expect(screen.queryByText(/Loading asset data.../i)).not.toBeInTheDocument();
+      // Also wait for a key element that indicates form content is trying to render
+      expect(screen.getByLabelText(/Asset Name/i)).toBeInTheDocument();
+    }, { timeout: 7000 });
+
+    const missingFieldsForm = await screen.findByRole('form', {}, { timeout: 7000 });
     expect(missingFieldsForm).toBeInTheDocument();
 
     await user.click(screen.getByRole('button', { name: /Create Asset/i }));
@@ -251,10 +257,14 @@ describe('AssetForm', () => {
     vi.mocked(assetApi.createAsset).mockRejectedValueOnce(new Error('Network Error'));
     renderWithProviders(<AssetForm />);
 
-    const apiErrorForm = await screen.findByRole('form', {}, { timeout: 5000 });
-    expect(apiErrorForm).toBeInTheDocument();
+    await waitFor(() => { // Wait for initial loading to complete
+      expect(screen.queryByText(/Loading asset data.../i)).not.toBeInTheDocument();
+       // Also wait for a key element that indicates form content is trying to render
+      expect(screen.getByLabelText(/Asset Name/i)).toBeInTheDocument();
+    }, { timeout: 7000 });
 
-    await waitFor(() => expect(screen.getByLabelText(/Asset Name/i)).toBeInTheDocument());
+    const apiErrorForm = await screen.findByRole('form', {}, { timeout: 7000 });
+    expect(apiErrorForm).toBeInTheDocument();
 
     await user.type(screen.getByLabelText(/Asset Name/i), 'Test Fail');
     await user.type(screen.getByLabelText(/Asset Tag/i), 'FAIL-001');
