@@ -47,7 +47,7 @@ import type {
 } from '../../types';
 import { useNavigate } from 'react-router-dom';
 import { getIomTemplates } from '../../../../api/genericIomApi'; // For fetching the PRM template ID
-import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // Type for IOMTemplate
+// import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // Type for IOMTemplate - Removed as unused
 
 type Order = 'asc' | 'desc';
 

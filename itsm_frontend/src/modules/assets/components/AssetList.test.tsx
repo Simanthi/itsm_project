@@ -47,7 +47,7 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       asset_tag: 'ASSET-001',
       name: 'Laptop A',
       category: { id: 1, name: 'Laptops' },
-      // category_name: 'Laptops', // Removed, Asset type expects nested category object
+      // category_name: 'Laptops', // Removed
       status: 'in_use',
       assigned_to: { id: 101, username: 'user_a', first_name: 'User', last_name: 'A' },
       assigned_to_username: 'user_a',
