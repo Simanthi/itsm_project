@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
-// import userEvent from '@testing-library/user-event'; // Add when interactions are tested
+import { render, screen, waitFor, within } from '@testing-library/react'; // Added 'within'
+// import userEvent from '@testing-library/user-event';
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
 import { server } from '../../../mocks/server';
@@ -11,11 +11,9 @@ import * as assetApi from '../../../api/assetApi';
 import * as useAuthHook from '../../../context/auth/useAuth';
 import type { Asset, AssetCategory, Location as AssetLocation, PaginatedResponse } from '../types/assetTypes';
 
-// Mock API modules
 vi.mock('../../../api/assetApi');
 vi.mock('../../../context/auth/useAuth');
 
-// Mock react-router-dom
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -34,8 +32,8 @@ const mockAssetCategoriesResponse: PaginatedResponse<AssetCategory> = {
 const mockLocationsResponse: PaginatedResponse<AssetLocation> = {
   count: 2, next: null, previous: null,
   results: [
-    { id: 1, name: 'Main Office', address: '123 Main St'},
-    { id: 2, name: 'Branch Office', address: '456 Branch Ave'}
+    { id: 1, name: 'Main Office' /* address removed */ },
+    { id: 2, name: 'Branch Office' /* address removed */ }
   ]
 };
 
@@ -49,7 +47,7 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       asset_tag: 'ASSET-001',
       name: 'Laptop A',
       category: { id: 1, name: 'Laptops' },
-      category_name: 'Laptops',
+      // category_name: 'Laptops', // Removed, Asset type expects nested category object
       status: 'in_use',
       assigned_to: { id: 101, username: 'user_a', first_name: 'User', last_name: 'A' },
       assigned_to_username: 'user_a',
@@ -69,7 +67,7 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       asset_tag: 'ASSET-002',
       name: 'Desktop B',
       category: { id: 2, name: 'Desktops' },
-      category_name: 'Desktops',
+      // category_name: 'Desktops', // Removed
       status: 'in_stock',
       assigned_to: null,
       assigned_to_username: null,
@@ -133,13 +131,12 @@ describe('AssetList', () => {
 
     await waitFor(() => {
       expect(assetApi.getAssets).toHaveBeenCalled();
-      expect(assetApi.getAssetCategories).toHaveBeenCalled(); // For filters
-      expect(assetApi.getLocations).toHaveBeenCalled(); // For location name mapping
+      expect(assetApi.getAssetCategories).toHaveBeenCalled();
+      expect(assetApi.getLocations).toHaveBeenCalled();
     });
 
     expect(screen.getByRole('button', { name: /Add New Asset/i})).toBeInTheDocument();
 
-    // Check for table headers (omitting select checkbox header for simplicity here)
     expect(screen.getByRole('columnheader', { name: /Asset Tag/i })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Name/i })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Category/i })).toBeInTheDocument();
@@ -149,20 +146,17 @@ describe('AssetList', () => {
     expect(screen.getByRole('columnheader', { name: /Purchase Date/i })).toBeInTheDocument();
     expect(screen.getByRole('columnheader', { name: /Actions/i })).toBeInTheDocument();
 
-    // Check for data from the first asset
     expect(await screen.findByText('ASSET-001')).toBeInTheDocument();
     expect(screen.getByText('Laptop A')).toBeInTheDocument();
-    // The category and location names are resolved via maps populated from API calls
     await waitFor(() => expect(screen.getByText('Laptops')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('Main Office')).toBeInTheDocument());
-    expect(screen.getByText('In Use')).toBeInTheDocument(); // Status for ASSET-001
+    expect(screen.getByText('In Use')).toBeInTheDocument();
 
-    // Check for data from the second asset
     expect(await screen.findByText('ASSET-002')).toBeInTheDocument();
     expect(screen.getByText('Desktop B')).toBeInTheDocument();
     await waitFor(() => expect(screen.getByText('Desktops')).toBeInTheDocument());
     await waitFor(() => expect(screen.getByText('Branch Office')).toBeInTheDocument());
-    expect(screen.getByText('In Stock')).toBeInTheDocument(); // Status for ASSET-002
+    expect(screen.getByText('In Stock')).toBeInTheDocument();
   });
 
   it('displays a loading state initially', async () => {
@@ -170,13 +164,12 @@ describe('AssetList', () => {
       new Promise(resolve => setTimeout(() => resolve(mockAssetsResponse), 100))
     );
     renderWithProviders(<AssetList />);
-    // Check for circular progress within the table body, specifically the loading row
     const table = await screen.findByRole('table');
     expect(within(table).getByRole('progressbar')).toBeInTheDocument();
 
     await waitFor(() => {
       expect(within(table).queryByRole('progressbar')).not.toBeInTheDocument();
-    }, {timeout: 2000}); // Increased timeout for safety
+    }, {timeout: 2000});
   });
 
   it('displays "No assets found" message when no assets are returned', async () => {
