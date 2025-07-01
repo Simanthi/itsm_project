@@ -128,7 +128,8 @@ else:
 
 # Email Configuration
 EMAIL_BACKEND = os.environ.get('DJANGO_EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
-# print(f"DEBUG: EMAIL_BACKEND is currently set to: '{EMAIL_BACKEND}'") # Add this lineEMAIL_HOST = os.environ.get('EMAIL_HOST')
+# print(f"DEBUG: EMAIL_BACKEND is currently set to: '{EMAIL_BACKEND}'") # Add this line
+EMAIL_HOST = os.environ.get('EMAIL_HOST')
 EMAIL_PORT = int(os.environ.get('EMAIL_PORT', 587)) # Default to 587 for TLS
 EMAIL_USE_TLS = os.environ.get('EMAIL_USE_TLS', 'True').lower() in ['true', '1', 't']
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER')

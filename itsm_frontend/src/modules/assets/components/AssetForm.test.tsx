@@ -10,9 +10,9 @@ import AssetForm from './AssetForm';
 import * as assetApi from '../../../api/assetApi';
 import * as authApi from '../../../api/authApi';
 import * as useAuthHook from '../../../context/auth/useAuth';
-import type { AssetData, AssetCategory, Location, Vendor as AssetVendorType } from '../types/assetTypes';
+import type { AssetCategory, Location, Vendor as AssetVendorType, PaginatedResponse } from '../types/assetTypes';
+// AssetData removed as it's unused according to lint, if still needed, re-add. For now, assuming it's covered by other types or not strictly typed in test mocks.
 import type { User as ApiUserType } from '../../../api/authApi';
-import type { PaginatedResponse } from '../../../types/genericTypes';
 
 vi.mock('../../../api/assetApi');
 vi.mock('../../../api/authApi');
@@ -84,7 +84,7 @@ describe('AssetForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, username: 'currentuser', role: 'user', is_staff: false, groups: [] },
+      user: { id: 1, name: 'currentuser', role: 'user', is_staff: false, groups: [] }, // Changed username to name
       authenticatedFetch: vi.fn(async (url, options) => {
         const res = await window.fetch(url, options);
         return res.json();
