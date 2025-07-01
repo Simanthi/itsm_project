@@ -17,9 +17,11 @@ urlpatterns = [
     path("admin/", admin.site.urls),
     # DRF authentication (optional for now, but good to have the path)
     path("api-auth/", include("rest_framework.urls")),
+    # Include urls from the root api app
+    path("api/app/", include("api.urls", namespace="app_api")), # For the original api/hello
     # Core API endpoints for our ITSM apps
     # Include urls from the core_api app (for general endpoints like 'hello')
-    path("api/", include("core_api.urls")),  # <--- ADD THIS LINE HERE
+    path("api/", include("core_api.urls")),  # This is for core_api specific endpoints
     # Include urls from the assets app
     path('api/assets/', include('assets.urls')),
     # Include urls from the service_requests app
