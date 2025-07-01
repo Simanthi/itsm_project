@@ -9,67 +9,55 @@ import {
   Alert,
   Grid,
   Paper,
-  // For GFK selectors later:
-  // FormControl, InputLabel, Select, MenuItem,
 } from '@mui/material';
 import { LocalizationProvider } from '@mui/x-date-pickers/LocalizationProvider';
 import { AdapterDateFns } from '@mui/x-date-pickers/AdapterDateFns';
-
 
 import { useAuth } from '../../../context/auth/useAuth';
 import { useUI } from '../../../context/UIContext/useUI';
 import { getIomTemplateById } from '../../../api/genericIomApi';
 import { getGenericIomById, createGenericIom, updateGenericIom } from '../../../api/genericIomApi';
-import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi'; // Import the real API call
-import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes'; // FieldDefinition kept as IOMTemplate uses it
-import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes'; // GenericIOM removed
-import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer'; // FormFieldValue to type-only import
-import IomPreviewRenderer from './IomPreviewRenderer'; // Import the new preview component
+import { getContentTypeId as fetchContentTypeIdFromApi } from '../../../api/coreApi';
+import type { IOMTemplate } from '../../iomTemplateAdmin/types/iomTemplateAdminTypes';
+import type { GenericIOMCreateData, GenericIOMUpdateData, IomDataPayload } from '../types/genericIomTypes';
+import DynamicIomFormFieldRenderer, { type FormFieldValue } from './DynamicIomFormFieldRenderer';
+import IomPreviewRenderer from './IomPreviewRenderer';
 
-// Define the type for the parent record context
 interface ParentRecordContextType {
   objectId: number;
   contentTypeAppLabel: string;
   contentTypeModel: string;
-  recordName?: string; // Generic name for display
-  recordIdentifier?: string; // Generic identifier for display
+  recordName?: string;
+  recordIdentifier?: string;
 }
 
 interface GenericIomFormProps {
-  parentRecordContext?: ParentRecordContextType | null; // Changed from assetContext
+  parentRecordContext?: ParentRecordContextType | null;
 }
 
-const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = null }) => { // Changed from assetContext
+const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = null }) => {
   const { templateId: templateIdParam, iomId: iomIdParam } = useParams<{ templateId?: string; iomId?: string }>();
   const navigate = useNavigate();
-  const { authenticatedFetch, user } = useAuth(); // Destructure user from useAuth()
+  const { authenticatedFetch, user } = useAuth();
   const { showSnackbar } = useUI();
 
   const [iomTemplate, setIomTemplate] = useState<IOMTemplate | null>(null);
-  // const [initialDataPayload, setInitialDataPayload] = useState<IomDataPayload>({}); // Removed unused state
-
-  // Form state for standard fields
   const [subject, setSubject] = useState<string>('');
   const [toUsersStr, setToUsersStr] = useState<string>('');
   const [toGroupsStr, setToGroupsStr] = useState<string>('');
   const [parentContentTypeId, setParentContentTypeId] = useState<number | null>(null);
   const [parentObjectId, setParentObjectId] = useState<number | null>(null);
-  const [parentDisplay, setParentDisplay] = useState<string>(''); // For showing e.g. "Asset: Laptop X"
-
-  // Form state for dynamic data_payload fields
+  const [parentDisplay, setParentDisplay] = useState<string>('');
   const [dynamicFormData, setDynamicFormData] = useState<IomDataPayload>({});
-
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [isEditMode, setIsEditMode] = useState<boolean>(false); // This will be set by iomIdParam
+  const [isEditMode, setIsEditMode] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
-  const [isPreviewing, setIsPreviewing] = useState<boolean>(false); // New state for preview mode
+  const [isPreviewing, setIsPreviewing] = useState<boolean>(false);
 
-  // Determine mode and IDs from URL params
   const currentIomId = iomIdParam ? parseInt(iomIdParam, 10) : null;
   const currentTemplateIdForCreate = templateIdParam ? parseInt(templateIdParam, 10) : null;
 
-  // Use the real API call for ContentType ID
   const fetchContentTypeId = useCallback(async (appLabel: string, model: string): Promise<number | null> => {
     if (!authenticatedFetch) return null;
     try {
@@ -82,13 +70,12 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     }
   }, [authenticatedFetch, showSnackbar]);
 
-
   const loadData = useCallback(async () => {
     if (!authenticatedFetch) return;
     setIsLoading(true);
     setError(null);
     try {
-      if (currentIomId) { // Edit mode
+      if (currentIomId) {
         setIsEditMode(true);
         const fetchedIom = await getGenericIomById(authenticatedFetch, currentIomId);
         if (!fetchedIom.iom_template_details) {
@@ -98,45 +85,36 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
         setIomTemplate(templateForEdit);
         setSubject(fetchedIom.subject);
         setDynamicFormData(fetchedIom.data_payload || {});
-        // setInitialDataPayload(fetchedIom.data_payload || {}); // Removed
         setToUsersStr(fetchedIom.to_users?.join(',') || '');
         setToGroupsStr(fetchedIom.to_groups?.join(',') || '');
         setParentContentTypeId(fetchedIom.parent_content_type || null);
         setParentObjectId(fetchedIom.parent_object_id || null);
         if (fetchedIom.parent_record_display) setParentDisplay(fetchedIom.parent_record_display);
-
-      } else if (currentTemplateIdForCreate) { // Create mode
+      } else if (currentTemplateIdForCreate) {
         setIsEditMode(false);
         const fetchedTemplate = await getIomTemplateById(authenticatedFetch, currentTemplateIdForCreate);
         setIomTemplate(fetchedTemplate);
-        const initialPayload: IomDataPayload = {}; // Changed let to const
+        const initialPayload: IomDataPayload = {};
         fetchedTemplate.fields_definition.forEach(field => {
           if (field.defaultValue !== undefined) {
             initialPayload[field.name] = field.defaultValue;
           }
         });
-
-        // Pre-fill from parentRecordContext if available
         if (parentRecordContext) {
           setParentObjectId(parentRecordContext.objectId);
           const ctId = await fetchContentTypeId(parentRecordContext.contentTypeAppLabel, parentRecordContext.contentTypeModel);
           setParentContentTypeId(ctId);
-
           const modelNameDisplay = parentRecordContext.contentTypeModel.replace(/_/g, ' ');
           const capitalizedModelName = modelNameDisplay.charAt(0).toUpperCase() + modelNameDisplay.slice(1);
           setParentDisplay(
             `${capitalizedModelName}: ${parentRecordContext.recordName || parentRecordContext.recordIdentifier || `ID ${parentRecordContext.objectId}`}`
           );
-
-          // Example pre-filling a data_payload field if template is designed for it
-          // This logic can be expanded based on conventions for field names in templates
           const recordNameField = fetchedTemplate.fields_definition.find(f =>
             f.name === 'related_record_name' || f.name === `${parentRecordContext.contentTypeModel}_name`
           );
           if (recordNameField && parentRecordContext.recordName) {
             initialPayload[recordNameField.name] = parentRecordContext.recordName;
           }
-
           const recordIdentifierField = fetchedTemplate.fields_definition.find(f =>
             f.name === 'related_record_identifier' || f.name === `${parentRecordContext.contentTypeModel}_identifier`
           );
@@ -144,28 +122,22 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
             initialPayload[recordIdentifierField.name] = parentRecordContext.recordIdentifier;
           }
         }
-
-        // Auto-populate 'from_department' or 'sender_department' if user has department_name
-        // And if the template has a field with such a conventional name.
         if (user?.department_name) {
             const fromDepartmentField = fetchedTemplate.fields_definition.find(
                 f => f.name === 'from_department' || f.name === 'sender_department'
             );
-            if (fromDepartmentField && initialPayload[fromDepartmentField.name] === undefined) { // Only populate if not already set by defaultValue
+            if (fromDepartmentField && initialPayload[fromDepartmentField.name] === undefined) {
                 initialPayload[fromDepartmentField.name] = user.department_name;
             }
         }
-        // Auto-populate 'from_user' or 'sender_user_name' if user has a name
-        if (user?.name) { // Assuming user.name is 'FirstName LastName' or similar from AuthContext
+        if (user?.name) {
             const fromUserField = fetchedTemplate.fields_definition.find(
-                f => f.name === 'from_user' || f.name === 'sender_user_name' || f.name === 'created_by_name_field' // Common conventional names
+                f => f.name === 'from_user' || f.name === 'sender_user_name' || f.name === 'created_by_name_field'
             );
             if (fromUserField && initialPayload[fromUserField.name] === undefined) {
                  initialPayload[fromUserField.name] = user.name;
             }
         }
-
-
         setDynamicFormData(initialPayload);
       } else {
         throw new Error("No Template ID for new IOM or IOM ID for editing.");
@@ -177,44 +149,37 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     } finally {
       setIsLoading(false);
     }
-  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, parentRecordContext, fetchContentTypeId, user]); // Added user to dependency array
+  }, [authenticatedFetch, currentTemplateIdForCreate, currentIomId, showSnackbar, parentRecordContext, fetchContentTypeId, user]);
 
   useEffect(() => {
     loadData();
   }, [loadData]);
 
-  const handleDynamicFieldChange = (fieldName: string, value: FormFieldValue) => { // Changed value type to FormFieldValue
+  const handleDynamicFieldChange = (fieldName: string, value: FormFieldValue) => {
     setDynamicFormData(prev => ({ ...prev, [fieldName]: value }));
   };
 
-  // Make event optional to allow calling without it from preview button
   const handleSubmit = async (event?: React.FormEvent<HTMLFormElement>) => {
-    if(event) event.preventDefault(); // Prevent default only if event is passed
+    if(event) event.preventDefault();
     if (!authenticatedFetch || !iomTemplate) {
       setError("Form not ready or authentication error.");
       return;
     }
-
-    // Basic validation for subject
     if (!subject.trim()) {
         showSnackbar("Subject is required.", "warning");
         setError("Subject is required.");
         return;
     }
-    // TODO: Add validation for required dynamic fields based on iomTemplate.fields_definition
-
     setIsSubmitting(true);
     setError(null);
-
     const commonPayload = {
-        subject, // Removed duplicate subject
+        subject,
         data_payload: dynamicFormData,
         to_users: toUsersStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
         to_groups: toGroupsStr.split(',').map(id => parseInt(id.trim(), 10)).filter(id => !isNaN(id) && id > 0),
         parent_content_type_id: parentContentTypeId,
         parent_object_id: parentObjectId,
     };
-
     try {
       if (isEditMode && currentIomId) {
         const updateData: GenericIOMUpdateData = commonPayload;
@@ -254,20 +219,17 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     return <Box sx={{ display: 'flex', justifyContent: 'center', p: 3 }}><CircularProgress /></Box>;
   }
 
-  if (error && !isSubmitting) { // Show general error if not during submission attempt (already handled by loadData for initial load)
-    // This error state is more for submission errors that are not field-specific.
-    // return <Alert severity="error" sx={{m:2}}>{error}</Alert>;
+  if (error && !isSubmitting) {
+    // Error handled by snackbar primarily, this could be a fallback or for initial load errors not preventing form render
   }
 
   if (!iomTemplate) {
     return <Alert severity="warning" sx={{m:2}}>Template information could not be loaded. {error}</Alert>;
   }
 
-  // If in preview mode, render the preview (Step 3 will create IomPreviewRenderer)
   if (isPreviewing) {
     return (
       <Box sx={{p:2}}>
-        {/* Use the IomPreviewRenderer component */}
         <IomPreviewRenderer
             iomTemplate={iomTemplate}
             dataPayload={dynamicFormData}
@@ -284,11 +246,11 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                 Back to Form
             </Button>
             <Button
-                type="submit" // Explicitly set as submit button
+                type="submit" // Ensures this button can submit the form if it's part of one, or acts as a general button
+                onClick={() => handleSubmit()} // Call handleSubmit without event arg
                 variant="contained"
                 color="primary"
                 disabled={isSubmitting || isLoading}
-                // onClick handler removed, form's onSubmit will be used
                 >
                 {isSubmitting ? <CircularProgress size={24} /> : (isEditMode ? 'Update IOM' : 'Create IOM')}
             </Button>
@@ -297,7 +259,6 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
     );
   }
 
-  // Standard form rendering
   return (
     <LocalizationProvider dateAdapter={AdapterDateFns}>
       <Box component="form" onSubmit={handleSubmit} noValidate>
@@ -322,7 +283,6 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
             />
           </Grid>
 
-          {/* Dynamic Fields Section */}
           <Grid item xs={12}>
             <Paper variant="outlined" sx={{p:2}}>
                 <Typography variant="subtitle1" gutterBottom>Details (based on template)</Typography>
@@ -334,7 +294,6 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                         value={dynamicFormData[fieldDef.name]}
                         onChange={handleDynamicFieldChange}
                         disabled={isSubmitting}
-                        // TODO: Pass field-specific errors if available from backend validation on data_payload
                         />
                     </Grid>
                     ))}
@@ -342,7 +301,6 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
             </Paper>
           </Grid>
 
-          {/* Standard Fields: Recipients, Parent Record - Simplified for now */}
           <Grid item xs={12} md={6}>
             <TextField
                 name="toUsersStr"
@@ -365,8 +323,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                 helperText="Future: Group selector component."
             />
           </Grid>
-          {/* Parent Record GFK input fields - simplified for PoC, hidden if pre-filled by context */}
-          {!parentRecordContext && !isEditMode && ( // Only show if not pre-filled by context and not editing
+          {!parentRecordContext && !isEditMode && (
             <>
               <Grid item xs={12} sm={6}>
                 <TextField
@@ -388,7 +345,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                   value={parentObjectId || ''}
                   onChange={(e) => setParentObjectId(e.target.value ? parseInt(e.target.value) : null)}
                   fullWidth
-                  disabled={isSubmitting || !parentContentTypeId} // Disable if no content type selected
+                  disabled={isSubmitting || !parentContentTypeId}
                   helperText="ID of the related object."
                 />
               </Grid>
