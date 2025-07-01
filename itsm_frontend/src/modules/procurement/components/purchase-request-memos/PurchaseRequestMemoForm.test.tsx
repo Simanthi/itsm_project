@@ -139,9 +139,31 @@ describe('PurchaseRequestMemoForm', () => {
 
   it('validates required fields on submit', async () => {
     renderWithProviders(<PurchaseRequestMemoForm />);
+    const user = userEvent.setup();
+    // Wait for form to be ready
+    const itemDescriptionInput = await screen.findByLabelText(/Item Description/i);
+    expect(itemDescriptionInput).toBeInTheDocument();
+
+    const formElement = screen.getByRole('form', { name: /Create New Purchase Request Memo Form/i }); // Assuming a similar aria-label pattern or adjust as needed
+    const submitButton = screen.getByRole('button', { name: /Submit Request/i });
+
+    await user.click(submitButton);
+
+    const expectedErrorMessage = /Item Description, valid Quantity, and Reason are required./i;
+
     await waitFor(() => {
-      expect(screen.getByLabelText(/Item Description/i)).toBeInTheDocument();
-    });
+      // Check that createPurchaseRequestMemo was not called
+      expect(procurementApi.createPurchaseRequestMemo).not.toHaveBeenCalled();
+      // Check if the error message text appears anywhere on the screen
+      expect(screen.getByText(expectedErrorMessage)).toBeInTheDocument();
+    }, { timeout: 5000 });
+
+    // Now that we know the text "Item Description, valid Quantity, and Reason are required." is on the screen,
+    // find the specific alert that CONTAINS this text.
+    const formAlertElement = screen.getByText(expectedErrorMessage).closest('[role="alert"]');
+    expect(formAlertElement).toBeInTheDocument();
+    // Confirm the text is indeed within this specific alert element (though getByText already did this implicitly)
+    expect(within(formAlertElement!).getByText(expectedErrorMessage)).toBeInTheDocument();
   });
 
   it('submits the form successfully in create mode', async () => {

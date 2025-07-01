@@ -559,7 +559,7 @@ const PurchaseOrderForm: React.FC = () => {
     return (
       <Box sx={{ p: 3 }}>
         <Alert severity="error">{error}</Alert>
-        <Button onClick={() => navigate('/procurement/memos')} sx={{ mt: 2 }}>
+        <Button onClick={() => navigate('/procurement/purchase-orders')} sx={{ mt: 2 }}>
           Back to List
         </Button>
       </Box>
@@ -583,8 +583,8 @@ const PurchaseOrderForm: React.FC = () => {
           : 'Create Purchase Order'}
         {isEditMode && formData.po_number && ` : ${formData.po_number}`}
       </Typography>
-      <Box component="form" onSubmit={handleSubmit} noValidate>
-        {error && isSubmitting && (
+      <Box component="form" onSubmit={handleSubmit} noValidate aria-label={isEditMode ? (effectiveViewOnly ? "View Purchase Order Form" : "Edit Purchase Order Form") : "Create Purchase Order Form"}>
+        {error && ( // Display error if error state is set
           <Alert severity="error" sx={{ mb: 2 }}>
             {error}
           </Alert>

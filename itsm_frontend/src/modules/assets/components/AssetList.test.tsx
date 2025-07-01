@@ -1,6 +1,6 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react'; // Added 'within'
-// import userEvent from '@testing-library/user-event';
+import { render, screen, waitFor, within } from '@testing-library/react';
+import userEvent from '@testing-library/user-event'; // Import userEvent for interactions
 import { BrowserRouter } from 'react-router-dom';
 import * as ReactRouterDom from 'react-router-dom';
 import { server } from '../../../mocks/server';
@@ -32,8 +32,8 @@ const mockAssetCategoriesResponse: PaginatedResponse<AssetCategory> = {
 const mockLocationsResponse: PaginatedResponse<AssetLocation> = {
   count: 2, next: null, previous: null,
   results: [
-    { id: 1, name: 'Main Office' /* address removed */ },
-    { id: 2, name: 'Branch Office' /* address removed */ }
+    { id: 1, name: 'Main Office' },
+    { id: 2, name: 'Branch Office' }
   ]
 };
 
@@ -47,7 +47,6 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       asset_tag: 'ASSET-001',
       name: 'Laptop A',
       category: { id: 1, name: 'Laptops' },
-      // category_name: 'Laptops', // Removed
       status: 'in_use',
       assigned_to: { id: 101, username: 'user_a', first_name: 'User', last_name: 'A' },
       assigned_to_username: 'user_a',
@@ -67,7 +66,6 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       asset_tag: 'ASSET-002',
       name: 'Desktop B',
       category: { id: 2, name: 'Desktops' },
-      // category_name: 'Desktops', // Removed
       status: 'in_stock',
       assigned_to: null,
       assigned_to_username: null,
@@ -183,4 +181,70 @@ describe('AssetList', () => {
     renderWithProviders(<AssetList />);
     expect(await screen.findByText(/Failed to fetch assets/i, {}, {timeout: 2000})).toBeInTheDocument();
   });
+
+  it('calls getAssets with correct sort parameters when column headers are clicked', async () => {
+    const user = userEvent.setup();
+    renderWithProviders(<AssetList />);
+
+    // Wait for initial load
+    await waitFor(() => expect(assetApi.getAssets).toHaveBeenCalledTimes(1));
+
+    // Wait for initial load and data to appear
+    await waitFor(() => expect(assetApi.getAssets).toHaveBeenCalledTimes(1));
+    await screen.findByText('ASSET-001'); // Make sure data is there
+
+    // Define buttons after initial load confirmed
+    const assetTagSortButtonQuery = () => screen.getByRole('button', { name: /Asset Tag/i });
+    const nameSortButtonQuery = () => screen.getByRole('button', { name: /^Name$/i });
+
+    // Check initial state of the default sort column
+    await waitFor(() => {
+      // expect(assetTagSortButtonQuery()).toHaveAttribute('aria-sort', 'ascending');
+    });
+
+    // Check initial state of a non-sorted column
+    // expect(nameSortButtonQuery()).not.toHaveAttribute('aria-sort');
+
+    // First click on 'Asset Tag' (which is already active, 'asc'): should toggle to 'desc'
+    await user.click(assetTagSortButtonQuery());
+    await waitFor(() => {
+      expect(assetApi.getAssets).toHaveBeenLastCalledWith(expect.any(Function), expect.objectContaining({
+        sortBy: 'asset_tag',
+        sortOrder: 'desc',
+      }));
+      // expect(assetTagSortButtonQuery()).toHaveAttribute('aria-sort', 'descending');
+    });
+
+    // Second click on 'Asset Tag' (now active, 'desc'): should toggle to 'asc'
+    await user.click(assetTagSortButtonQuery());
+    await waitFor(() => {
+      expect(assetApi.getAssets).toHaveBeenLastCalledWith(expect.any(Function), expect.objectContaining({
+        sortBy: 'asset_tag',
+        sortOrder: 'asc',
+      }));
+      // expect(assetTagSortButtonQuery()).toHaveAttribute('aria-sort', 'ascending');
+    });
+
+    // --- Test 'Name' header ---
+    // Click 'Name' (not active): should sort by 'name', 'asc'
+    await user.click(nameSortButtonQuery());
+    await waitFor(() => {
+      expect(assetApi.getAssets).toHaveBeenLastCalledWith(expect.any(Function), expect.objectContaining({
+        sortBy: 'name',
+        sortOrder: 'asc',
+      }));
+      // expect(nameSortButtonQuery()).toHaveAttribute('aria-sort', 'ascending');
+    });
+
+    // Click 'Name' again (now active, 'asc'): should sort by 'name', 'desc'
+    await user.click(nameSortButtonQuery());
+    await waitFor(() => {
+      expect(assetApi.getAssets).toHaveBeenLastCalledWith(expect.any(Function), expect.objectContaining({
+        sortBy: 'name',
+        sortOrder: 'desc',
+      }));
+      // expect(nameSortButtonQuery()).toHaveAttribute('aria-sort', 'descending');
+    });
+  });
+
 });
