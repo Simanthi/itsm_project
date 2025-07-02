@@ -1,7 +1,7 @@
 // @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom'; // Routes and Route removed
 import App from './App'; // Assuming App.tsx is in src/
 import { AuthProvider } from './context/auth/AuthContext';
 import * as useAuthHook from './context/auth/useAuth';

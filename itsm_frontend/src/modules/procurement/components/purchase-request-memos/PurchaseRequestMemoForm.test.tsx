@@ -144,7 +144,7 @@ describe('PurchaseRequestMemoForm', () => {
     const itemDescriptionInput = await screen.findByLabelText(/Item Description/i);
     expect(itemDescriptionInput).toBeInTheDocument();
 
-    const formElement = screen.getByRole('form', { name: /Create New Purchase Request Memo Form/i }); // Assuming a similar aria-label pattern or adjust as needed
+    // const formElement = screen.getByRole('form', { name: /Create New Purchase Request Memo Form/i }); // Unused variable
     const submitButton = screen.getByRole('button', { name: /Submit Request/i });
 
     await user.click(submitButton);

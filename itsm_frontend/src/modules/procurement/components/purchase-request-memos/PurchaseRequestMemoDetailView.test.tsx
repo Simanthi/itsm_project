@@ -69,7 +69,7 @@ const baseMemoData: PurchaseRequestMemo = {
   status: 'pending' as PurchaseRequestStatus,
   priority: 'high',
   required_delivery_date: '2023-11-01T10:00:00Z',
-  suggested_vendor_id: 1,
+  suggested_vendor: 1, // Corrected from suggested_vendor_id
   suggested_vendor_name: 'ServerBest Inc.',
   attachments: 'http://example.com/attachment.pdf',
   approver: null,
@@ -203,7 +203,7 @@ describe('PurchaseRequestMemoDetailView', () => {
         project: null,
         project_name: null,
         required_delivery_date: null,
-        suggested_vendor_id: null,
+        suggested_vendor: null, // Corrected from suggested_vendor_id
         suggested_vendor_name: null,
         attachments: null,
         priority: undefined,

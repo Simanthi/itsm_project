@@ -40,10 +40,10 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 const mockCRs: CheckRequest[] = [
   {
-    id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: 500, currency: 'USD', payee_name: 'Vendor X', created_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
+    id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD', payee_name: 'Vendor X', requested_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
   },
   {
-    id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: 150, currency: 'USD', payee_name: 'Consultant Y', created_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
+    id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
   },
 ];
 
@@ -81,8 +81,12 @@ describe('CheckRequestList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      isConfirmDialogVisible: false,
-      confirmDialogConfig: null,
+      confirmDialogOpen: false, // Corrected property name
+      confirmDialogConfig: null, // Assuming this is the correct structure based on UIContext.ts
+      // confirmDialogTitle: '', // Add other properties if needed by the component
+      // confirmDialogMessage: '',
+      // confirmDialogOnConfirm: vi.fn(),
+      // confirmDialogOnCancel: vi.fn(),
     });
 
     vi.mocked(procurementApi.getCheckRequests).mockResolvedValue(mockPaginatedCRsResponse);
@@ -270,7 +274,7 @@ describe('CheckRequestList', () => {
       ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
     };
      const otherUserPendingSubmissionCR: CheckRequest = {
-      ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, created_by_username: 'otheruser'
+      ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
     };
     const mockUserStaff = { id: 1, name: 'Staff User', role: 'admin', is_staff: true, groups: [] };
     const mockUserRegular = { id: 2, name: 'Regular User', role: 'user', is_staff: false, groups: [] };
@@ -662,7 +666,7 @@ describe('CheckRequestList', () => {
 
     it('Cancel dialog dismissal does not call API', async () => {
         vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-        const mockShowConfirmDialog = vi.fn((title, message, onConfirm, onCancel) => { if(onCancel) onCancel(); });
+        const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => { if(onCancel) onCancel(); });
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         vi.mocked(procurementApi.getCheckRequests)
@@ -789,8 +793,8 @@ describe('CheckRequestList', () => {
       expect(printSelectedButton).toBeDisabled();
 
       mockNavigate.mockClear();
-      await user.click(printPreviewButton).catch(e => {});
-      await user.click(printSelectedButton).catch(e => {});
+      await user.click(printPreviewButton).catch(_e => {}); // Ignored error for disabled button click
+      await user.click(printSelectedButton).catch(_e => {}); // Ignored error for disabled button click
 
       expect(showSnackbar).not.toHaveBeenCalledWith('Please select check requests to print.', 'warning');
       expect(mockNavigate).not.toHaveBeenCalled();
