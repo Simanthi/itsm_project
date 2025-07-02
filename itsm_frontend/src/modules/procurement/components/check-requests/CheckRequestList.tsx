@@ -86,8 +86,8 @@ const CheckRequestList: React.FC = () => {
   const [page, setPage] = useState<number>(0);
   const [rowsPerPage, setRowsPerPage] = useState<number>(10);
 
-  const [sortConfigKey, setSortConfigKey] = useState<string>('-request_date');
-  const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc');
+  const [sortConfigKey, setSortConfigKey] = useState<string>('request_date'); // Store raw key
+  const [sortConfigDirection, setSortConfigDirection] = useState<Order>('desc'); // Default sort direction
   const [selectedRequestIds, setSelectedRequestIds] = useState<number[]>([]); // State for selection
 
   const [selectedRequest, setSelectedRequest] = useState<CheckRequest | null>(
@@ -145,10 +145,16 @@ const CheckRequestList: React.FC = () => {
     setRowsPerPage(parseInt(event.target.value, 10));
     setPage(0);
   };
-  const handleSortRequest = (property: string) => {
-    const isAsc = sortConfigKey === property && sortConfigDirection === 'asc';
-    setSortConfigDirection(isAsc ? 'desc' : 'asc');
-    setSortConfigKey(property);
+   const handleSortRequest = (property: string) => { // property is the raw key e.g. 'cr_id'
+    const isCurrentProperty = sortConfigKey === property;
+    if (isCurrentProperty) {
+      // If it's the current sort column, toggle direction
+      setSortConfigDirection(sortConfigDirection === 'asc' ? 'desc' : 'asc');
+    } else {
+      // If it's a new sort column, set key and default to ascending
+      setSortConfigKey(property);
+      setSortConfigDirection('asc');
+    }
   };
 
   const handleAction = async (
@@ -436,13 +442,11 @@ const CheckRequestList: React.FC = () => {
                         handleRowCheckboxChange(event, req.id)
                       }
                       inputProps={{
-                        'aria-labelledby': `cr-checkbox-${req.id}`,
+                        'aria-label': `Select check request ${req.cr_id || req.id}`
                       }}
                     />
                   </TableCell>
-                  <TableCell
-                    id={`cr-checkbox-${req.id}`}
-                  >{req.cr_id || `CR-${req.id}`}</TableCell> {/* Display actual cr_id */}
+                  <TableCell>{req.cr_id || `CR-${req.id}`}</TableCell> {/* Display actual cr_id */}
                   <TableCell>{req.purchase_order_number || '-'}</TableCell>
                   <TableCell>{req.payee_name}</TableCell>
                   <TableCell align="right">
