@@ -56,7 +56,7 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       warranty_end_date: '2026-01-01',
       serial_number: 'SER001',
       vendor: {id: 1, name: 'Vendor X'},
-      vendor_name: 'Vendor X',
+      // vendor_name: 'Vendor X', // Removed: name is in vendor object
       description: 'Test asset 1',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
@@ -75,7 +75,7 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       warranty_end_date: '2026-02-01',
       serial_number: 'SER002',
       vendor: {id: 2, name: 'Vendor Y'},
-      vendor_name: 'Vendor Y',
+      // vendor_name: 'Vendor Y', // Removed: name is in vendor object
       description: 'Test asset 2',
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),

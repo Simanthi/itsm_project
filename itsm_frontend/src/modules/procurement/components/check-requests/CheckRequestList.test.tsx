@@ -81,12 +81,11 @@ describe('CheckRequestList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      confirmDialogOpen: false, // Corrected property name
-      confirmDialogConfig: null, // Assuming this is the correct structure based on UIContext.ts
-      // confirmDialogTitle: '', // Add other properties if needed by the component
-      // confirmDialogMessage: '',
-      // confirmDialogOnConfirm: vi.fn(),
-      // confirmDialogOnCancel: vi.fn(),
+      confirmDialogOpen: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogOnConfirm: vi.fn(),
+      confirmDialogOnCancel: undefined, // Match the type explicitly
     });
 
     vi.mocked(procurementApi.getCheckRequests).mockResolvedValue(mockPaginatedCRsResponse);

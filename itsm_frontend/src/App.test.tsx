@@ -65,7 +65,7 @@ describe('App.tsx Routing and Authentication', () => {
   it('renders HomePage for "/" when authenticated', async () => {
     mockUseAuth.mockReturnValue({
       isAuthenticated: true,
-      user: { id: 1, name: 'Test User', role: 'user', is_staff: false, groups:[] },
+      user: { id: 1, name: 'Test User', email: 'test@example.com', role: 'user', is_staff: false, groups:[] },
       token: 'fake-token',
       loading: false,
       login: vi.fn(),
@@ -90,7 +90,7 @@ describe('App.tsx Routing and Authentication', () => {
   });
 
   it('renders the protected route component when authenticated', async () => {
-    mockUseAuth.mockReturnValue({ isAuthenticated: true, user: { id: 1, name: 'Test User', role: 'user', is_staff: false, groups:[] }, token: 'fake-token', loading: false, login: vi.fn(), logout: vi.fn(), authenticatedFetch: vi.fn() });
+    mockUseAuth.mockReturnValue({ isAuthenticated: true, user: { id: 1, name: 'Test User', email: 'test@example.com', role: 'user', is_staff: false, groups:[] }, token: 'fake-token', loading: false, login: vi.fn(), logout: vi.fn(), authenticatedFetch: vi.fn() });
     renderApp(['/assets']); // Example protected route
     await waitFor(() => expect(screen.getByText('AssetsPageMock')).toBeInTheDocument());
   });

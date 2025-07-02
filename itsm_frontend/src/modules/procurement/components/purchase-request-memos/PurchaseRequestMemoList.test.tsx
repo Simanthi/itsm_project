@@ -123,13 +123,11 @@ describe('PurchaseRequestMemoList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      confirmDialogOpen: false, // Corrected property name
-      confirmDialogConfig: null, // Assuming this is the correct structure
-      // Add other confirmDialog properties if they are accessed by the component from the context
-      // confirmDialogTitle: '',
-      // confirmDialogMessage: '',
-      // confirmDialogOnConfirm: vi.fn(),
-      // confirmDialogOnCancel: vi.fn(),
+      confirmDialogOpen: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogOnConfirm: vi.fn(),
+      confirmDialogOnCancel: undefined,
     });
 
     // IMPORTANT: Do not set a global .mockResolvedValue for getPurchaseRequestMemos here
@@ -414,8 +412,8 @@ describe('PurchaseRequestMemoList', () => {
       requested_by: 1,
     };
 
-    const mockUserRegular = { id: 2, name: 'regularJoe', role: 'user', is_staff: false, groups: [] };
-    const mockUserStaff = { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] };
+    const mockUserRegular = { id: 2, name: 'regularJoe', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
+    const mockUserStaff = { id: 1, name: 'testuser', email: 'teststaff@example.com', role: 'admin', is_staff: true, groups: [] };
 
 
     it('shows Edit button for pending memo if user is requester, and navigates on click', async () => {
@@ -495,12 +493,15 @@ describe('PurchaseRequestMemoList', () => {
         user: { ...mockUserStaff, id: pendingMemoIsRequester.requested_by }, // User is requester
         isAuthenticated: true,
       });
-       vi.mocked(useUIHook.useUI).mockReturnValue({ // Assuming useUI is the hook name
+       vi.mocked(useUIHook.useUI).mockReturnValue({
         showSnackbar: vi.fn(),
         showConfirmDialog: mockShowConfirmDialog,
-        hideConfirmDialog: vi.fn(), // Added hideConfirmDialog
-        isConfirmDialogVisible: false, // Added isConfirmDialogVisible
-        confirmDialogConfig: null, // Added confirmDialogConfig
+        hideConfirmDialog: vi.fn(),
+        confirmDialogOpen: false,
+        confirmDialogTitle: '',
+        confirmDialogMessage: '',
+        confirmDialogOnConfirm: vi.fn(),
+        confirmDialogOnCancel: undefined,
       });
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
         .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoIsRequester] }) // Initial load
@@ -532,8 +533,11 @@ describe('PurchaseRequestMemoList', () => {
             showSnackbar: vi.fn(),
             showConfirmDialog: mockShowConfirmDialog,
             hideConfirmDialog: vi.fn(),
-            isConfirmDialogVisible: false,
-            confirmDialogConfig: null,
+            confirmDialogOpen: false,
+            confirmDialogTitle: '',
+            confirmDialogMessage: '',
+            confirmDialogOnConfirm: vi.fn(),
+            confirmDialogOnCancel: undefined,
         });
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
             .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoNotRequester] }) // Initial load
@@ -586,8 +590,11 @@ describe('PurchaseRequestMemoList', () => {
         showSnackbar: vi.fn(),
         showConfirmDialog: mockShowConfirmDialog,
         hideConfirmDialog: vi.fn(),
-        isConfirmDialogVisible: false,
-        confirmDialogConfig: null,
+        confirmDialogOpen: false,
+        confirmDialogTitle: '',
+        confirmDialogMessage: '',
+        confirmDialogOnConfirm: vi.fn(),
+        confirmDialogOnCancel: undefined,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
         count: 1, next: null, previous: null, results: [pendingMemoIsRequester],

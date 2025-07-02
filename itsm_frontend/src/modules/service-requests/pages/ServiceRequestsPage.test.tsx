@@ -98,7 +98,7 @@ const mockEmptySRsResponse: PaginatedResponse<ServiceRequest> = {
   results: [],
 };
 
-const mockUser = { id: 1, name: 'Test User', role: 'admin', is_staff: true, groups: [] };
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com', role: 'admin', is_staff: true, groups: [] }; // Added email
 
 describe('ServiceRequestsPage.tsx', () => {
   beforeEach(() => {
@@ -106,7 +106,7 @@ describe('ServiceRequestsPage.tsx', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: mockUser,
+      user: mockUser, // mockUser now includes email
       authenticatedFetch: vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
       login: vi.fn(),
       logout: vi.fn(),
@@ -118,12 +118,11 @@ describe('ServiceRequestsPage.tsx', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      confirmDialogOpen: false, // Corrected property name
-      confirmDialogConfig: null, // Assuming this is the correct structure
-      // confirmDialogTitle: '', // Add other properties if needed
-      // confirmDialogMessage: '',
-      // confirmDialogOnConfirm: vi.fn(),
-      // confirmDialogOnCancel: vi.fn(),
+      confirmDialogOpen: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogOnConfirm: vi.fn(),
+      confirmDialogOnCancel: undefined,
     });
 
     vi.mocked(serviceRequestApi.getServiceRequests).mockResolvedValue(mockPaginatedSRsResponse);
@@ -137,7 +136,6 @@ describe('ServiceRequestsPage.tsx', () => {
 
   it('renders table headers correctly', async () => {
     renderServiceRequestsPage();
-    // Wait for data to load as headers are part of DataGrid which renders after data fetch
     await waitFor(() => expect(serviceRequestApi.getServiceRequests).toHaveBeenCalledTimes(1));
 
     expect(screen.getByText('Request ID')).toBeInTheDocument();
@@ -146,10 +144,10 @@ describe('ServiceRequestsPage.tsx', () => {
     expect(screen.getByText('Category')).toBeInTheDocument();
     expect(screen.getByText('Status')).toBeInTheDocument();
     expect(screen.getByText('Priority')).toBeInTheDocument();
-    expect(screen.getByText('Requested By')).toBeInTheDocument(); // Changed from Reported By
+    expect(screen.getByText('Requested By')).toBeInTheDocument();
     expect(screen.getByText('Assigned To')).toBeInTheDocument();
     expect(screen.getByText('Created At')).toBeInTheDocument();
-    expect(screen.getByText('Last Updated')).toBeInTheDocument(); // Added
+    expect(screen.getByText('Last Updated')).toBeInTheDocument();
     expect(screen.getByText('Actions')).toBeInTheDocument();
   });
 
@@ -194,19 +192,16 @@ describe('ServiceRequestsPage.tsx', () => {
     renderServiceRequestsPage();
     const createButton = screen.getByRole('button', { name: /Create New Request/i });
     await user.click(createButton);
-    expect(mockNavigate).toHaveBeenCalledWith('/service-requests/new'); // Or the correct path
+    expect(mockNavigate).toHaveBeenCalledWith('/service-requests/new');
   });
 
   it('navigates to view service request details when view icon is clicked', async () => {
     const user = userEvent.setup();
     renderServiceRequestsPage();
-    // DataGrid actions are often buttons with aria-label or specific test ids might be needed if not directly named
-    // The action item in ServiceRequestsPage has label="View"
     const viewButtons = await screen.findAllByRole('button', { name: /View/i });
-    expect(viewButtons[0]).toBeInTheDocument(); // Assuming at least one row with a view button
+    expect(viewButtons[0]).toBeInTheDocument();
 
     await user.click(viewButtons[0]);
-    // The component navigates using request_id (e.g., "SR-001"), not the numeric id.
     expect(mockNavigate).toHaveBeenCalledWith(`/service-requests/view/${mockServiceRequests[0].request_id}`);
   });
 });
