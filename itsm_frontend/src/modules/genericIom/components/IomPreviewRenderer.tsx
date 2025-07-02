@@ -36,7 +36,7 @@ const PreviewDisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: 
             return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap'}}>
                 {field.type === 'date' ? dateObj.toLocaleDateString() : dateObj.toLocaleString()}
             </Typography>;
-        } catch (e) {
+        } catch (_e) { // Marked as unused
             return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'error.main' }}><em>Invalid Date Value</em></Typography>;
         }
     }
@@ -118,7 +118,7 @@ const IomPreviewRenderer: React.FC<IomPreviewRendererProps> = ({
                     </Box>
                 </Grid>
                 ))}
-                {Object.keys(dataPayload).length === 0 && !iomTemplate.fields_definition.some(fd => dataPayload.hasOwnProperty(fd.name)) && (
+                {Object.keys(dataPayload).length === 0 && !iomTemplate.fields_definition.some(fd => Object.hasOwn(dataPayload, fd.name)) && (
                     <Grid item xs={12}><Typography variant="body2" color="text.secondary"><em>No details entered yet.</em></Typography></Grid>
                 )}
             </Grid>

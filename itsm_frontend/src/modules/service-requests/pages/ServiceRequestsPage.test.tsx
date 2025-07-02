@@ -10,7 +10,8 @@ import ServiceRequestsPage from './ServiceRequestsPage';
 import * as serviceRequestApi from '../../../api/serviceRequestApi'; // Specific API for service requests
 import * as useAuthHook from '../../../context/auth/useAuth';
 import * as useUIHook from '../../../context/UIContext/useUI';
-import type { ServiceRequest, PaginatedResponse } from '../types/ServiceRequestTypes';
+import type { ServiceRequest } from '../types/ServiceRequestTypes';
+import type { PaginatedResponse } from '../../../modules/assets/types/assetTypes'; // Corrected import
 
 // Mock API module
 vi.mock('../../../api/serviceRequestApi');
@@ -50,18 +51,18 @@ const mockServiceRequests: ServiceRequest[] = [
     request_id: 'SR-001',
     title: 'Printer not working',
     description: 'The office printer on the 2nd floor is jammed.',
-    status: 'open',
+    status: 'new', // Corrected status
     priority: 'high',
-    category: { id: 1, name: 'Hardware Issue', description: '' },
-    reported_by: { id: 1, username: 'jdoe', email: 'jdoe@example.com', first_name: 'John', last_name: 'Doe' },
-    assigned_to: null,
+    category: 'hardware', // Corrected category to be a string literal
+    requested_by_id: 1, // Corrected field name and type
+    requested_by_username: 'jdoe', // Corrected field name
+    assigned_to_id: null, // Corrected field name and type
+    assigned_to_username: null, // Corrected field name
     created_at: '2024-03-01T10:00:00Z',
     updated_at: '2024-03-01T10:00:00Z',
     resolution_notes: null,
     resolved_at: null,
-    attachments: [],
-    related_cis: [],
-    sla_due_date: '2024-03-05T10:00:00Z',
+    // Removed attachments, related_cis, sla_due_date as they are not in ServiceRequest type
   },
   {
     id: 2,
@@ -70,16 +71,16 @@ const mockServiceRequests: ServiceRequest[] = [
     description: 'Need access to the new accounting software.',
     status: 'in_progress',
     priority: 'medium',
-    category: { id: 2, name: 'Software Request', description: '' },
-    reported_by: { id: 2, username: 'asmith', email: 'asmith@example.com', first_name: 'Alice', last_name: 'Smith' },
-    assigned_to: { id: 3, username: 'techguy', email: 'tech@example.com', first_name: 'Tech', last_name: 'Guy' },
+    category: 'software', // Corrected category to be a string literal
+    requested_by_id: 2, // Corrected field name and type
+    requested_by_username: 'asmith', // Corrected field name
+    assigned_to_id: 3, // Corrected field name and type
+    assigned_to_username: 'techguy', // Corrected field name
     created_at: '2024-03-02T11:00:00Z',
     updated_at: '2024-03-02T11:30:00Z',
     resolution_notes: null,
     resolved_at: null,
-    attachments: [],
-    related_cis: [],
-    sla_due_date: '2024-03-08T11:00:00Z',
+    // Removed attachments, related_cis, sla_due_date as they are not in ServiceRequest type
   },
 ];
 
@@ -117,8 +118,12 @@ describe('ServiceRequestsPage.tsx', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      isConfirmDialogVisible: false,
-      confirmDialogConfig: null,
+      confirmDialogOpen: false, // Corrected property name
+      confirmDialogConfig: null, // Assuming this is the correct structure
+      // confirmDialogTitle: '', // Add other properties if needed
+      // confirmDialogMessage: '',
+      // confirmDialogOnConfirm: vi.fn(),
+      // confirmDialogOnCancel: vi.fn(),
     });
 
     vi.mocked(serviceRequestApi.getServiceRequests).mockResolvedValue(mockPaginatedSRsResponse);

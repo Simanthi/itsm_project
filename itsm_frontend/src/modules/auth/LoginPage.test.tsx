@@ -6,9 +6,9 @@ import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../context/auth/AuthContext';
 import { UIContextProvider } from '../../context/UIContext/UIContextProvider';
 import LoginPage from './LoginPage';
-import * as authApi from '../../api/authApi';
+// import * as authApi from '../../api/authApi'; // Unused import
 import * as useAuthHook from '../../context/auth/useAuth';
-import * as useUIHook from '../../context/UIContext/useUI';
+// import * as useUIHook from '../../context/UIContext/useUI'; // Unused import
 
 vi.mock('../../api/authApi', () => ({
   login: vi.fn(),

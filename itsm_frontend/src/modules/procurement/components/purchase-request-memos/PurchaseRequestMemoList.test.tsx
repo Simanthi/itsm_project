@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
-import { render, screen, waitFor, within } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { BrowserRouter, MemoryRouter, Routes, Route } from 'react-router-dom';
+import { MemoryRouter } from 'react-router-dom'; // BrowserRouter, Routes, Route removed
 import * as ReactRouterDom from 'react-router-dom';
-import { server } from '../../../../mocks/server';
+// import { server } from '../../../../mocks/server'; // MSW server import removed
 import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
 import PurchaseRequestMemoList from './PurchaseRequestMemoList';
@@ -44,7 +44,7 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       created_by_username: 'admin',
-      updated_by_username: 'admin',
+      // updated_by_username: 'admin', // Removed as it's not in IOMTemplate type
       // Add other fields from IOMTemplate as needed, with default/mock values
       created_by: 1,
       updated_by: 1,
@@ -123,8 +123,13 @@ describe('PurchaseRequestMemoList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      isConfirmDialogVisible: false,
-      confirmDialogConfig: null,
+      confirmDialogOpen: false, // Corrected property name
+      confirmDialogConfig: null, // Assuming this is the correct structure
+      // Add other confirmDialog properties if they are accessed by the component from the context
+      // confirmDialogTitle: '',
+      // confirmDialogMessage: '',
+      // confirmDialogOnConfirm: vi.fn(),
+      // confirmDialogOnCancel: vi.fn(),
     });
 
     // IMPORTANT: Do not set a global .mockResolvedValue for getPurchaseRequestMemos here
@@ -569,7 +574,7 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     it('opens Cancel dialog and does NOT call API if dismissed', async () => {
-      const mockShowConfirmDialog = vi.fn((title, message, onConfirm, onCancel) => {
+      const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => {
         if (onCancel) onCancel(); // Simulate user clicking "Cancel" in dialog
       });
        vi.mocked(useAuthHook.useAuth).mockReturnValue({

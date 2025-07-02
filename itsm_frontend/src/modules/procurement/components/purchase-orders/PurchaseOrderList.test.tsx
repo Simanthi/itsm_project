@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
@@ -81,8 +81,12 @@ describe('PurchaseOrderList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      isConfirmDialogVisible: false,
-      confirmDialogConfig: null,
+      confirmDialogOpen: false, // Corrected property name
+      confirmDialogConfig: null, // Assuming this is the correct structure
+      // confirmDialogTitle: '', // Add other properties if needed by the component
+      // confirmDialogMessage: '',
+      // confirmDialogOnConfirm: vi.fn(),
+      // confirmDialogOnCancel: vi.fn(),
     });
 
     // Default API mock for getPurchaseOrders
@@ -329,7 +333,7 @@ describe('PurchaseOrderList', () => {
     // Cancel Button Tests
     [draftPO, pendingApprovalPO, approvedPO].forEach((po) => {
       it(`shows Cancel button for "${po.status}" PO, opens dialog, confirms, and calls API`, async () => {
-        const mockShowConfirmDialog = vi.fn((title, message, onConfirm) => onConfirm());
+        const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         const getOrdersMock = vi.mocked(procurementApi.getPurchaseOrders)
@@ -364,7 +368,7 @@ describe('PurchaseOrderList', () => {
     });
 
     it('opens Cancel dialog and does NOT call API if dismissed', async () => {
-      const mockShowConfirmDialog = vi.fn((title, message, onConfirm, onCancel) => {
+      const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => {
         if (onCancel) onCancel(); // Simulate user clicking "Cancel" in dialog
       });
       vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
@@ -494,8 +498,8 @@ describe('PurchaseOrderList', () => {
       // Attempting to click disabled buttons should not result in navigation or snackbar
       // userEvent.click on a disabled button typically does nothing or might even error in some setups.
       // We are primarily verifying the disabled state.
-      await user.click(printPreviewButton).catch(e => {}); // Suppress error if userEvent throws on disabled
-      await user.click(printSelectedButton).catch(e => {});
+      await user.click(printPreviewButton).catch(_e => {}); // Suppress error if userEvent throws on disabled
+      await user.click(printSelectedButton).catch(_e => {}); // Suppress error if userEvent throws on disabled
 
       expect(showSnackbar).not.toHaveBeenCalledWith('Please select purchase orders to print.', 'warning');
       expect(mockNavigate).not.toHaveBeenCalled();

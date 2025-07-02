@@ -6,6 +6,7 @@ export interface AuthUser {
   id: number;
   name: string; // Typically username or full name for display
   role: string; // User's role (e.g., 'user', 'admin')
+  email: string; // User's email address
   is_staff: boolean;
   groups: string[]; // Array of group names
   department_id?: number | null;

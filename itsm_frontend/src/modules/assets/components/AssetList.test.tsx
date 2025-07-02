@@ -49,9 +49,9 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       category: { id: 1, name: 'Laptops' },
       status: 'in_use',
       assigned_to: { id: 101, username: 'user_a', first_name: 'User', last_name: 'A' },
-      assigned_to_username: 'user_a',
+      // assigned_to_username: 'user_a', // Removed: username is in assigned_to object
       location: { id: 1, name: 'Main Office' },
-      location_name: 'Main Office',
+      // location_name: 'Main Office', // Removed: name is in location object
       purchase_date: '2023-01-01',
       warranty_end_date: '2026-01-01',
       serial_number: 'SER001',
@@ -68,9 +68,9 @@ const mockAssetsResponse: PaginatedResponse<Asset> = {
       category: { id: 2, name: 'Desktops' },
       status: 'in_stock',
       assigned_to: null,
-      assigned_to_username: null,
+      // assigned_to_username: null, // Removed: username is in assigned_to object (or null)
       location: { id: 2, name: 'Branch Office' },
-      location_name: 'Branch Office',
+      // location_name: 'Branch Office', // Removed: name is in location object
       purchase_date: '2023-02-01',
       warranty_end_date: '2026-02-01',
       serial_number: 'SER002',

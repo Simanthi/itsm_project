@@ -11,7 +11,9 @@ import * as serviceRequestApi from '../../../api/serviceRequestApi';
 import * as assetApi from '../../../api/assetApi'; // For categories
 import * as useAuthHook from '../../../context/auth/useAuth';
 import * as useUIHook from '../../../context/UIContext/useUI';
-import type { ServiceRequest, ServiceCategory, PaginatedResponse } from '../types/ServiceRequestTypes';
+// ServiceCategory and PaginatedResponse will be imported from assetTypes or a shared location
+import type { ServiceRequest } from '../types/ServiceRequestTypes';
+import type { AssetCategory as ServiceCategory, PaginatedResponse } from '../../../assets/types/assetTypes'; // Corrected import
 import type { User } from '../../../types/UserTypes';
 
 // Mock API modules
@@ -34,7 +36,7 @@ vi.mock('react-router-dom', async () => {
 const mockUseParams = vi.spyOn(require('react-router-dom'), 'useParams');
 
 
-const mockUser: User = { id: 1, username: 'testuser', email: 'test@example.com', first_name: 'Test', last_name: 'User', role: 'user', is_staff: false, groups: [] };
+const mockUser: User = { id: 1, username: 'testuser', email: 'test@example.com', first_name: 'Test', last_name: 'User', is_staff: false, is_active: true, date_joined: new Date().toISOString(), last_login: null, groups: [] }; // Removed 'role', added missing User fields for completeness
 const mockCategories: PaginatedResponse<ServiceCategory> = {
   count: 2, next: null, previous: null,
   results: [
@@ -67,13 +69,26 @@ describe('ServiceRequestForm.tsx', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: mockUser,
+      // user: mockUser, // This was User, needs to be AuthUser
+      user: { // Conforms to AuthUser
+        id: mockUser.id,
+        name: mockUser.username, // Or `${mockUser.first_name} ${mockUser.last_name}`
+        email: mockUser.email,
+        role: 'user', // Example role, adjust as needed for tests
+        is_staff: mockUser.is_staff,
+        groups: mockUser.groups?.map(g => g.name) || [], // Assuming groups in User have name property
+      },
       authenticatedFetch: vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
       login: vi.fn(),logout: vi.fn(), loading: false, isAuthenticated: true,
     });
     vi.mocked(useUIHook.useUI).mockReturnValue({
       showSnackbar: vi.fn(), showConfirmDialog: vi.fn(), hideConfirmDialog: vi.fn(),
-      isConfirmDialogVisible: false, confirmDialogConfig: null,
+      confirmDialogOpen: false, // Corrected property name
+      confirmDialogConfig: null, // Assuming this is the correct structure
+      // confirmDialogTitle: '', // Add other properties if needed
+      // confirmDialogMessage: '',
+      // confirmDialogOnConfirm: vi.fn(),
+      // confirmDialogOnCancel: vi.fn(),
     });
     vi.mocked(assetApi.getAssetCategories).mockResolvedValue(mockCategories);
     vi.mocked(serviceRequestApi.createServiceRequest).mockResolvedValue({ id: 123, request_id: 'SR-NEW-123' } as ServiceRequest);
@@ -97,20 +112,28 @@ describe('ServiceRequestForm.tsx', () => {
 
   it('loads service request data in edit mode', async () => {
     const mockExistingSR: ServiceRequest = {
-      ...mockServiceRequests[0], // from a shared mock or define here
       id: 1,
       request_id: 'SR-EDIT-001',
       title: 'Existing Title',
       description: 'Existing Description',
-      category: mockCategories.results[0], // { id: 1, name: 'Hardware Issue' }
+      category: mockCategories.results[0].name as ServiceRequestCategory, // Use name from mockCategory
       priority: 'high',
+      status: 'new', // Add other required fields for ServiceRequest type
+      resolution_notes: null,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+      requested_by_username: 'testuser',
+      requested_by_id: 1,
+      assigned_to_username: null,
+      assigned_to_id: null,
+      // catalog_item_id and catalog_item_name are optional
     };
-    vi.mocked(serviceRequestApi.getServiceRequest).mockResolvedValue(mockExistingSR);
+    vi.mocked(serviceRequestApi.getServiceRequestById).mockResolvedValue(mockExistingSR); // Corrected function name
 
     renderForm('SR-EDIT-001');
 
     expect(await screen.findByRole('heading', { name: /Edit Service Request SR-EDIT-001/i })).toBeInTheDocument();
-    await waitFor(() => expect(serviceRequestApi.getServiceRequest).toHaveBeenCalledWith(expect.any(Function), 'SR-EDIT-001'));
+    await waitFor(() => expect(serviceRequestApi.getServiceRequestById).toHaveBeenCalledWith(expect.any(Function), 'SR-EDIT-001')); // Corrected function name
 
     expect(screen.getByLabelText(/Title/i)).toHaveValue(mockExistingSR.title);
     expect(screen.getByLabelText(/Description/i)).toHaveValue(mockExistingSR.description);

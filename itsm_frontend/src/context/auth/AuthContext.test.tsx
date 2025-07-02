@@ -1,5 +1,5 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act, waitFor } from '@testing-library/react';
 import { AuthProvider } from './AuthContext';
 import { useAuth } from './useAuth';
@@ -265,7 +265,7 @@ describe('AuthContext', () => {
       localStorageMock.setItem('authToken', mockToken);
       localStorageMock.setItem('user', JSON.stringify(mockUser));
       const consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation(() => {});
-      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {}); // For backend logout errors
+      // const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {}); // For backend logout errors - This spy is not used in this test
 
       const { result } = renderHook(() => useAuth(), { wrapper });
       await waitFor(() => expect(result.current.token).toBe(mockToken));
