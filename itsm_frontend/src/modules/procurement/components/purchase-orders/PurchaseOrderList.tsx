@@ -348,10 +348,10 @@ const PurchaseOrderList: React.FC = () => {
                       onChange={(event) =>
                         handleRowCheckboxChange(event, po.id)
                       }
-                      inputProps={{ 'aria-labelledby': `po-checkbox-${po.id}` }}
+                      inputProps={{ 'aria-label': `Select purchase order ${po.po_number}` }}
                     />
                   </TableCell>
-                  <TableCell id={`po-checkbox-${po.id}`}>
+                  <TableCell> {/* Removed id from here as aria-label is now direct */}
                     {po.po_number}
                   </TableCell>
                   <TableCell>{po.vendor_details?.name || '-'}</TableCell>
