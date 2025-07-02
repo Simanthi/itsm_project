@@ -84,7 +84,7 @@ describe('AssetForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'currentuser', role: 'user', is_staff: false, groups: [] },
+      user: { id: 1, name: 'currentuser', email: 'current@example.com', role: 'user', is_staff: false, groups: [] },
       authenticatedFetch: vi.fn(async (url, options) => {
         const res = await window.fetch(url, options);
         return res.json();

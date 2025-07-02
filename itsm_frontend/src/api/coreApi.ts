@@ -39,7 +39,7 @@ export const getContentTypeId = async (
     }
     console.error('getContentTypeId: Unexpected response structure:', response);
     return null; // Or throw a more specific error
-  } catch (error: any) {
+  } catch (error: unknown) {
     // API client's authenticatedFetch might throw for non-2xx responses.
     // If the error is a 404, we can specifically return null.
     // This depends on how authenticatedFetch and apiClient handle errors.

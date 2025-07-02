@@ -82,13 +82,14 @@ describe('ServiceRequestForm.tsx', () => {
       login: vi.fn(),logout: vi.fn(), loading: false, isAuthenticated: true,
     });
     vi.mocked(useUIHook.useUI).mockReturnValue({
-      showSnackbar: vi.fn(), showConfirmDialog: vi.fn(), hideConfirmDialog: vi.fn(),
-      confirmDialogOpen: false, // Corrected property name
-      confirmDialogConfig: null, // Assuming this is the correct structure
-      // confirmDialogTitle: '', // Add other properties if needed
-      // confirmDialogMessage: '',
-      // confirmDialogOnConfirm: vi.fn(),
-      // confirmDialogOnCancel: vi.fn(),
+      showSnackbar: vi.fn(),
+      showConfirmDialog: vi.fn(),
+      hideConfirmDialog: vi.fn(),
+      confirmDialogOpen: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogOnConfirm: vi.fn(),
+      confirmDialogOnCancel: undefined,
     });
     vi.mocked(assetApi.getAssetCategories).mockResolvedValue(mockCategories);
     vi.mocked(serviceRequestApi.createServiceRequest).mockResolvedValue({ id: 123, request_id: 'SR-NEW-123' } as ServiceRequest);

@@ -61,7 +61,7 @@ const mockEmptyPOsResponse: PaginatedResponse<PurchaseOrder> = {
   results: [],
 };
 
-const mockUser = { id: 1, name: 'Test User', role: 'admin', is_staff: true, groups: [] };
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com', role: 'admin', is_staff: true, groups: [] };
 
 describe('PurchaseOrderList', () => {
   beforeEach(() => {
@@ -81,12 +81,11 @@ describe('PurchaseOrderList', () => {
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
       hideConfirmDialog: vi.fn(),
-      confirmDialogOpen: false, // Corrected property name
-      confirmDialogConfig: null, // Assuming this is the correct structure
-      // confirmDialogTitle: '', // Add other properties if needed by the component
-      // confirmDialogMessage: '',
-      // confirmDialogOnConfirm: vi.fn(),
-      // confirmDialogOnCancel: vi.fn(),
+      confirmDialogOpen: false,
+      confirmDialogTitle: '',
+      confirmDialogMessage: '',
+      confirmDialogOnConfirm: vi.fn(),
+      confirmDialogOnCancel: undefined,
     });
 
     // Default API mock for getPurchaseOrders
