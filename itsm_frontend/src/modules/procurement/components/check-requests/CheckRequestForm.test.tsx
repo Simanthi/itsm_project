@@ -138,6 +138,8 @@ describe('CheckRequestForm', () => {
       payment_date: null,
       transaction_id: null,
       payment_notes: null,
+      created_at: '2024-07-01T00:00:00Z', // Added
+      updated_at: '2024-07-01T00:00:00Z', // Added
     };
     vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(mockCheckRequest);
 
@@ -248,6 +250,8 @@ describe('CheckRequestForm', () => {
       payment_date: null,
       transaction_id: null,
       payment_notes: null,
+      created_at: now, // Added
+      updated_at: now, // Added
     };
 
     vi.mocked(procurementApi.createCheckRequest).mockResolvedValue(createdCRMock);

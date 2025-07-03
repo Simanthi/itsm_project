@@ -121,6 +121,8 @@ describe('PurchaseRequestMemoForm', () => {
       approver_username: null,
       decision_date: null,
       approver_comments: null,
+      created_at: '2024-07-01T00:00:00Z', // Added
+      updated_at: '2024-07-01T00:00:00Z', // Added
     };
     vi.mocked(procurementApi.getPurchaseRequestMemoById).mockResolvedValue(mockMemo);
     const mockDepartments: Department[] = [{ id: 1, name: 'Test Dept', department_code: 'TD001' }];
@@ -197,6 +199,8 @@ describe('PurchaseRequestMemoForm', () => {
         decision_date: null,
         approver_comments: null,
         attachments: null,
+        created_at: now, // Added
+        updated_at: now, // Added
     };
 
     const mockDepartments: Department[] = [{ id: 1, name: 'Engineering', department_code: 'ENG' }];
