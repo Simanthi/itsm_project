@@ -79,7 +79,7 @@ describe('CheckRequestForm', () => {
 
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] },
+      user: { id: 1, name: 'testuser', email: 'test@example.com', role: 'admin', is_staff: true, groups: [] },
       authenticatedFetch: vi.fn(async (url, options) => {
         const rawResponse = await window.fetch(url, options);
         if (!rawResponse.ok) {

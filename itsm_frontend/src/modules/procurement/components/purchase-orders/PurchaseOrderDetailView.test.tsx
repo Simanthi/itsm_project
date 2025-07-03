@@ -6,7 +6,7 @@ import { MemoryRouter, Routes, Route, useParams } from 'react-router-dom';
 import { AuthContext, type AuthContextType } from '../../../../context/auth/AuthContextDefinition';
 import PurchaseOrderDetailView from './PurchaseOrderDetailView';
 import { getPurchaseOrderById } from '../../../../api/procurementApi';
-import type { PurchaseOrder, PurchaseOrderStatus, OrderItem, POType } from '../../types';
+import type { PurchaseOrder, PurchaseOrderStatus, OrderItem } from '../../types'; // POType removed
 
 // Mock the procurement API
 vi.mock('../../../../api/procurementApi');
@@ -55,7 +55,7 @@ const sampleOrderItem: OrderItem = {
   quantity: 2,
   unit_price: 1200,
   total_price: 2400,
-  currency: 'USD',
+  // currency: 'USD', // Currency is typically on the PO level, not item level in this model
   gl_account: 101,
   gl_account_code: 'EXP-IT-HW',
   received_quantity: 1,
@@ -73,7 +73,7 @@ const basePurchaseOrderData: PurchaseOrder = {
   id: 1,
   po_number: 'PO-2023-00001',
   vendor: 1,
-  vendor_details: { id: 1, name: 'Tech Solutions LLC', contact_person: 'Jane Doe', email: 'jane@tech.com', phone: '555-1234' },
+  vendor_details: { id: 1, name: 'Tech Solutions LLC' }, // Removed contact_person, email, phone to match VendorSummary
   order_date: '2023-10-15T00:00:00Z',
   expected_delivery_date: '2023-11-15T00:00:00Z',
   status: 'pending_approval' as PurchaseOrderStatus,
@@ -190,7 +190,7 @@ describe('PurchaseOrderDetailView', () => {
       expect(screen.getByText(item.item_description)).toBeInTheDocument();
       expect(screen.getByText(item.product_code!)).toBeInTheDocument();
       expect(screen.getAllByText(item.quantity.toString())[0]).toBeInTheDocument(); // There might be multiple '2's, ensure it's in the table context
-      expect(screen.getByText(`$${item.unit_price.toFixed(2)}`)).toBeInTheDocument(); // Simple check for USD
+      expect(screen.getByText(`$${item.unit_price!.toFixed(2)}`)).toBeInTheDocument(); // Added non-null assertion
       expect(screen.getByText(item.gl_account_code!)).toBeInTheDocument();
       expect(screen.getByText(item.received_quantity!.toString())).toBeInTheDocument();
       expect(screen.getByText(item.line_item_status!.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()))).toBeInTheDocument();

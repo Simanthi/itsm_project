@@ -53,6 +53,8 @@ export interface PurchaseRequestMemo {
   suggested_vendor?: number | null; // FK to Vendor
   suggested_vendor_name?: string | null; // Read-only
   attachments?: File | string | null; // File for upload, string for URL on read
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
 }
 
 export interface PurchaseRequestMemoData {
@@ -318,6 +320,8 @@ export interface CheckRequest {
   recurring_payment_details?: string | null; // Read-only
   attachments?: File | string | null; // File for upload, string for URL on read
   currency?: string; // e.g., 'USD', 'KES'
+  created_at: string; // ISO date string
+  updated_at: string; // ISO date string
 }
 
 export interface CheckRequestData {

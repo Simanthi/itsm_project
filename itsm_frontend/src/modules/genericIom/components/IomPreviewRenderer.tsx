@@ -36,7 +36,7 @@ const PreviewDisplayDynamicFieldValue: React.FC<{field: FieldDefinition, value: 
             return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap'}}>
                 {field.type === 'date' ? dateObj.toLocaleDateString() : dateObj.toLocaleString()}
             </Typography>;
-        } catch (_e) { // Marked as unused
+        } catch { // Error object not used
             return <Typography variant="body2" sx={{ whiteSpace: 'pre-wrap', color: 'error.main' }}><em>Invalid Date Value</em></Typography>;
         }
     }

@@ -47,7 +47,7 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       // updated_by_username: 'admin', // Removed as it's not in IOMTemplate type
       // Add other fields from IOMTemplate as needed, with default/mock values
       created_by: 1,
-      updated_by: 1,
+      // updated_by: 1, // Removed as it's not in IOMTemplate type (updated_at is present)
       form_layout: "{}",
       form_title: "Purchase Request Memo",
       is_active: true,
