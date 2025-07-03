@@ -136,7 +136,7 @@ describe('PurchaseOrderDetailView', () => {
   });
 
   it('renders "not found" state if API returns no purchase order', async () => {
-    vi.mocked(getPurchaseOrderById).mockImplementationOnce(async () => null as any); // Cast to any
+    vi.mocked(getPurchaseOrderById).mockImplementationOnce(async () => null as unknown as PurchaseOrder);
     renderComponent('1');
     await waitFor(() => {
       expect(screen.getByText(/Purchase Order not found./i)).toBeInTheDocument();

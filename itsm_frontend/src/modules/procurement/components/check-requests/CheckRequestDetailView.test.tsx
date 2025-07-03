@@ -139,7 +139,7 @@ describe('CheckRequestDetailView', () => {
   });
 
   it('renders "not found" state if API returns no check request', async () => {
-    vi.mocked(procurementApi.getCheckRequestById).mockImplementationOnce(async () => null as any); // Cast to any
+    vi.mocked(procurementApi.getCheckRequestById).mockImplementationOnce(async () => null as unknown as CheckRequest);
     renderComponent('1');
     await waitFor(() => {
       expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
@@ -149,7 +149,14 @@ describe('CheckRequestDetailView', () => {
   describe('Successful Data Display (Happy Path)', () => {
     // Helper to re-render with potentially different data for specific display tests
     const setupAndRender = (data: CheckRequest | null) => {
-        vi.mocked(procurementApi.getCheckRequestById).mockImplementation(async () => data as any); // Cast to any
+        vi.mocked(procurementApi.getCheckRequestById).mockImplementation(async () => {
+          if (data === null) {
+            // This cast is to satisfy TSC if it strictly expects Promise<CheckRequest>
+            // even though the component handles null.
+            return null as unknown as CheckRequest;
+          }
+          return data;
+        });
         renderComponent(data ? String(data.id) : '1');
     };
 
