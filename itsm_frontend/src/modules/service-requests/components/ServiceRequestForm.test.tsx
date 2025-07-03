@@ -25,7 +25,8 @@ vi.mock('../../../context/auth/useAuth');
 vi.mock('../../../context/UIContext/useUI');
 
 const mockNavigate = vi.fn();
-const mockUseParamsFn = vi.fn<[], { requestId?: string }>(() => ({ requestId: undefined })); // Persistent mock function with explicit type
+// Changed to pass a single function type argument to vi.fn
+const mockUseParamsFn = vi.fn<() => { requestId?: string }>(() => ({ requestId: undefined }));
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');

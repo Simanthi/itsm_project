@@ -61,7 +61,7 @@ const mockEmptyCRsResponse: PaginatedResponse<CheckRequest> = {
   results: [],
 };
 
-const mockUser = { id: 1, name: 'Test User', role: 'admin', is_staff: true, groups: [] };
+const mockUser = { id: 1, name: 'Test User', email: 'test@example.com', role: 'admin', is_staff: true, groups: [] };
 
 describe('CheckRequestList', () => {
   beforeEach(() => {
@@ -86,6 +86,11 @@ describe('CheckRequestList', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined, // Match the type explicitly
+      // Add missing properties
+      snackbarOpen: false,
+      snackbarMessage: '',
+      snackbarSeverity: 'info', // Default severity
+      hideSnackbar: vi.fn(),
     });
 
     vi.mocked(procurementApi.getCheckRequests).mockResolvedValue(mockPaginatedCRsResponse);
@@ -275,8 +280,8 @@ describe('CheckRequestList', () => {
      const otherUserPendingSubmissionCR: CheckRequest = {
       ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
     };
-    const mockUserStaff = { id: 1, name: 'Staff User', role: 'admin', is_staff: true, groups: [] };
-    const mockUserRegular = { id: 2, name: 'Regular User', role: 'user', is_staff: false, groups: [] };
+    const mockUserStaff = { id: 1, name: 'Staff User', email: 'staff@example.com', role: 'admin', is_staff: true, groups: [] };
+    const mockUserRegular = { id: 2, name: 'Regular User', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
 
     // --- Edit Button ---
     it('shows Edit button for "pending_submission" CR if user is requester, and navigates', async () => {
@@ -665,6 +670,7 @@ describe('CheckRequestList', () => {
 
     it('Cancel dialog dismissal does not call API', async () => {
         vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
+        // @ts-expect-error Unused parameters _title, _message, _onConfirm are part of the signature but not used in this specific mock.
         const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => { if(onCancel) onCancel(); });
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 

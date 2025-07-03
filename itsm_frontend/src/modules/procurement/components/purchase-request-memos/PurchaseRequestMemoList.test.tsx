@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom'; // BrowserRouter, Routes, Route removed
-import * as ReactRouterDom from 'react-router-dom';
+// import * as ReactRouterDom from 'react-router-dom'; // Unused import
 // import { server } from '../../../../mocks/server'; // MSW server import removed
 import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
@@ -51,10 +51,11 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       // form_layout: "{}", // Removed as it's not in IOMTemplate type
       // form_title: "Purchase Request Memo", // Removed as it's not in IOMTemplate type
       is_active: true,
+      approval_type: 'none', // Added missing required property
       // related_module: "procurement", // Removed as it's not in IOMTemplate type
-      template_version: "1.0",
-      workflow: null,
-      workflow_name: null,
+      // template_version: "1.0", // Removed as it's not in IOMTemplate type
+      // workflow: null, // Removed as per TS2353, not in IOMTemplate type
+      // workflow_name: null, // Removed as per TS2353, not in IOMTemplate type
     }
   ]
 };
@@ -106,7 +107,7 @@ describe('PurchaseRequestMemoList', () => {
     // Mock useAuth consistently
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] },
+      user: { id: 1, name: 'testuser', email: 'testuser@example.com', role: 'admin', is_staff: true, groups: [] },
       // Ensure authenticatedFetch is a stable function mock for each test
       authenticatedFetch: vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
       login: vi.fn(),
@@ -128,6 +129,11 @@ describe('PurchaseRequestMemoList', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined,
+      // Add missing UIContextType properties
+      snackbarOpen: false,
+      snackbarMessage: '',
+      snackbarSeverity: 'info',
+      hideSnackbar: vi.fn(),
     });
 
     // IMPORTANT: Do not set a global .mockResolvedValue for getPurchaseRequestMemos here
@@ -487,7 +493,7 @@ describe('PurchaseRequestMemoList', () => {
 
     // Tests for Cancel Button
     it('shows Cancel button for pending memo if user is requester, opens dialog, confirms, and calls API', async () => {
-      const mockShowConfirmDialog = vi.fn((title, message, onConfirm) => onConfirm()); // Auto-confirm
+      const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm()); // Auto-confirm
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
         user: { ...mockUserStaff, id: pendingMemoIsRequester.requested_by }, // User is requester
@@ -502,6 +508,10 @@ describe('PurchaseRequestMemoList', () => {
         confirmDialogMessage: '',
         confirmDialogOnConfirm: vi.fn(),
         confirmDialogOnCancel: undefined,
+        snackbarOpen: false,
+        snackbarMessage: '',
+        snackbarSeverity: 'info',
+        hideSnackbar: vi.fn(),
       });
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
         .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoIsRequester] }) // Initial load
@@ -523,7 +533,7 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     it('shows Cancel button for pending memo if user is staff, opens dialog, confirms, and calls API', async () => {
-        const mockShowConfirmDialog = vi.fn((title, message, onConfirm) => onConfirm());
+        const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
             user: mockUserStaff, // User is staff
@@ -538,6 +548,10 @@ describe('PurchaseRequestMemoList', () => {
             confirmDialogMessage: '',
             confirmDialogOnConfirm: vi.fn(),
             confirmDialogOnCancel: undefined,
+        snackbarOpen: false,
+        snackbarMessage: '',
+        snackbarSeverity: 'info',
+        hideSnackbar: vi.fn(),
         });
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
             .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoNotRequester] }) // Initial load
@@ -595,6 +609,10 @@ describe('PurchaseRequestMemoList', () => {
         confirmDialogMessage: '',
         confirmDialogOnConfirm: vi.fn(),
         confirmDialogOnCancel: undefined,
+        snackbarOpen: false,
+        snackbarMessage: '',
+        snackbarSeverity: 'info',
+        hideSnackbar: vi.fn(),
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
         count: 1, next: null, previous: null, results: [pendingMemoIsRequester],

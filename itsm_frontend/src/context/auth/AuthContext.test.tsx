@@ -12,17 +12,22 @@ vi.mock('../../api/authApi', () => ({
   loginApi: vi.fn(),
   logoutApi: vi.fn(), // Corrected: This should be the actual exported name from the module
 }));
-vi.mock('../../api/apiClient', () => ({
-  apiClient: vi.fn(),
-  AuthError: class MockAuthError extends Error { // Mock the custom error class
-    status: number;
-    constructor(message: string, status: number) {
+vi.mock('../../api/apiClient', () => {
+  // Actual AuthError takes only a message. The mock should reflect this.
+  class MockAuthError extends Error {
+    isAuthError: boolean;
+    constructor(message: string) {
       super(message);
-      this.name = 'AuthError'; // Match the original error name if checked
-      this.status = status;
+      this.name = 'AuthError';
+      this.isAuthError = true;
+      Object.setPrototypeOf(this, MockAuthError.prototype);
     }
   }
-}));
+  return {
+    apiClient: vi.fn(),
+    AuthError: MockAuthError,
+  };
+});
 
 // Mock localStorage
 const localStorageMock = (() => {
@@ -274,7 +279,9 @@ describe('AuthContext', () => {
       // to prevent TypeError: undefined.catch is not a function in logout()
       vi.mocked(authApi.logoutApi).mockResolvedValue(undefined);
 
-      const authError = new apiClient.AuthError('Session expired', 401); // apiClient.AuthError is the MockAuthError class
+      // Constructing AuthError according to its actual definition (1 argument)
+      // The mocked AuthError (MockAuthError) also takes 1 argument now.
+      const authError = new apiClient.AuthError('Session expired');
 
       // Use mockImplementation for clarity that it's an async function throwing
       vi.mocked(apiClient.apiClient).mockImplementation(async () => {

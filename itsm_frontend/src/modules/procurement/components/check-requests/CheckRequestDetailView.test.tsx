@@ -7,7 +7,7 @@ import { AuthProvider } from '../../../../context/auth/AuthContext';
 import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestDetailView from './CheckRequestDetailView';
 import * as procurementApi from '../../../../api/procurementApi';
-import * as useAuthHook from '../../../../context/auth/useAuth';
+// import * as useAuthHook from '../../../../context/auth/useAuth'; // Unused import
 import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
 import type { AuthUser } from '../../../../context/auth/AuthContextDefinition';
 
@@ -139,7 +139,7 @@ describe('CheckRequestDetailView', () => {
   });
 
   it('renders "not found" state if API returns no check request', async () => {
-    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValueOnce(null);
+    vi.mocked(procurementApi.getCheckRequestById).mockImplementationOnce(async () => null as any); // Cast to any
     renderComponent('1');
     await waitFor(() => {
       expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
@@ -149,7 +149,7 @@ describe('CheckRequestDetailView', () => {
   describe('Successful Data Display (Happy Path)', () => {
     // Helper to re-render with potentially different data for specific display tests
     const setupAndRender = (data: CheckRequest | null) => {
-        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data);
+        vi.mocked(procurementApi.getCheckRequestById).mockImplementation(async () => data as any); // Cast to any
         renderComponent(data ? String(data.id) : '1');
     };
 
