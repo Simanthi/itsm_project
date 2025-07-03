@@ -221,6 +221,7 @@ describe('CheckRequestForm', () => {
     };
     // invoice_date removed for simplification
 
+    const now = new Date().toISOString(); // Define 'now'
     const createdCRMock: CheckRequest = {
       id: 124,
       cr_id: 'CR-124',

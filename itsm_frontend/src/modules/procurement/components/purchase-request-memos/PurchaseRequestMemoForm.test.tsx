@@ -182,6 +182,8 @@ describe('PurchaseRequestMemoForm', () => {
       estimated_cost: 500,
       attachments: null,
       requested_by: 1,
+      created_at: new Date().toISOString(), // Added
+      updated_at: new Date().toISOString(), // Added
     };
 
     const mockFullCreatedMemo: PurchaseRequestMemo = {
