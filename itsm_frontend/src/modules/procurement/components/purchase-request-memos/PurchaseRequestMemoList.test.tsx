@@ -49,7 +49,7 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       created_by: 1,
       // updated_by: 1, // Removed as it's not in IOMTemplate type (updated_at is present)
       // form_layout: "{}", // Removed as it's not in IOMTemplate type
-      form_title: "Purchase Request Memo",
+      // form_title: "Purchase Request Memo", // Removed as it's not in IOMTemplate type
       is_active: true,
       related_module: "procurement",
       template_version: "1.0",

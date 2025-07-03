@@ -84,7 +84,7 @@ const basePurchaseOrderData: PurchaseOrder = {
   created_at: '2023-10-14T00:00:00Z',
   updated_at: '2023-10-14T00:00:00Z',
   order_items: [sampleOrderItem],
-  po_type: 'standard' as POType,
+  po_type: 'goods', // Changed to a valid string literal from the PurchaseOrder type
   notes: 'Urgent order for new project.',
   payment_terms: 'Net 30',
   shipping_address: '123 Main St, Anytown, USA',

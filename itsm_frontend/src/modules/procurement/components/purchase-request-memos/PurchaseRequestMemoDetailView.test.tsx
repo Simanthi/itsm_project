@@ -78,10 +78,10 @@ const baseMemoData: PurchaseRequestMemo = {
   approver_comments: null,
   created_at: '2023-10-01T10:00:00Z',
   updated_at: '2023-10-01T10:00:00Z',
-  purchase_order: null,
-  is_assigned_to_po: false,
-  check_request: null,
-  is_assigned_to_cr: false,
+  // purchase_order: null, // Removed, not in PurchaseRequestMemo type
+  // is_assigned_to_po: false, // Removed, not in PurchaseRequestMemo type
+  // check_request: null, // Removed, not in PurchaseRequestMemo type
+  // is_assigned_to_cr: false, // Removed, not in PurchaseRequestMemo type
 };
 
 
