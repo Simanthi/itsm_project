@@ -638,7 +638,7 @@ describe('CheckRequestList', () => {
       it(`handles "Cancel Request" for "${crInstance.status}" CR: shows button, opens dialog, confirms, calls API`, async () => {
         vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: crInstance.requested_by }; // User is requester or staff
 
-        const mockShowConfirmDialog = vi.fn((title, message, onConfirm) => onConfirm()); // Auto-confirm
+        const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm()); // Auto-confirm
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
@@ -670,7 +670,6 @@ describe('CheckRequestList', () => {
 
     it('Cancel dialog dismissal does not call API', async () => {
         vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-        // @ts-expect-error Unused parameters _title, _message, _onConfirm are part of the signature but not used in this specific mock.
         const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => { if(onCancel) onCancel(); });
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
