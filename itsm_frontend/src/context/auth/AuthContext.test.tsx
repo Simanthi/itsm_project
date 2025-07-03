@@ -169,7 +169,7 @@ describe('AuthContext', () => {
       });
 
       expect(caughtError).toBeInstanceOf(Error);
-      // @ts-ignore
+      // @ts-expect-error // ESLint prefers this over @ts-ignore
       expect(caughtError?.message).toContain('Invalid user ID returned from login API');
       expect(result.current.isAuthenticated).toBe(false);
       expect(localStorageMock.getItem('authToken')).toBeNull();

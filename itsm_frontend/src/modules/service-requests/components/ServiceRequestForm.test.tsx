@@ -13,7 +13,7 @@ import * as useAuthHook from '../../../context/auth/useAuth';
 import * as useUIHook from '../../../context/UIContext/useUI';
 // ServiceCategory and PaginatedResponse will be imported from assetTypes or a shared location
 import type { ServiceRequest } from '../types/ServiceRequestTypes';
-import type { AssetCategory as ServiceCategory, PaginatedResponse } from '../../../assets/types/assetTypes'; // Corrected import
+import type { AssetCategory as ServiceCategory, PaginatedResponse } from '../../../modules/assets/types/assetTypes'; // Corrected path
 import type { User } from '../../../types/UserTypes';
 
 // Mock API modules
@@ -25,15 +25,17 @@ vi.mock('../../../context/auth/useAuth');
 vi.mock('../../../context/UIContext/useUI');
 
 const mockNavigate = vi.fn();
+const mockUseParamsFn = vi.fn(() => ({ requestId: undefined })); // Persistent mock function
+
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => ({ requestId: undefined }), // Default to create mode
+    useParams: mockUseParamsFn, // Use the persistent mock function
   };
 });
-const mockUseParams = vi.spyOn(require('react-router-dom'), 'useParams');
+// const mockUseParams = vi.spyOn(require('react-router-dom'), 'useParams'); // Removed require
 
 
 const mockUser: User = { id: 1, username: 'testuser', email: 'test@example.com', first_name: 'Test', last_name: 'User', is_staff: false, is_active: true, date_joined: new Date().toISOString(), last_login: null, groups: [] }; // Removed 'role', added missing User fields for completeness
@@ -46,7 +48,7 @@ const mockCategories: PaginatedResponse<ServiceCategory> = {
 };
 
 const renderForm = (requestId?: string) => {
-  mockUseParams.mockReturnValue({ requestId });
+  mockUseParamsFn.mockReturnValue({ requestId }); // Use the persistent mock function's mockReturnValue
   return render(
     <MemoryRouter initialEntries={requestId ? [`/service-requests/edit/${requestId}`] : ['/service-requests/new']}>
       <AuthProvider>
