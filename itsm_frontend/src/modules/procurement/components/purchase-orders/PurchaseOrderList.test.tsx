@@ -86,6 +86,11 @@ describe('PurchaseOrderList', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined,
+      // Add missing UIContextType properties
+      snackbarOpen: false,
+      snackbarMessage: '',
+      snackbarSeverity: 'info',
+      hideSnackbar: vi.fn(),
     });
 
     // Default API mock for getPurchaseOrders

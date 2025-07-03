@@ -63,7 +63,7 @@ describe('PurchaseRequestMemoForm', () => {
     vi.mocked(ReactRouterDom.useParams).mockReturnValue({});
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
-      user: { id: 1, name: 'testuser', role: 'admin', is_staff: true, groups: [] },
+      user: { id: 1, name: 'testuser', email: 'testuser@example.com', role: 'admin', is_staff: true, groups: [] },
       authenticatedFetch: vi.fn(async (url, options) => {
         const rawResponse = await window.fetch(url, options);
         if (!rawResponse.ok) {
@@ -165,7 +165,7 @@ describe('PurchaseRequestMemoForm', () => {
     const formAlertElement = screen.getByText(expectedErrorMessage).closest('[role="alert"]');
     expect(formAlertElement).toBeInTheDocument();
     // Confirm the text is indeed within this specific alert element (though getByText already did this implicitly)
-    expect(within(formAlertElement!).getByText(expectedErrorMessage)).toBeInTheDocument();
+    expect(within(formAlertElement as HTMLElement).getByText(expectedErrorMessage)).toBeInTheDocument();
   });
 
   it('submits the form successfully in create mode', async () => {
@@ -201,8 +201,8 @@ describe('PurchaseRequestMemoForm', () => {
         decision_date: null,
         approver_comments: null,
         attachments: null,
-        created_at: now, // Added
-        updated_at: now, // Added
+        created_at: new Date().toISOString(), // Added & Fixed
+        updated_at: new Date().toISOString(), // Added & Fixed
     };
 
     const mockDepartments: Department[] = [{ id: 1, name: 'Engineering', department_code: 'ENG' }];
