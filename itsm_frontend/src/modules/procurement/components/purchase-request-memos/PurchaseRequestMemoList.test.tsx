@@ -51,7 +51,7 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       // form_layout: "{}", // Removed as it's not in IOMTemplate type
       // form_title: "Purchase Request Memo", // Removed as it's not in IOMTemplate type
       is_active: true,
-      related_module: "procurement",
+      // related_module: "procurement", // Removed as it's not in IOMTemplate type
       template_version: "1.0",
       workflow: null,
       workflow_name: null,
