@@ -25,7 +25,7 @@ vi.mock('../../../context/auth/useAuth');
 vi.mock('../../../context/UIContext/useUI');
 
 const mockNavigate = vi.fn();
-const mockUseParamsFn = vi.fn(() => ({ requestId: undefined })); // Persistent mock function
+const mockUseParamsFn = vi.fn<[], { requestId?: string }>(() => ({ requestId: undefined })); // Persistent mock function with explicit type
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -92,6 +92,11 @@ describe('ServiceRequestForm.tsx', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined,
+      // Added missing snackbar properties
+      snackbarOpen: false,
+      snackbarMessage: '',
+      snackbarSeverity: 'info',
+      hideSnackbar: vi.fn(),
     });
     vi.mocked(assetApi.getAssetCategories).mockResolvedValue(mockCategories);
     vi.mocked(serviceRequestApi.createServiceRequest).mockResolvedValue({ id: 123, request_id: 'SR-NEW-123' } as ServiceRequest);

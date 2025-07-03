@@ -68,6 +68,8 @@ export const procurementHandlers = [
         {
           id: 1, item_description: 'Approved IOM 1 (MSW)', quantity: 2, estimated_cost: 100,
           status: 'approved', reason: 'Urgent', requested_by: 1, requested_by_username: 'test', request_date: new Date().toISOString(),
+          created_at: new Date().toISOString(), // Added
+          updated_at: new Date().toISOString(), // Added
           // Add other required fields for PurchaseRequestMemo
           iom_id: 'IM-001', department: null, project: null, priority: 'medium',
         },
@@ -155,6 +157,8 @@ export const procurementHandlers = [
       attachments: data.has('attachments') ? `http://localhost/mock-attachment/${(data.get('attachments') as File).name}` : null,
       requested_by: 1, // Mock user ID
       requested_by_username: 'msw_user',
+      created_at: now, // Added
+      updated_at: now, // Added
       // approver fields typically null on creation
       approver: null,
       approver_username: null,
@@ -179,6 +183,8 @@ export const procurementHandlers = [
       request_date: now,
       requested_by: 1, // Mock user ID
       requested_by_username: 'msw_user',
+      created_at: now, // Added
+      updated_at: now, // Added
       currency: data.get('currency') as string || 'USD',
       invoice_date: data.get('invoice_date') as string || undefined, // Match CheckRequest type (optional string)
       invoice_number: data.get('invoice_number') as string || undefined, // Match CheckRequest type (optional string)

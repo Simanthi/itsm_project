@@ -29,10 +29,11 @@ export const loginApi = async (
     name: string;
     role: string;
     id: number;
+    email: string; // Added email
     is_staff: boolean;
     groups: string[];
-    department_id?: number | null; // Added
-    department_name?: string | null; // Added
+    department_id?: number | null;
+    department_name?: string | null;
   };
 }> => {
   try {
@@ -52,18 +53,20 @@ export const loginApi = async (
     const token: string = data.access;
 
     // Now that we have a token, we can use our new apiClient for the authenticated call.
-    // Update the type of loggedInUser to include is_staff
+    // Update the type of loggedInUser to include is_staff and email
     const loggedInUser: {
   id: number;
   name: string;
+  email: string; // Added email
   role: string;
   is_staff: boolean;
   groups: string[];
-  department_id?: number | null; // Added
-  department_name?: string | null; // Added
+  department_id?: number | null;
+  department_name?: string | null;
 } = {
   id: 0,
   name: username,
+  email: '', // Initialize email
   role: 'user', // Default role, will be updated based on is_staff
   is_staff: false, // Default is_staff
   groups: [], // Initialize groups as an empty array
@@ -86,6 +89,7 @@ export const loginApi = async (
           currentUser.first_name && currentUser.last_name
             ? `${currentUser.first_name} ${currentUser.last_name}`
             : currentUser.username;
+        loggedInUser.email = currentUser.email; // Populate email
         loggedInUser.is_staff = currentUser.is_staff;
         loggedInUser.role = currentUser.is_staff ? 'admin' : 'user';
 

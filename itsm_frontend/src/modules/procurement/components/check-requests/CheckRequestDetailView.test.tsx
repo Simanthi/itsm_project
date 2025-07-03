@@ -96,8 +96,8 @@ const baseCheckRequestData: CheckRequest = {
   recurring_payment: null,
   recurring_payment_details: null,
   attachments: 'http://example.com/cr_attachment.pdf',
-  // Properties from CheckRequest type in procurementTypes.ts (created_at, updated_at were missing from problem.MD but are in the type)
-  // Assuming these are not strictly required for all tests or will be added if tests fail for their absence.
+  created_at: '2024-07-15T09:00:00Z', // Added based on type update
+  updated_at: '2024-07-20T10:00:00Z', // Added based on type update
 };
 
 

@@ -123,6 +123,11 @@ describe('ServiceRequestsPage.tsx', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined,
+      // Added missing snackbar properties
+      snackbarOpen: false,
+      snackbarMessage: '',
+      snackbarSeverity: 'info',
+      hideSnackbar: vi.fn(),
     });
 
     vi.mocked(serviceRequestApi.getServiceRequests).mockResolvedValue(mockPaginatedSRsResponse);

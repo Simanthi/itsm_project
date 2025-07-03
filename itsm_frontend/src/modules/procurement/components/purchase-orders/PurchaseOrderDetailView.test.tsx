@@ -93,7 +93,7 @@ const basePurchaseOrderData: PurchaseOrder = {
   revision_number: 0,
   attachments: 'http://example.com/po_attachment.pdf',
   internal_office_memo: 10, // IOM ID
-  related_contract_id: 20, // Contract ID
+  related_contract: 20, // Contract ID - Renamed from related_contract_id
   related_contract_details: 'Contract C20-Alpha',
 };
 

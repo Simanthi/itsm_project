@@ -48,7 +48,7 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       // Add other fields from IOMTemplate as needed, with default/mock values
       created_by: 1,
       // updated_by: 1, // Removed as it's not in IOMTemplate type (updated_at is present)
-      form_layout: "{}",
+      // form_layout: "{}", // Removed as it's not in IOMTemplate type
       form_title: "Purchase Request Memo",
       is_active: true,
       related_module: "procurement",
@@ -74,12 +74,12 @@ const mockMemos: PurchaseRequestMemo[] = [
   {
     id: 1, iom_id: 'IOM-001', item_description: 'Laptop Pro', priority: 'high', department: 1, department_name: 'IT',
     requested_by: 1, requested_by_username: 'jdoe', request_date: '2024-01-15T10:00:00Z', status: 'pending', estimated_cost: 1500,
-    reason: 'Need new laptop', quantity: 1, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: null, approver_username: null, decision_date: null, approver_comments: null,
+    reason: 'Need new laptop', quantity: 1, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: null, approver_username: null, decision_date: null, approver_comments: null, created_at: '2024-01-15T10:00:00Z', updated_at: '2024-01-15T10:00:00Z',
   },
   {
     id: 2, iom_id: 'IOM-002', item_description: 'Office Chairs', priority: 'medium', department: 2, department_name: 'HR',
     requested_by: 2, requested_by_username: 'asmith', request_date: '2024-01-16T11:00:00Z', status: 'approved', estimated_cost: 300,
-    reason: 'New hires', quantity: 2, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: 1, approver_username: 'admin', decision_date: '2024-01-17T10:00:00Z', approver_comments: 'Approved',
+    reason: 'New hires', quantity: 2, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: 1, approver_username: 'admin', decision_date: '2024-01-17T10:00:00Z', approver_comments: 'Approved', created_at: '2024-01-16T11:00:00Z', updated_at: '2024-01-17T10:00:00Z',
   },
 ];
 

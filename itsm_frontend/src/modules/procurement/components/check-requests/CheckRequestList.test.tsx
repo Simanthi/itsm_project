@@ -40,10 +40,10 @@ const renderWithProviders = (ui: React.ReactElement) => {
 
 const mockCRs: CheckRequest[] = [
   {
-    id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD', payee_name: 'Vendor X', requested_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
+    id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD', payee_name: 'Vendor X', requested_by: 1, requested_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
   },
   {
-    id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
+    id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by: 2, requested_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
   },
 ];
 
