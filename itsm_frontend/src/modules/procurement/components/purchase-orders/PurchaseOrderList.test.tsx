@@ -502,8 +502,8 @@ describe('PurchaseOrderList', () => {
       // Attempting to click disabled buttons should not result in navigation or snackbar
       // userEvent.click on a disabled button typically does nothing or might even error in some setups.
       // We are primarily verifying the disabled state.
-      await user.click(printPreviewButton).catch(() => {}); // Suppress error if userEvent throws on disabled
-      await user.click(printSelectedButton).catch(() => {}); // Suppress error if userEvent throws on disabled
+      await user.click(printPreviewButton).catch(_e => {}); // Suppress error if userEvent throws on disabled
+      await user.click(printSelectedButton).catch(_e => {}); // Suppress error if userEvent throws on disabled
 
       expect(showSnackbar).not.toHaveBeenCalledWith('Please select purchase orders to print.', 'warning');
       expect(mockNavigate).not.toHaveBeenCalled();
