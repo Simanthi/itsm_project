@@ -124,7 +124,7 @@ describe('ServiceRequestForm.tsx', () => {
       request_id: 'SR-EDIT-001',
       title: 'Existing Title',
       description: 'Existing Description',
-      category: mockCategories.results[0].name as ServiceRequestCategory, // Use name from mockCategory
+      category: 'hardware', // Assign a valid ServiceRequestCategory string literal
       priority: 'high',
       status: 'new', // Add other required fields for ServiceRequest type
       resolution_notes: null,

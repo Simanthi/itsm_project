@@ -1,5 +1,5 @@
 // itsm_frontend/src/api/authApi.ts
-import type { User } from '../types/UserTypes';
+import type { User } from '../types/UserTypes'; // User type should include email
 import { API_BASE_URL } from '../config';
 import { apiClient } from './apiClient';
 
@@ -19,10 +19,10 @@ export const loginApi = async (
   password: string,
 ): Promise<{
   token: string;
-  user: {
+  user: { // This type MUST align with AuthUser in AuthContextDefinition.ts
     id: number;
     name: string;
-    email: string;
+    email: string; // Ensure email is here
     role: string;
     is_staff: boolean;
     groups: string[];
@@ -38,26 +38,33 @@ export const loginApi = async (
     });
 
     if (!tokenResponse.ok) {
-      const errorData = await tokenResponse.json();
-      throw new Error(errorData.detail || 'Invalid username or password');
+      let errorDetail = 'Invalid username or password';
+      try {
+        const errorData = await tokenResponse.json();
+        errorDetail = errorData.detail || errorDetail;
+      } catch (e) {
+        // Ignore if response is not JSON
+      }
+      throw new Error(errorDetail);
     }
 
     const data = await tokenResponse.json();
     const token: string = data.access;
 
+    // This internal loggedInUser object must also align with the AuthUser structure
     const loggedInUser: {
       id: number;
       name: string;
-      email: string;
+      email: string; // Ensure email is here
       role: string;
       is_staff: boolean;
       groups: string[];
       department_id?: number | null;
       department_name?: string | null;
     } = {
-      id: 0,
-      name: username,
-      email: '', // Initialize email
+      id: 0, // Default, will be updated
+      name: username, // Default, will be updated
+      email: '', // Default, MUST be updated from currentUser
       role: 'user',
       is_staff: false,
       groups: [],
@@ -67,6 +74,7 @@ export const loginApi = async (
 
     try {
       const endpoint = `${SECURITY_ACCESS_ENDPOINT}/users/?username=${username}`;
+      // Assuming User type (from ../types/UserTypes) includes: id, username, email, first_name, last_name, is_staff, groups
       const paginatedUserResponse = await apiClient<PaginatedResponse<User>>(
         endpoint,
         token,
@@ -79,33 +87,41 @@ export const loginApi = async (
           currentUser.first_name && currentUser.last_name
             ? `${currentUser.first_name} ${currentUser.last_name}`
             : currentUser.username;
-        loggedInUser.email = currentUser.email; // Populate email
+        loggedInUser.email = currentUser.email; // CRITICAL: Populate email
         loggedInUser.is_staff = currentUser.is_staff;
         loggedInUser.role = currentUser.is_staff ? 'admin' : 'user';
 
-        if ('department_id' in currentUser && currentUser.department_id !== undefined) {
-            loggedInUser.department_id = currentUser.department_id;
-        }
-        if ('department_name' in currentUser && currentUser.department_name !== undefined) {
-            loggedInUser.department_name = currentUser.department_name;
-        }
+        loggedInUser.department_id = currentUser.department_id ?? null;
+        loggedInUser.department_name = currentUser.department_name ?? null;
+
         if (currentUser.groups && Array.isArray(currentUser.groups)) {
-            loggedInUser.groups = currentUser.groups.map(g => g.name);
+          // Assuming currentUser.groups is an array of objects like { name: string }
+          loggedInUser.groups = currentUser.groups.map(g => g.name).filter(name => typeof name === 'string');
+        } else {
+          loggedInUser.groups = [];
         }
       } else {
         console.warn(
-          `loginApi: Could not find user details for username: ${username}. Defaulting email, role, etc.`,
+          `loginApi: Could not find user details for username: ${username}. Using username as name and a default email.`,
         );
-        // Attempt to use the username as email if it looks like one, otherwise fallback or error
-        loggedInUser.email = username.includes('@') ? username : `${username}@example.com`;
+        // Fallback if user details not found - ensure email is a string
+        loggedInUser.email = username.includes('@') ? username : `${username.replace(/\s+/g, '.')}@example.com`;
       }
     } catch (userFetchError) {
       console.error(
-        'loginApi: Error fetching full user details after login. Defaulting email.',
+        'loginApi: Error fetching full user details after login. Using username as name and a default email.',
         userFetchError,
       );
-       loggedInUser.email = username.includes('@') ? username : `${username}@example.com`; // Fallback email
+       loggedInUser.email = username.includes('@') ? username : `${username.replace(/\s+/g, '.')}@example.com`; // Fallback email
     }
+
+    // Final check to ensure email is not empty if it's required non-optional
+    if (!loggedInUser.email) {
+        console.error("loginApi: Email is still empty after attempting to fetch user details. This should not happen.");
+        // Provide a failsafe default, though this indicates a deeper issue if reached.
+        loggedInUser.email = "fallback@example.com";
+    }
+
 
     return { token, user: loggedInUser };
   } catch (error) {
