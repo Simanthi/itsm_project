@@ -797,8 +797,8 @@ describe('CheckRequestList', () => {
       expect(printSelectedButton).toBeDisabled();
 
       mockNavigate.mockClear();
-      await user.click(printPreviewButton).catch(_e => {}); // Ignored error for disabled button click
-      await user.click(printSelectedButton).catch(_e => {}); // Ignored error for disabled button click
+      await user.click(printPreviewButton).catch(() => {}); // Ignored error for disabled button click
+      await user.click(printSelectedButton).catch(() => {}); // Ignored error for disabled button click
 
       expect(showSnackbar).not.toHaveBeenCalledWith('Please select check requests to print.', 'warning');
       expect(mockNavigate).not.toHaveBeenCalled();
