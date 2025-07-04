@@ -1,16 +1,15 @@
+// @vitest-environment happy-dom
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { MemoryRouter } from 'react-router-dom'; // BrowserRouter, Routes, Route removed
-// import * as ReactRouterDom from 'react-router-dom'; // Unused import
-// import { server } from '../../../../mocks/server'; // MSW server import removed
+import { MemoryRouter } from 'react-router-dom';
 import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
 import { AuthProvider } from '../../../../context/auth/AuthContext';
 import PurchaseRequestMemoList from './PurchaseRequestMemoList';
 import * as procurementApi from '../../../../api/procurementApi';
 import * as genericIomApi from '../../../../api/genericIomApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
-import * as useUIHook from '../../../../context/UIContext/useUI'; // Import useUI
+import * as useUIHook from '../../../../context/UIContext/useUI';
 import type { PurchaseRequestMemo, PaginatedResponse } from '../../types/procurementTypes';
 import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
@@ -19,7 +18,7 @@ import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdm
 vi.mock('../../../../api/procurementApi');
 vi.mock('../../../../api/genericIomApi');
 vi.mock('../../../../context/auth/useAuth');
-vi.mock('../../../../context/UIContext/useUI'); // Mock useUI
+vi.mock('../../../../context/UIContext/useUI');
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
@@ -44,18 +43,9 @@ const mockPurchaseRequestTemplate: PaginatedResponse<IOMTemplate> = {
       created_at: new Date().toISOString(),
       updated_at: new Date().toISOString(),
       created_by_username: 'admin',
-      // updated_by_username: 'admin', // Removed as it's not in IOMTemplate type
-      // Add other fields from IOMTemplate as needed, with default/mock values
       created_by: 1,
-      // updated_by: 1, // Removed as it's not in IOMTemplate type (updated_at is present)
-      // form_layout: "{}", // Removed as it's not in IOMTemplate type
-      // form_title: "Purchase Request Memo", // Removed as it's not in IOMTemplate type
       is_active: true,
-      approval_type: 'none', // Added missing required property
-      // related_module: "procurement", // Removed as it's not in IOMTemplate type
-      // template_version: "1.0", // Removed as it's not in IOMTemplate type
-      // workflow: null, // Removed as per TS2353, not in IOMTemplate type
-      // workflow_name: null, // Removed as per TS2353, not in IOMTemplate type
+      approval_type: 'none',
     }
   ]
 };
@@ -101,14 +91,11 @@ const mockEmptyMemosResponse: PaginatedResponse<PurchaseRequestMemo> = {
 
 describe('PurchaseRequestMemoList', () => {
   beforeEach(() => {
-    vi.resetAllMocks(); // Reset all mocks fresh for each test
-    // server.resetHandlers(); // If using MSW, uncomment and ensure server is imported
+    vi.resetAllMocks();
 
-    // Mock useAuth consistently
     vi.mocked(useAuthHook.useAuth).mockReturnValue({
       token: 'mockToken',
       user: { id: 1, name: 'testuser', email: 'testuser@example.com', role: 'admin', is_staff: true, groups: [] },
-      // Ensure authenticatedFetch is a stable function mock for each test
       authenticatedFetch: vi.fn().mockResolvedValue({ ok: true, json: async () => ({}) }),
       login: vi.fn(),
       logout: vi.fn(),
@@ -116,10 +103,8 @@ describe('PurchaseRequestMemoList', () => {
       isAuthenticated: true,
     });
 
-    // Provide a default mock for getIomTemplates as it's fetched during component setup
     vi.mocked(genericIomApi.getIomTemplates).mockResolvedValue(mockPurchaseRequestTemplate);
 
-    // Default mock for useUI
     vi.mocked(useUIHook.useUI).mockReturnValue({
       showSnackbar: vi.fn(),
       showConfirmDialog: vi.fn(),
@@ -129,28 +114,21 @@ describe('PurchaseRequestMemoList', () => {
       confirmDialogMessage: '',
       confirmDialogOnConfirm: vi.fn(),
       confirmDialogOnCancel: undefined,
-      // Add missing UIContextType properties
       snackbarOpen: false,
       snackbarMessage: '',
       snackbarSeverity: 'info',
       hideSnackbar: vi.fn(),
     });
-
-    // IMPORTANT: Do not set a global .mockResolvedValue for getPurchaseRequestMemos here
-    // if individual tests are going to use .mockResolvedValueOnce() chains.
-    // Let each test define its sequence for getPurchaseRequestMemos.
   });
 
   afterEach(() => {
-    // server.close(); // If using MSW
+    // server.close();
   });
 
   it('renders the main title and create button', async () => {
-    // Provide a default mock for getPurchaseRequestMemos for tests not focused on its data
     vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockEmptyMemosResponse);
     renderWithProviders(<PurchaseRequestMemoList />);
     expect(screen.getByRole('heading', { name: /Internal Office Memo/i })).toBeInTheDocument();
-    // Wait for template ID to be fetched before button becomes enabled
     await waitFor(() => {
       expect(screen.getByRole('button', { name: /Create New Request/i })).toBeEnabled();
     });
@@ -159,7 +137,7 @@ describe('PurchaseRequestMemoList', () => {
   it('renders table headers correctly', async () => {
     vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockEmptyMemosResponse);
     renderWithProviders(<PurchaseRequestMemoList />);
-    await waitFor(() => { // Wait for data to load which triggers header rendering
+    await waitFor(() => {
       expect(screen.getByText('IOM ID')).toBeInTheDocument();
     });
     expect(screen.getByText('Item Description')).toBeInTheDocument();
@@ -173,7 +151,7 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   it('displays memos in the table', async () => {
-    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse); // Add this line
+    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse);
     renderWithProviders(<PurchaseRequestMemoList />);
     await waitFor(() => {
       expect(screen.getByText(mockMemos[0].iom_id as string)).toBeInTheDocument();
@@ -213,14 +191,14 @@ describe('PurchaseRequestMemoList', () => {
     const user = userEvent.setup();
     renderWithProviders(<PurchaseRequestMemoList />);
     const createButton = await screen.findByRole('button', { name: /Create New Request/i });
-    await waitFor(() => expect(createButton).toBeEnabled()); // Ensure button is enabled after template ID fetch
+    await waitFor(() => expect(createButton).toBeEnabled());
 
     await user.click(createButton);
     expect(mockNavigate).toHaveBeenCalledWith(`/ioms/new/form/${mockPurchaseRequestTemplate.results[0].id}`);
   });
 
   it('navigates to view memo details when view icon is clicked', async () => {
-    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse); // Add this line
+    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse);
     const user = userEvent.setup();
     renderWithProviders(<PurchaseRequestMemoList />);
     const viewButtons = await screen.findAllByRole('button', { name: /view details/i });
@@ -230,33 +208,27 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   it('calls getPurchaseRequestMemos with correct sort parameters when column headers are clicked', async () => {
-    // For this test, we need to control the responses for getPurchaseRequestMemos
-    // to check how sorting parameters change.
     const mockGetMemosSort = vi.mocked(procurementApi.getPurchaseRequestMemos)
-      .mockResolvedValue(mockPaginatedMemosResponse); // Default for initial load and subsequent sorts
+      .mockResolvedValue(mockPaginatedMemosResponse);
 
     const user = userEvent.setup();
     renderWithProviders(<PurchaseRequestMemoList />);
 
-    // Wait for initial data to load
-    // It will be called once for template, once for initial memos
     await waitFor(() => expect(genericIomApi.getIomTemplates).toHaveBeenCalledTimes(1));
     await waitFor(() => expect(mockGetMemosSort).toHaveBeenCalledTimes(1));
     expect(mockGetMemosSort).toHaveBeenNthCalledWith(1, expect.any(Function), expect.objectContaining({ ordering: '-request_date'}));
 
-    await screen.findByText(mockMemos[0].iom_id as string); // Ensure table is populated
+    await screen.findByText(mockMemos[0].iom_id as string);
 
-    // Click on 'IOM ID' header (initially sorted by request_date desc)
     const iomIdHeaderButton = screen.getByRole('button', { name: /IOM ID/i });
     await user.click(iomIdHeaderButton);
     await waitFor(() => {
       expect(procurementApi.getPurchaseRequestMemos).toHaveBeenLastCalledWith(
         expect.any(Function),
-        expect.objectContaining({ ordering: 'iom_id' }) // Ascending by default on new column
+        expect.objectContaining({ ordering: 'iom_id' })
       );
     });
 
-    // Click again for descending
     await user.click(iomIdHeaderButton);
     await waitFor(() => {
       expect(procurementApi.getPurchaseRequestMemos).toHaveBeenLastCalledWith(
@@ -265,7 +237,6 @@ describe('PurchaseRequestMemoList', () => {
       );
     });
 
-    // Click on 'Item Description' header
     const itemDescriptionHeaderButton = screen.getByRole('button', { name: /Item Description/i });
     await user.click(itemDescriptionHeaderButton);
     await waitFor(() => {
@@ -274,7 +245,6 @@ describe('PurchaseRequestMemoList', () => {
         expect.objectContaining({ ordering: 'item_description' })
       );
     });
-     // Click again for descending
     await user.click(itemDescriptionHeaderButton);
     await waitFor(() => {
       expect(procurementApi.getPurchaseRequestMemos).toHaveBeenLastCalledWith(
@@ -283,8 +253,6 @@ describe('PurchaseRequestMemoList', () => {
       );
     });
 
-
-    // Test another sortable column, e.g., 'Priority'
     const priorityHeaderButton = screen.getByRole('button', { name: /Priority/i });
     await user.click(priorityHeaderButton);
     await waitFor(() => {
@@ -299,11 +267,10 @@ describe('PurchaseRequestMemoList', () => {
     const user = userEvent.setup();
 
     const moreMemos: PurchaseRequestMemo[] = Array.from({ length: 25 }, (_, i) => ({
-      ...mockMemos[0], // Base it on an existing mock structure
+      ...mockMemos[0],
       id: i + 1,
       iom_id: `IOM-${String(i + 1).padStart(3, '0')}`,
       item_description: `Test Item ${i + 1}`,
-      // Ensure other required fields are present if mockMemos[0] is minimal
       priority: mockMemos[0].priority || 'medium',
       department: mockMemos[0].department || 1,
       department_name: mockMemos[0].department_name || 'Test Dept',
@@ -315,93 +282,79 @@ describe('PurchaseRequestMemoList', () => {
     }));
 
     const initialResponseForPaginationTest: PaginatedResponse<PurchaseRequestMemo> = {
-      count: moreMemos.length, // 25 items
+      count: moreMemos.length,
       next: 'http://test/api/memos?page=2&pageSize=10',
       previous: null,
-      results: moreMemos.slice(0, 10), // First 10 items
+      results: moreMemos.slice(0, 10),
     };
 
     const responseFor5RPP_Page1: PaginatedResponse<PurchaseRequestMemo> = {
       count: moreMemos.length,
       next: 'http://test/api/memos?page=2&pageSize=5',
       previous: null,
-      results: moreMemos.slice(0, 5), // First 5 items
+      results: moreMemos.slice(0, 5),
     };
 
     const responseFor5RPP_Page2: PaginatedResponse<PurchaseRequestMemo> = {
         count: moreMemos.length,
         next: 'http://test/api/memos?page=3&pageSize=5',
         previous: 'http://test/api/memos?page=1&pageSize=5',
-        results: moreMemos.slice(5, 10), // Items 6-10
+        results: moreMemos.slice(5, 10),
     };
 
-    // Set up the mock sequence for getPurchaseRequestMemos specifically for this test
     const mockGetMemos = vi.mocked(procurementApi.getPurchaseRequestMemos)
-        .mockResolvedValueOnce(initialResponseForPaginationTest) // For initial load
-        .mockResolvedValueOnce(responseFor5RPP_Page1)          // After changing to 5 RPP
-        .mockResolvedValueOnce(responseFor5RPP_Page2);        // After clicking next page
+        .mockResolvedValueOnce(initialResponseForPaginationTest)
+        .mockResolvedValueOnce(responseFor5RPP_Page1)
+        .mockResolvedValueOnce(responseFor5RPP_Page2);
 
     renderWithProviders(<PurchaseRequestMemoList />);
 
-    // 1. Initial load
-    // Wait for getIomTemplates to be called (part of component setup)
     await waitFor(() => expect(genericIomApi.getIomTemplates).toHaveBeenCalledTimes(1));
-
-    // Now check getPurchaseRequestMemos for the initial data load
-    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(1)); // Should be called once for initial data
+    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(1));
     expect(mockGetMemos).toHaveBeenNthCalledWith(
       1,
-      expect.any(Function), // authenticatedFetch argument
-      expect.objectContaining({ page: 1, pageSize: 10, ordering: '-request_date' }) // Default sort
+      expect.any(Function),
+      expect.objectContaining({ page: 1, pageSize: 10, ordering: '-request_date' })
     );
-    // Ensure table shows initial data and pagination reflects 25 total items
-    await screen.findByText('IOM-001'); // from initialResponseForPaginationTest
+    await screen.findByText('IOM-001');
     expect(screen.getByText('1–10 of 25')).toBeInTheDocument();
 
-
-    // 2. Change rows per page to 5
     const rowsPerPageSelectFor5 = screen.getByLabelText(/Rows per page:/i);
     await user.click(rowsPerPageSelectFor5);
     const option5 = await screen.findByRole('option', { name: '5' });
     await user.click(option5);
 
-    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(2)); // Initial + RPP change
+    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(2));
     expect(mockGetMemos).toHaveBeenNthCalledWith(
       2,
       expect.any(Function),
-      // When rowsPerPage changes, page should reset to 1, ordering might persist or reset based on component logic
-      // Assuming ordering persists or is the default again.
       expect.objectContaining({ page: 1, pageSize: 5, ordering: '-request_date' })
     );
-    // Ensure table updates to 5 items and pagination reflects 5 RPP
-    await screen.findByText('IOM-001'); // Still item 1
-    expect(screen.queryByText('IOM-006')).not.toBeInTheDocument(); // Item 6 should not be visible yet
+    await screen.findByText('IOM-001');
+    expect(screen.queryByText('IOM-006')).not.toBeInTheDocument();
     expect(screen.getByText('1–5 of 25')).toBeInTheDocument();
 
-
-    // 3. Click next page
     const nextPageButton = screen.getByRole('button', { name: /Go to next page/i });
     expect(nextPageButton).toBeEnabled();
     await user.click(nextPageButton);
 
-    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(3)); // Initial + RPP change + Next Page
+    await waitFor(() => expect(mockGetMemos).toHaveBeenCalledTimes(3));
     expect(mockGetMemos).toHaveBeenNthCalledWith(
       3,
       expect.any(Function),
       expect.objectContaining({ page: 2, pageSize: 5, ordering: '-request_date' })
     );
-    // Ensure table updates to show items 6-10
-    await screen.findByText('IOM-006'); // from responseFor5RPP_Page2
+    await screen.findByText('IOM-006');
     expect(screen.getByText('6–10 of 25')).toBeInTheDocument();
   });
 
   describe('Action Buttons', () => {
     const pendingMemoIsRequester: PurchaseRequestMemo = {
-      ...mockMemos[0], // status: 'pending', requested_by: 1 (matches default mockUser.id)
+      ...mockMemos[0],
       id: 101,
       iom_id: 'IOM-101',
       status: 'pending',
-      requested_by: 1, // Mock user ID
+      requested_by: 1,
       requested_by_username: 'testuser',
     };
 
@@ -410,12 +363,12 @@ describe('PurchaseRequestMemoList', () => {
         id: 102,
         iom_id: 'IOM-102',
         status: 'pending',
-        requested_by: 99, // Different user
+        requested_by: 99,
         requested_by_username: 'otheruser',
     };
 
     const approvedMemo: PurchaseRequestMemo = {
-      ...mockMemos[1], // status: 'approved'
+      ...mockMemos[1],
       id: 103,
       iom_id: 'IOM-103',
       status: 'approved',
@@ -428,8 +381,8 @@ describe('PurchaseRequestMemoList', () => {
 
     it('shows Edit button for pending memo if user is requester, and navigates on click', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
-        ...vi.mocked(useAuthHook.useAuth)(), // spread previous mock
-        user: mockUserStaff, // or any user that matches requested_by
+        ...vi.mocked(useAuthHook.useAuth)(),
+        user: mockUserStaff,
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
@@ -447,11 +400,11 @@ describe('PurchaseRequestMemoList', () => {
     it('shows Edit button for pending memo if user is staff (not requester), and navigates on click', async () => {
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
-            user: mockUserStaff, // Staff user
+            user: mockUserStaff,
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo], // Memo requested by someone else
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
         } as PaginatedResponse<PurchaseRequestMemo>);
         const user = userEvent.setup();
         renderWithProviders(<PurchaseRequestMemoList />);
@@ -474,7 +427,7 @@ describe('PurchaseRequestMemoList', () => {
       } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
 
-      await screen.findByText(approvedMemo.iom_id as string); // Ensure row is rendered
+      await screen.findByText(approvedMemo.iom_id as string);
       const editButton = screen.queryByRole('button', { name: /edit memo/i });
       expect(editButton).not.toBeInTheDocument();
     });
@@ -482,25 +435,26 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Edit button if user is not requester and not staff', async () => {
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
-            user: mockUserRegular, // Regular user, not staff
+            user: mockUserRegular,
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo], // Requested by 'otheruser'
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
         } as PaginatedResponse<PurchaseRequestMemo>);
         renderWithProviders(<PurchaseRequestMemoList />);
 
-        await screen.findByText(pendingMemoNotRequester.iom_id as string); // Ensure row is rendered
+        await screen.findByText(pendingMemoNotRequester.iom_id as string);
         const editButton = screen.queryByRole('button', { name: /edit memo/i });
         expect(editButton).not.toBeInTheDocument();
     });
 
     // Tests for Cancel Button
+    // Line 527 error likely here or similar mockResolvedValueOnce
     it('shows Cancel button for pending memo if user is requester, opens dialog, confirms, and calls API', async () => {
-      const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm()); // Auto-confirm
+      const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
-        user: { ...mockUserStaff, id: pendingMemoIsRequester.requested_by }, // User is requester
+        user: { ...mockUserStaff, id: pendingMemoIsRequester.requested_by },
         isAuthenticated: true,
       });
        vi.mocked(useUIHook.useUI).mockReturnValue({
@@ -524,7 +478,7 @@ describe('PurchaseRequestMemoList', () => {
         .mockResolvedValueOnce({
           count: 1, next: null, previous: null, results: [{...pendingMemoIsRequester, status: 'cancelled'} as PurchaseRequestMemo]
         } as PaginatedResponse<PurchaseRequestMemo>);
-      const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined); // API call for cancel
+      const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
@@ -534,17 +488,16 @@ describe('PurchaseRequestMemoList', () => {
       await user.click(cancelButton);
 
       expect(mockShowConfirmDialog).toHaveBeenCalled();
-      // onConfirm was called automatically by the mock
       await waitFor(() => expect(cancelMemoMock).toHaveBeenCalledWith(expect.any(Function), pendingMemoIsRequester.id));
-      await waitFor(() => expect(getMemosMock).toHaveBeenCalledTimes(2)); // Initial + refresh
-      // Optionally, check for snackbar success message
+      await waitFor(() => expect(getMemosMock).toHaveBeenCalledTimes(2));
     });
 
+    // Line 571 error likely here or similar mockResolvedValueOnce
     it('shows Cancel button for pending memo if user is staff, opens dialog, confirms, and calls API', async () => {
         const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
-            user: mockUserStaff, // User is staff
+            user: mockUserStaff,
             isAuthenticated: true,
         });
         vi.mocked(useUIHook.useUI).mockReturnValue({
@@ -605,7 +558,7 @@ describe('PurchaseRequestMemoList', () => {
 
     it('opens Cancel dialog and does NOT call API if dismissed', async () => {
       const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => {
-        if (onCancel) onCancel(); // Simulate user clicking "Cancel" in dialog
+        if (onCancel) onCancel();
       });
        vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
@@ -642,6 +595,7 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     // Tests for Approve/Reject Buttons
+    // Line 658 error likely here or similar mockResolvedValueOnce
     it('handles Approve button click, dialog confirmation, API call, and UI updates', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
@@ -658,7 +612,7 @@ describe('PurchaseRequestMemoList', () => {
       const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
-      const { showSnackbar } = useUIHook.useUI(); // Get the mocked showSnackbar from the context
+      const { showSnackbar } = useUIHook.useUI();
       renderWithProviders(<PurchaseRequestMemoList />);
 
       const approveButton = await screen.findByRole('button', { name: /approve request/i });
@@ -681,6 +635,7 @@ describe('PurchaseRequestMemoList', () => {
       expect(showSnackbar).toHaveBeenCalledWith('Purchase request approved successfully!', 'success');
     });
 
+    // Line 697 error likely here or similar mockResolvedValueOnce
     it('handles Reject button click, dialog confirmation, API call, and UI updates', async () => {
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
@@ -746,33 +701,29 @@ describe('PurchaseRequestMemoList', () => {
 
   describe('Selection and Print Buttons', () => {
     it('selects and deselects all memos via header checkbox, updating print button states and labels', async () => {
-      vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse); // 2 memos
+      vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse);
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
 
       const printPreviewButton = await screen.findByRole('button', { name: /Print Preview Selected/i });
       const printSelectedButton = screen.getByRole('button', { name: /Print Selected/i });
 
-      // Initially, buttons should be disabled and show (0)
       expect(printPreviewButton).toBeDisabled();
       expect(printSelectedButton).toBeDisabled();
       expect(printPreviewButton).toHaveTextContent('Print Preview Selected (0)');
       expect(printSelectedButton).toHaveTextContent('Print Selected (0)');
 
-      // Wait for table rows to be present
       await screen.findByText(mockMemos[0].iom_id as string);
       await screen.findByText(mockMemos[1].iom_id as string);
 
       const selectAllCheckbox = screen.getByLabelText(/select all purchase request memos/i);
 
-      // Select all
       await user.click(selectAllCheckbox);
       expect(printPreviewButton).toBeEnabled();
       expect(printSelectedButton).toBeEnabled();
       expect(printPreviewButton).toHaveTextContent(`Print Preview Selected (${mockMemos.length})`);
       expect(printSelectedButton).toHaveTextContent(`Print Selected (${mockMemos.length})`);
 
-      // Deselect all
       await user.click(selectAllCheckbox);
       expect(printPreviewButton).toBeDisabled();
       expect(printSelectedButton).toBeDisabled();
@@ -781,38 +732,32 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     it('selects individual memos, updating print button states and labels', async () => {
-      vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse); // 2 memos
+      vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockPaginatedMemosResponse);
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
 
       const printPreviewButton = await screen.findByRole('button', { name: /Print Preview Selected/i });
       const printSelectedButton = screen.getByRole('button', { name: /Print Selected/i });
 
-      // Wait for table rows
-      const row1Checkbox = await screen.findByRole('checkbox', { name: `Select memo ${mockMemos[0].iom_id}` }); // Assuming aria-label improves
+      const row1Checkbox = await screen.findByRole('checkbox', { name: `Select memo ${mockMemos[0].iom_id}` });
       const row2Checkbox = screen.getByRole('checkbox', { name: `Select memo ${mockMemos[1].iom_id}` });
 
-      // Select first memo
       await user.click(row1Checkbox);
       expect(printPreviewButton).toBeEnabled();
       expect(printSelectedButton).toBeEnabled();
       expect(printPreviewButton).toHaveTextContent('Print Preview Selected (1)');
       expect(printSelectedButton).toHaveTextContent('Print Selected (1)');
 
-      // Select second memo
       await user.click(row2Checkbox);
       expect(printPreviewButton).toHaveTextContent('Print Preview Selected (2)');
       expect(printSelectedButton).toHaveTextContent('Print Selected (2)');
 
-      // Deselect first memo
       await user.click(row1Checkbox);
       expect(printPreviewButton).toHaveTextContent('Print Preview Selected (1)');
       expect(printSelectedButton).toHaveTextContent('Print Selected (1)');
-       expect(printPreviewButton).toBeEnabled(); // Still enabled as one is selected
+       expect(printPreviewButton).toBeEnabled();
       expect(printSelectedButton).toBeEnabled();
 
-
-      // Deselect second memo (none selected)
       await user.click(row2Checkbox);
       expect(printPreviewButton).toBeDisabled();
       expect(printSelectedButton).toBeDisabled();
@@ -826,7 +771,7 @@ describe('PurchaseRequestMemoList', () => {
       renderWithProviders(<PurchaseRequestMemoList />);
 
       const row1Checkbox = await screen.findByRole('checkbox', { name: `Select memo ${mockMemos[0].iom_id}` });
-      await user.click(row1Checkbox); // Select one memo
+      await user.click(row1Checkbox);
 
       const printPreviewButton = screen.getByRole('button', { name: /Print Preview Selected \(1\)/i });
       await user.click(printPreviewButton);
@@ -844,7 +789,7 @@ describe('PurchaseRequestMemoList', () => {
       const row1Checkbox = await screen.findByRole('checkbox', { name: `Select memo ${mockMemos[0].iom_id}` });
       const row2Checkbox = screen.getByRole('checkbox', { name: `Select memo ${mockMemos[1].iom_id}` });
       await user.click(row1Checkbox);
-      await user.click(row2Checkbox); // Select two memos
+      await user.click(row2Checkbox);
 
       const printSelectedButton = screen.getByRole('button', { name: /Print Selected \(2\)/i });
       await user.click(printSelectedButton);
@@ -863,51 +808,17 @@ describe('PurchaseRequestMemoList', () => {
       const printPreviewButton = await screen.findByRole('button', { name: /Print Preview Selected \(0\)/i });
       const printSelectedButton = screen.getByRole('button', { name: /Print Selected \(0\)/i });
 
-      expect(printPreviewButton).toBeDisabled(); // Should be disabled initially
+      expect(printPreviewButton).toBeDisabled();
 
-      // To test the snackbar, we need to simulate the click even if disabled,
-      // or ensure the component's internal logic for showing snackbar is hit.
-      // However, userEvent.click on a disabled button won't trigger the handler.
-      // The component's onClick handler `handlePrintSelected` has a guard:
-      // if (selectedMemoIds.length === 0) { showSnackbar(...); return; }
-      // This means the buttons *should* be disabled by MUI if selectedMemoIds is empty.
-      // Let's verify they are disabled, and then if we were to somehow enable and click, the snackbar would show.
-      // For now, verifying they are disabled is the main check for this state.
-      // If there was a scenario where they could be enabled with 0 items, then we'd test snackbar.
-
-      // Manually call the handler to test the snackbar logic path if buttons were somehow clickable
-      // This is more of a unit test of the handler itself rather than a full UI interaction.
-      // For a true UI test, we'd rely on the disabled state.
-
-      // We can check that the buttons are disabled. The actual snackbar for "0 selected"
-      // is typically prevented by the button being disabled.
-      // The component's `handlePrintSelected` function does have a check:
-      // `if (selectedMemoIds.length === 0) { showSnackbar(...); return; }`
-      // This logic would only be hit if the button was somehow clickable with 0 items.
-      // Since the buttons are correctly disabled, this direct test of snackbar on click is not standard.
-      // We'll trust the disabled state prevents the click.
-
-      // Let's re-verify the disabled state.
       expect(printPreviewButton).toBeDisabled();
       expect(printSelectedButton).toBeDisabled();
 
-      // If we wanted to force test the snackbar part of handlePrintSelected:
-      // (This is slightly artificial as the UI should prevent this)
-      // const instance = getByRole('button', { name: /Print Preview Selected \(0\)/i });
-      // instance.onclick(); // This is not how RTL userEvent works.
-      // We'd have to call the component's handler directly in a different kind of test.
+      mockNavigate.mockClear();
 
-      // The important UI behavior is that buttons are disabled.
-      // The snackbar in handlePrintSelected is a fallback, which is good.
-      // No navigation should occur.
-      mockNavigate.mockClear(); // Clear any previous navigation calls from other tests
-
-      // Simulate an attempt to click (though they are disabled)
-      // These clicks won't do anything because buttons are disabled.
-      await user.click(printPreviewButton).catch(() => {}); // userEvent might error on disabled
+      await user.click(printPreviewButton).catch(() => {});
       await user.click(printSelectedButton).catch(() => {});
 
-      expect(showSnackbar).not.toHaveBeenCalledWith('Please select IOMs to print.', 'warning'); // Because disabled
+      expect(showSnackbar).not.toHaveBeenCalledWith('Please select IOMs to print.', 'warning');
       expect(mockNavigate).not.toHaveBeenCalled();
     });
   });
