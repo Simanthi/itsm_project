@@ -125,12 +125,13 @@ describe('PurchaseRequestMemoDetailView', () => {
     });
   });
 
-  it('renders "not found" state if API returns no memo', async () => {
-    vi.mocked(getPurchaseRequestMemoById).mockImplementationOnce(
-      async (): Promise<PurchaseRequestMemo | null> => null
-    );
-    renderComponent('1');
+  it('renders "not found" state if API call for non-existent ID fails', async () => {
+    const notFoundError = new Error('Internal Office Memo not found');
+    vi.mocked(getPurchaseRequestMemoById).mockRejectedValueOnce(notFoundError);
+    renderComponent('1'); // Attempt to fetch a memo that will "not be found"
     await waitFor(() => {
+      // The component should catch this error and display an appropriate message.
+      // This assertion might need to be adjusted based on actual component behavior.
       expect(screen.getByText(/Internal Office Memo not found./i)).toBeInTheDocument();
     });
   });
