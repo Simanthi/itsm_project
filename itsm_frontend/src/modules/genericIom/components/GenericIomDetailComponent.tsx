@@ -375,7 +375,7 @@ const GenericIomDetailComponent: React.FC<GenericIomDetailComponentProps> = ({ i
             <Grid item xs={12} md={fieldDef.type === 'text_area' ? 12 : 6} key={fieldDef.name}>
               <Box>
                 <Typography variant="subtitle2" color="textSecondary">{fieldDef.label}:</Typography>
-                <DisplayDynamicFieldValue field={fieldDef} value={iom.data_payload[fieldDef.name]} />
+                <DisplayDynamicFieldValue field={fieldDef} value={iom.data_payload[fieldDef.name] as FormFieldValue} />
               </Box>
             </Grid>
           ))}

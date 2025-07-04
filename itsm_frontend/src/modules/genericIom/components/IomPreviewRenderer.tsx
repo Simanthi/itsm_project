@@ -114,7 +114,7 @@ const IomPreviewRenderer: React.FC<IomPreviewRendererProps> = ({
                     <Typography variant="caption" color="text.secondary" display="block" sx={{ fontWeight: 'medium', fontSize: '0.75rem' }}>
                         {fieldDef.label}:
                     </Typography>
-                    <PreviewDisplayDynamicFieldValue field={fieldDef} value={dataPayload[fieldDef.name]} />
+                    <PreviewDisplayDynamicFieldValue field={fieldDef} value={dataPayload[fieldDef.name] as FormFieldValue} />
                     </Box>
                 </Grid>
                 ))}

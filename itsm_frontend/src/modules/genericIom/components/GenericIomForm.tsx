@@ -291,7 +291,7 @@ const GenericIomForm: React.FC<GenericIomFormProps> = ({ parentRecordContext = n
                     <Grid item xs={12} md={fieldDef.type === 'text_area' ? 12 : (fieldDef.type === 'boolean' ? 12 : 6)} key={fieldDef.name}>
                         <DynamicIomFormFieldRenderer
                         field={fieldDef}
-                        value={dynamicFormData[fieldDef.name]}
+                        value={dynamicFormData[fieldDef.name] as FormFieldValue}
                         onChange={handleDynamicFieldChange}
                         disabled={isSubmitting}
                         />

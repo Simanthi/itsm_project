@@ -517,9 +517,11 @@ describe('PurchaseRequestMemoList', () => {
         snackbarSeverity: 'info',
         hideSnackbar: vi.fn(),
       });
+      const results1: PurchaseRequestMemo[] = [pendingMemoIsRequester];
+      const results2: PurchaseRequestMemo[] = [{...pendingMemoIsRequester, status: 'cancelled'}];
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoIsRequester] }) // Initial load
-        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [{...pendingMemoIsRequester, status: 'cancelled'}] }); // After cancellation
+        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results1 })
+        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results2 });
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined); // API call for cancel
 
       const user = userEvent.setup();
@@ -557,9 +559,11 @@ describe('PurchaseRequestMemoList', () => {
         snackbarSeverity: 'info',
         hideSnackbar: vi.fn(),
         });
+        const results1: PurchaseRequestMemo[] = [pendingMemoNotRequester];
+        const results2: PurchaseRequestMemo[] = [{...pendingMemoNotRequester, status: 'cancelled'}];
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoNotRequester] }) // Initial load
-            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'cancelled'}] });
+            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results1 })
+            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results2 });
         const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -640,9 +644,11 @@ describe('PurchaseRequestMemoList', () => {
         user: mockUserStaff,
       });
 
+      const results1: PurchaseRequestMemo[] = [pendingMemoNotRequester];
+      const results2: PurchaseRequestMemo[] = [{...pendingMemoNotRequester, status: 'approved'}];
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoNotRequester] }) // Initial load
-        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'approved'}] }); // After approval
+        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results1 })
+        .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results2 });
       const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -675,9 +681,11 @@ describe('PurchaseRequestMemoList', () => {
             user: mockUserStaff,
         });
 
+        const results1: PurchaseRequestMemo[] = [pendingMemoIsRequester];
+        const results2: PurchaseRequestMemo[] = [{...pendingMemoIsRequester, status: 'rejected'}];
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [pendingMemoIsRequester] }) // Initial load
-            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [{...pendingMemoIsRequester, status: 'rejected'}] }); // After rejection
+            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results1 })
+            .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: results2 });
         const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
