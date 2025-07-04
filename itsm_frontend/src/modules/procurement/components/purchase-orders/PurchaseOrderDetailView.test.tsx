@@ -140,9 +140,8 @@ describe('PurchaseOrderDetailView', () => {
     vi.mocked(getPurchaseOrderById).mockRejectedValueOnce(notFoundError);
     renderComponent('1'); // Attempt to fetch PO with ID '1' that will be "not found"
     await waitFor(() => {
-      // The component should catch the error and display an appropriate message.
-      // This assertion might need to be adjusted if the component displays the error differently.
-      expect(screen.getByText(/Purchase Order not found./i)).toBeInTheDocument();
+      // Component displays the error message in an Alert
+      expect(screen.getByText(/Failed to fetch purchase order details: Purchase Order not found/i)).toBeInTheDocument();
     });
   });
 

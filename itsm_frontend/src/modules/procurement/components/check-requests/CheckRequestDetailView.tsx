@@ -218,7 +218,7 @@ const CheckRequestDetailView: React.FC = () => {
           <Typography variant="h6" gutterBottom>
             Request Information {checkRequest.cr_id && `(${checkRequest.cr_id})`}
           </Typography>
-          <Typography>
+          <Typography component="div"> {/* Changed from p to div */}
             <strong>Status:</strong>{' '}
             <Chip
               label={checkRequest.status.replace(/_/g, ' ')}
@@ -233,7 +233,7 @@ const CheckRequestDetailView: React.FC = () => {
             <strong>Request Date:</strong>{' '}
             {formatDateString(checkRequest.request_date)}
           </Typography>
-           <Typography>
+           <Typography component="div"> {/* Changed from p to div */}
             <strong>Urgent:</strong> {checkRequest.is_urgent ? <Chip label="Yes" color="error" size="small" /> : 'No'}
           </Typography>
           <Typography>

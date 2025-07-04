@@ -143,9 +143,8 @@ describe('CheckRequestDetailView', () => {
     vi.mocked(procurementApi.getCheckRequestById).mockRejectedValueOnce(notFoundError);
     renderComponent('1'); // Attempt to fetch CR with ID '1' that will be "not found"
     await waitFor(() => {
-      // The component should catch the error and display an appropriate message.
-      // This assertion might need to be adjusted if the component displays the error differently.
-      expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
+      // Component displays the error message in an Alert
+      expect(screen.getByText(/Failed to fetch check request details: Check Request not found/i)).toBeInTheDocument();
     });
   });
 

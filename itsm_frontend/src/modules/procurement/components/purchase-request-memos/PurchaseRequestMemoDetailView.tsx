@@ -212,10 +212,10 @@ const PurchaseRequestMemoDetailView: React.FC = () => {
           <Typography variant="body1" sx={{ mb: 1 }}>
             <strong>Request Date:</strong> {formatDateString(memo.request_date)}
           </Typography>
-           <Typography component="div" variant="body1" sx={{ mb: 1 }}> {/* Changed to component="div" */}
+           <Typography component="div" variant="body1" sx={{ mb: 1 }}>
             <strong>Priority:</strong> <Chip label={memo.priority?.toUpperCase() || 'N/A'} size="small" />
           </Typography>
-          <Typography variant="body1" sx={{ mb: 2 }}>
+          <Typography component="div" variant="body1" sx={{ mb: 2 }}> {/* Changed to component="div" */}
             <strong>Status:</strong>&nbsp;
             <Chip
               label={memo.status
