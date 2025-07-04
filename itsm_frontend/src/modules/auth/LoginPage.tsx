@@ -9,8 +9,8 @@ import {
   Paper,
   CircularProgress,
   Alert,
-  useTheme,
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles'; // Corrected import for useTheme
 import { useAuth } from '../../context/auth/useAuth'; // Updated import path for useAuth
 import { useNavigate } from 'react-router-dom'; // Import useNavigate for explicit navigation
 
