@@ -126,8 +126,9 @@ describe('PurchaseRequestMemoDetailView', () => {
   });
 
   it('renders "not found" state if API returns no memo', async () => {
-    // Assuming getPurchaseRequestMemoById is typed to return Promise<PurchaseRequestMemo | null>
-    vi.mocked(getPurchaseRequestMemoById).mockResolvedValueOnce(null);
+    vi.mocked(getPurchaseRequestMemoById).mockImplementationOnce(
+      async (): Promise<PurchaseRequestMemo | null> => null
+    );
     renderComponent('1');
     await waitFor(() => {
       expect(screen.getByText(/Internal Office Memo not found./i)).toBeInTheDocument();
