@@ -108,7 +108,7 @@ describe('AuthContext', () => {
     it('updates state and localStorage on successful login', async () => {
       const mockLoginData = {
         token: 'new-token',
-        user: { id: 2, name: 'Logged In User', email: 'login@example.com', role: 'editor', is_staff: false, groups: [] } as AuthUser
+        user: { id: 2, name: 'Logged In User', email: 'login@example.com', role: 'editor', is_staff: false, groups: [] }
       };
       vi.mocked(authApi.loginApi).mockResolvedValue(mockLoginData);
 
@@ -154,9 +154,20 @@ describe('AuthContext', () => {
       expect(result.current.loading).toBe(false);
     });
      it('throws error and clears state if login API returns user with no ID', async () => {
+      const mockUserWithMissingIdDetails: Omit<AuthUser, 'id'> = {
+        name: 'User Without ID',
+        email: 'no-id@example.com', // email is correctly a string
+        role: 'guest',              // Provide all other required fields for AuthUser
+        is_staff: false,
+        groups: [],
+        // id is intentionally omitted here
+      };
       const mockInvalidLoginData = {
         token: 'new-token',
-        user: { name: 'User Without ID', email: 'no-id@example.com' } as unknown as AuthUser // Missing ID
+        // Cast to AuthUser, acknowledging 'id' is missing for this test's purpose.
+        // This satisfies the type checker for mockResolvedValue,
+        // while ensuring the runtime check for 'id' in AuthContext's login will fail.
+        user: mockUserWithMissingIdDetails as AuthUser
       };
       vi.mocked(authApi.loginApi).mockResolvedValue(mockInvalidLoginData);
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
