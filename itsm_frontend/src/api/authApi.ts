@@ -42,7 +42,7 @@ export const loginApi = async (
       try {
         const errorData = await tokenResponse.json();
         errorDetail = errorData.detail || errorDetail;
-      } catch (e) {
+      } catch { // Omitted error variable as it's not used
         // Ignore if response is not JSON
       }
       throw new Error(errorDetail);

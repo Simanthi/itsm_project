@@ -157,7 +157,7 @@ describe('AuthContext', () => {
       // Define a user object that is structurally an AuthUser but with an id that will fail runtime validation.
       // All other fields, including email, must conform to AuthUser.
       const userForApiInvalidId: AuthUser = {
-        id: undefined as any, // Makes !user.id true, or typeof user.id !== 'number' true. Cast to any for TS.
+        id: undefined as unknown as number, // Makes !user.id true, or typeof user.id !== 'number' true.
         name: 'User With Invalid ID',
         email: 'invalid-id@example.com', // Ensure email is a string.
         role: 'guest',

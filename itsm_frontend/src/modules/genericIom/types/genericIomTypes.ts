@@ -17,7 +17,7 @@ export type GenericIomStatus =
   | 'cancelled';
 
 // Structure for the data_payload - can be any JSON object
-export type IomDataPayload = Record<string, any>; // Or Record<string, unknown> for stricter typing
+export type IomDataPayload = Record<string, unknown>; // Changed 'any' to 'unknown' for stricter typing
 
 // Interface for a GenericIOM object received from the API
 export interface GenericIOM {
