@@ -319,7 +319,6 @@ describe('CheckRequestList', () => {
     });
 
     // --- Submit for Approval Button ---
-    // Line 338 error likely here or similar mockResolvedValueOnce
     it('shows "Submit for Approval" button for "pending_submission" CR if user is requester, and calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: pendingSubmissionCR.requested_by };
 
@@ -349,7 +348,6 @@ describe('CheckRequestList', () => {
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request submitted for approval!', 'success');
     });
 
-    // Line 387 error likely here or similar mockResolvedValue
     it('shows "Submit for Approval" button for "pending_submission" CR if user is staff (not requester)', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
        vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
@@ -365,7 +363,6 @@ describe('CheckRequestList', () => {
       expect(screen.queryByRole('button', { name: /submit for approval/i })).not.toBeInTheDocument();
     });
 
-    // Line 419 error likely here or similar mockResolvedValue
     it('does NOT show "Submit for Approval" button for "pending_submission" CR if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
@@ -404,7 +401,6 @@ describe('CheckRequestList', () => {
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request approved by accounts!', 'success');
     });
 
-    // Line 469 error likely here or similar mockResolvedValueOnce
     it('handles "Reject" by accounts: shows button, opens dialog, confirms, calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
@@ -443,7 +439,6 @@ describe('CheckRequestList', () => {
       expect(screen.queryByRole('button', { name: /reject/i })).not.toBeInTheDocument();
     });
 
-    // Line 515 error likely here or similar mockResolvedValue
     it('does NOT show Approve/Reject buttons for "pending_submission" CR even if user is staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
@@ -498,7 +493,6 @@ describe('CheckRequestList', () => {
     const approvedCRForPayment: CheckRequest = { ...mockCRs[0], id: 206, cr_id: 'CR-PAY-APPROVED', status: 'approved' };
     const processingCRForPayment: CheckRequest = { ...mockCRs[0], id: 207, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing' };
 
-    // Line 589 error likely here or similar mockResolvedValueOnce
     it(`handles "Confirm Payment" for "approved" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstance = approvedCRForPayment;
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
@@ -622,7 +616,6 @@ describe('CheckRequestList', () => {
     const yetAnotherPendingApprovalCR: CheckRequest = { ...mockCRs[0], id: 209, cr_id: 'CR-CANCEL-APP', status: 'pending_approval', requested_by: mockUser.id };
     const approvedCRForCancelTest: CheckRequest = { ...mockCRs[0], id: 210, cr_id: 'CR-CANCEL-APPROVED', status: 'approved' };
 
-    // Line 690 error likely here or similar mockResolvedValueOnce
     [yetAnotherPendingSubmissionCR, yetAnotherPendingApprovalCR].forEach((crInstance) => {
       it(`handles "Cancel Request" for "${crInstance.status}" CR: shows button, opens dialog, confirms, calls API`, async () => {
         vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: crInstance.requested_by };
