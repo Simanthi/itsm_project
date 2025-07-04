@@ -357,6 +357,7 @@ class ApprovalStepSerializer(serializers.ModelSerializer):
 
     approval_rule_name = serializers.CharField(source='approval_rule.name', read_only=True, allow_null=True)
     assigned_approver_user_name = serializers.CharField(source='assigned_approver_user.username', read_only=True, allow_null=True)
+    original_assigned_approver_user_name = serializers.CharField(source='original_assigned_approver_user.username', read_only=True, allow_null=True)
     assigned_approver_group_name = serializers.CharField(source='assigned_approver_group.name', read_only=True, allow_null=True)
     actioned_by_user_name = serializers.CharField(source='approved_by.username', read_only=True, allow_null=True) # 'approved_by' is the field name for actioner
     status_display = serializers.CharField(source='get_status_display', read_only=True)
@@ -370,6 +371,7 @@ class ApprovalStepSerializer(serializers.ModelSerializer):
             'content_object_display', 'content_object_url', # Custom representations of the GFK
             'approval_rule', 'approval_rule_name', 'rule_name_snapshot', 'step_order',
             'assigned_approver_user', 'assigned_approver_user_name',
+            'original_assigned_approver_user', 'original_assigned_approver_user_name',
             'assigned_approver_group', 'assigned_approver_group_name',
             'status', 'status_display', 'approved_by', 'actioned_by_user_name',
             'decision_date', 'comments', 'created_at', 'updated_at'
@@ -377,7 +379,8 @@ class ApprovalStepSerializer(serializers.ModelSerializer):
         read_only_fields = [
             'content_object_display', 'content_object_url',
             'approval_rule_name', 'rule_name_snapshot',
-            'assigned_approver_user_name', 'assigned_approver_group_name',
+            'assigned_approver_user_name', 'original_assigned_approver_user_name',
+            'assigned_approver_group_name',
             'actioned_by_user_name', 'status_display',
             'created_at', 'updated_at',
         ]

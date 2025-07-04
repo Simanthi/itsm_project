@@ -175,13 +175,25 @@ class PurchaseRequestMemo(models.Model):
                 if not self.project or not rule.projects.filter(pk=self.project.pk).exists():
                     continue
 
+            assigned_user = rule.approver_user
+            original_user_for_step = None
+            current_status = 'pending'
+
+            if rule.approver_user:
+                active_delegate = ApprovalDelegation.get_active_delegate(rule.approver_user)
+                if active_delegate:
+                    original_user_for_step = rule.approver_user
+                    assigned_user = active_delegate
+                    # current_status = 'delegated' # Or keep 'pending' but assign to delegatee
+
             ApprovalStep.objects.create(
                 content_object=self, # Use GFK
                 approval_rule=rule,
                 step_order=rule.order,
-                assigned_approver_user=rule.approver_user,
+                assigned_approver_user=assigned_user,
+                original_assigned_approver_user=original_user_for_step,
                 assigned_approver_group=rule.approver_group,
-                status='pending'
+                status=current_status
             )
             created_steps_count += 1
 
@@ -598,6 +610,13 @@ class ApprovalStep(models.Model):
         null=True, blank=True,
         related_name='assigned_approval_steps_group',
         verbose_name=_("Assigned Approver Group")
+    )
+    original_assigned_approver_user = models.ForeignKey(
+        User,
+        on_delete=models.SET_NULL,
+        null=True, blank=True,
+        related_name='original_assigned_approval_steps',
+        verbose_name=_("Original Assigned Approver User (if delegated)")
     )
     status = models.CharField(
         _("Status"),
