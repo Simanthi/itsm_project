@@ -330,10 +330,13 @@ describe('CheckRequestList', () => {
 
       const submitButton = await screen.findByRole('button', { name: /submit for approval/i });
       expect(submitButton).toBeInTheDocument();
-      await user.click(submitButton);
 
+      await user.click(submitButton);
+      // Ensure all promises from the click handler (including chained state updates) resolve
       await waitFor(() => expect(submitMock).toHaveBeenCalledWith(expect.any(Function), pendingSubmissionCR.id));
-      await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
+
+      // Assertions after act has completed
+      await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2)); // initial load + refresh after submit
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request submitted for approval!', 'success');
     });
 
@@ -381,8 +384,11 @@ describe('CheckRequestList', () => {
       const confirmButton = screen.getByRole('button', { name: /Confirm Approval/i });
       await user.click(confirmButton);
 
+      // Ensure all promises from the click handler resolve
       await waitFor(() => expect(approveMock).toHaveBeenCalledWith(expect.any(Function), pendingApprovalCR.id, { comments: 'Approved by Accounts test' }));
-      await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
+
+      // Assertions after act has completed
+      await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2)); // initial load + refresh
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request approved by accounts!', 'success');
     });
 
@@ -407,6 +413,7 @@ describe('CheckRequestList', () => {
       await user.click(confirmButton);
 
       await waitFor(() => expect(rejectMock).toHaveBeenCalledWith(expect.any(Function), pendingApprovalCR.id, { comments: 'Rejected by Accounts test' }));
+
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request rejected by accounts!', 'success');
     });
@@ -442,9 +449,10 @@ describe('CheckRequestList', () => {
 
       const markButton = await screen.findByRole('button', { name: /mark payment processing/i });
       expect(markButton).toBeInTheDocument();
-      await user.click(markButton);
 
+      await user.click(markButton);
       await waitFor(() => expect(markProcessingMock).toHaveBeenCalledWith(expect.any(Function), approvedCR.id));
+
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request marked as payment processing!', 'success');
     });
@@ -516,8 +524,6 @@ describe('CheckRequestList', () => {
 
         const confirmDialogButton = screen.getByRole('button', { name: /Confirm Payment/i, hidden: false });
         console.log("Confirm dialog button found for approved CR");
-        await user.click(confirmDialogButton);
-        console.log("Confirm dialog button clicked for approved CR");
 
         const expectedPayload = {
             payment_method: 'ach',
@@ -526,13 +532,15 @@ describe('CheckRequestList', () => {
             payment_notes: 'Payment processed via ACH.',
         };
 
+        await user.click(confirmDialogButton);
+        console.log("Confirm dialog button clicked for approved CR");
         await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
           expect.any(Function),
           crInstance.id,
           expect.objectContaining(expectedPayload)
         ), { timeout: 7000 });
-        console.log("confirmPaymentMock called for approved CR");
 
+        console.log("confirmPaymentMock called for approved CR");
         await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
         console.log("getRequestsMock for refresh called for approved CR");
 
@@ -588,8 +596,6 @@ describe('CheckRequestList', () => {
 
       const confirmDialogButton = screen.getByRole('button', { name: /Confirm Payment/i, hidden: false });
       console.log("Confirm dialog button found for payment_processing CR");
-      await user.click(confirmDialogButton);
-      console.log("Confirm dialog button clicked for payment_processing CR");
 
       const expectedPayload = {
           payment_method: 'check',
@@ -598,13 +604,15 @@ describe('CheckRequestList', () => {
           payment_notes: 'Payment processed via Check for payment_processing.',
       };
 
+      await user.click(confirmDialogButton);
+      console.log("Confirm dialog button clicked for payment_processing CR");
       await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
         expect.any(Function),
         crInstance.id,
         expect.objectContaining(expectedPayload)
       ), { timeout: 7000 });
-      console.log("confirmPaymentMock called for payment_processing CR");
 
+      console.log("confirmPaymentMock called for payment_processing CR");
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
       console.log("getRequestsMock for refresh called for payment_processing CR");
 
@@ -651,11 +659,16 @@ describe('CheckRequestList', () => {
 
         const cancelButton = await screen.findByRole('button', { name: /cancel request/i });
         expect(cancelButton).toBeInTheDocument();
-        await user.click(cancelButton);
+        await user.click(cancelButton); // This click triggers mockShowConfirmDialog, which then calls onConfirm
 
-        expect(mockShowConfirmDialog).toHaveBeenCalled();
+        // The onConfirm is called synchronously within the mock of showConfirmDialog.
+        // The handleCancel itself is async due to handleAction.
+        // We need to ensure the effects of handleCancel (API call, state updates) are awaited.
+        await waitFor(() => expect(mockShowConfirmDialog).toHaveBeenCalled());
+
+        // Now, check the results of the auto-confirmed action
         await waitFor(() => expect(cancelMock).toHaveBeenCalledWith(expect.any(Function), crInstance.id));
-        await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
+        await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2)); // Initial + refresh
         expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request cancelled!', 'success');
       });
     });

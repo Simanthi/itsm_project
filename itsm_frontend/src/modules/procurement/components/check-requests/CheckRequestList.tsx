@@ -702,27 +702,27 @@ const CheckRequestList: React.FC = () => {
         </DialogContent>
         <DialogActions>
           <Button onClick={closeDialog}>Cancel</Button>
-          {dialogAction === 'reject' && (
+          {dialogAction === 'reject' && selectedRequest && (
             <Button
-              onClick={() => handleAccountsReject(selectedRequest!.id)}
+              onClick={() => handleAccountsReject(selectedRequest.id)}
               variant="contained"
               color="error"
             >
               Confirm Rejection
             </Button>
           )}
-          {dialogAction === 'approve' && (
+          {dialogAction === 'approve' && selectedRequest && (
             <Button
-              onClick={() => handleAccountsApprove(selectedRequest!.id)}
+              onClick={() => handleAccountsApprove(selectedRequest.id)}
               variant="contained"
               color="success"
             >
               Confirm Approval
             </Button>
           )}
-          {dialogAction === 'confirm_payment' && (
+          {dialogAction === 'confirm_payment' && selectedRequest && (
             <Button
-              onClick={() => handleConfirmPaymentSubmit(selectedRequest!.id)}
+              onClick={() => handleConfirmPaymentSubmit(selectedRequest.id)}
               variant="contained"
               color="primary"
             >

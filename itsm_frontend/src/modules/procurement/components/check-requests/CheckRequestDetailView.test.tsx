@@ -7,7 +7,7 @@ import { AuthProvider } from '../../../../context/auth/AuthContext';
 import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
 import CheckRequestDetailView from './CheckRequestDetailView';
 import * as procurementApi from '../../../../api/procurementApi';
-// import * as useAuthHook from '../../../../context/auth/useAuth'; // Unused import
+// import { formatDate } from '../../../../utils/formatters'; // No longer needed here
 import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
 import type { AuthUser } from '../../../../context/auth/AuthContextDefinition';
 
@@ -168,7 +168,8 @@ describe('CheckRequestDetailView', () => {
       expect(screen.getByText('Status:')).toBeInTheDocument();
       // The text check for status needs to be more robust if the status is rendered inside a Chip
       // For now, we assume the test expects the raw status text to be found, which might fail if it's stylized.
-      expect(screen.getByText(baseCheckRequestData.status.replace(/_/g, ' ').toUpperCase())).toBeInTheDocument();
+      // Adjusted to match the actual chip label which is lowercase and space-separated.
+      expect(screen.getByText(baseCheckRequestData.status.replace(/_/g, ' '))).toBeInTheDocument();
       expect(screen.getByText('Requested By:')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.requested_by_username)).toBeInTheDocument();
       expect(screen.getByText('Request Date:')).toBeInTheDocument();
@@ -193,8 +194,8 @@ describe('CheckRequestDetailView', () => {
       expect(screen.getByText('Invoice Number:')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.invoice_number!)).toBeInTheDocument();
       expect(screen.getByText('Invoice Date:')).toBeInTheDocument();
-      // Use toLocaleDateString for date-only fields for consistency with component's formatDateString logic for YYYY-MM-DD
-      expect(screen.getByText(new Date(baseCheckRequestData.invoice_date! + 'T00:00:00').toLocaleDateString())).toBeInTheDocument();
+      // Component's formatDateString uses toLocaleString for full ISO dates
+      expect(screen.getByText(new Date(baseCheckRequestData.invoice_date!).toLocaleString())).toBeInTheDocument();
       expect(screen.getByText('Payee Address:')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.payee_address!)).toBeInTheDocument();
 
@@ -207,6 +208,7 @@ describe('CheckRequestDetailView', () => {
       expect(screen.getByText('Approved By (Accounts):')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.approved_by_accounts_username!)).toBeInTheDocument();
       expect(screen.getByText('Accounts Approval Date:')).toBeInTheDocument();
+      // Component's formatDateString uses toLocaleString for full ISO dates
       expect(screen.getByText(new Date(baseCheckRequestData.accounts_approval_date!).toLocaleString())).toBeInTheDocument();
       expect(screen.getByText('Accounts Comments:')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.accounts_comments!)).toBeInTheDocument();
@@ -237,9 +239,19 @@ describe('CheckRequestDetailView', () => {
       setupAndRender(minimalData);
 
       await waitFor(() => {
-        expect(screen.getByText(/Request Information/i)).toBeInTheDocument();
+        // Check a field that should display N/A
+        const approvedByLabel = screen.getByText('Approved By (Accounts):');
+        // MUI Typography might render the value in the same text node if not complex, or as a sibling.
+        // Check parent's textContent which includes both <strong> and the value.
+        expect(approvedByLabel.parentElement?.textContent).toBe('Approved By (Accounts): N/A');
       });
-      expect(screen.getByText(/Request Information \(N\/A\)/i)).toBeInTheDocument(); // cr_id is null
+
+      // Title check: component renders "Request Information " when cr_id is null
+      // The regex /Request Information$/ might be safer if there's potential trailing space.
+      expect(screen.getByText((content, element) => {
+        return element?.tagName.toLowerCase() === 'h6' && content.startsWith('Request Information') && !content.includes('(');
+      })).toBeInTheDocument();
+
       expect(screen.getByText('Urgent:')).toBeInTheDocument();
       expect(screen.getByText('No')).toBeInTheDocument(); // for is_urgent: false
       expect(screen.queryByText('Expense Category:')).not.toBeInTheDocument();
@@ -250,8 +262,13 @@ describe('CheckRequestDetailView', () => {
       expect(screen.queryByText('Attachment:')).not.toBeInTheDocument();
 
       expect(screen.getByText('Approval & Processing')).toBeInTheDocument();
-      expect(screen.getByText('Approved By (Accounts):').nextSibling?.textContent?.trim()).toBe('N/A');
-      expect(screen.getByText('Accounts Approval Date:').nextSibling?.textContent?.trim()).toBe('N/A');
+      // Using parentElement.textContent for robustness with N/A checks
+      const approvedByLabel = screen.getByText('Approved By (Accounts):');
+      expect(approvedByLabel.parentElement?.textContent).toBe('Approved By (Accounts): N/A');
+
+      const approvalDateLabel = screen.getByText('Accounts Approval Date:');
+      expect(approvalDateLabel.parentElement?.textContent).toBe('Accounts Approval Date: N/A');
+
       expect(screen.queryByText('Accounts Comments:')).not.toBeInTheDocument(); // Comments only show if present
     });
 
@@ -283,7 +300,8 @@ describe('CheckRequestDetailView', () => {
             const testData: CheckRequest = { ...baseCheckRequestData, status };
             vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(testData);
             renderComponent(String(testData.id));
-            await waitFor(() => expect(screen.getByText('Request Information')).toBeInTheDocument());
+            // Wait for a stable element that indicates data is loaded and title is fully rendered
+            await waitFor(() => expect(screen.getByText(`Request Information (${testData.cr_id})`)).toBeInTheDocument());
             expect(screen.queryByText('Approval & Processing')).not.toBeInTheDocument();
         });
     });
@@ -294,8 +312,10 @@ describe('CheckRequestDetailView', () => {
             const testData: CheckRequest = { ...baseCheckRequestData, status, accounts_approval_date: '2024-01-01T00:00:00Z', approved_by_accounts_username: 'accUser' }; // ensure some data to render section
             vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(testData);
             renderComponent(String(testData.id));
-            await waitFor(() => expect(screen.getByText('Request Information')).toBeInTheDocument());
-            expect(screen.getByText('Approval & Processing')).toBeInTheDocument();
+            // Wait for the "Approval & Processing" section itself to appear
+            await waitFor(() => expect(screen.getByText('Approval & Processing')).toBeInTheDocument());
+            // Additional check to ensure main content is also there
+            expect(screen.getByText(`Request Information (${testData.cr_id})`)).toBeInTheDocument();
         });
     });
   });

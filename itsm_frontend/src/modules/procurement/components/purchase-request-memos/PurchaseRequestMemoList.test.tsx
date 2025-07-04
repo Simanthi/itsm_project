@@ -146,6 +146,8 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   it('renders the main title and create button', async () => {
+    // Provide a default mock for getPurchaseRequestMemos for tests not focused on its data
+    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockEmptyMemosResponse);
     renderWithProviders(<PurchaseRequestMemoList />);
     expect(screen.getByRole('heading', { name: /Internal Office Memo/i })).toBeInTheDocument();
     // Wait for template ID to be fetched before button becomes enabled
@@ -155,6 +157,7 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   it('renders table headers correctly', async () => {
+    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockEmptyMemosResponse);
     renderWithProviders(<PurchaseRequestMemoList />);
     await waitFor(() => { // Wait for data to load which triggers header rendering
       expect(screen.getByText('IOM ID')).toBeInTheDocument();
@@ -206,6 +209,7 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   it('navigates to create new IOM form when "Create New Request" is clicked', async () => {
+    vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue(mockEmptyMemosResponse);
     const user = userEvent.setup();
     renderWithProviders(<PurchaseRequestMemoList />);
     const createButton = await screen.findByRole('button', { name: /Create New Request/i });
