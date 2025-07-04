@@ -139,8 +139,7 @@ describe('CheckRequestDetailView', () => {
   });
 
   it('renders "not found" state if API returns no check request', async () => {
-    // Assuming getCheckRequestById is typed to return Promise<CheckRequest | null>
-    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValueOnce(null);
+    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValueOnce(null); // Corrected: Use mockResolvedValueOnce for null
     renderComponent('1');
     await waitFor(() => {
       expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
@@ -150,8 +149,7 @@ describe('CheckRequestDetailView', () => {
   describe('Successful Data Display (Happy Path)', () => {
     // Helper to re-render with potentially different data for specific display tests
     const setupAndRender = (data: CheckRequest | null) => {
-        // Assuming getCheckRequestById is typed to return Promise<CheckRequest | null>
-        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data);
+        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data); // Corrected: Use mockResolvedValue
         renderComponent(data ? String(data.id) : '1');
     };
 
