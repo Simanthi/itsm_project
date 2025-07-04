@@ -14,7 +14,6 @@ import {
   ListItemText,
   Divider,
   CssBaseline,
-  useTheme,
   Button,
   CircularProgress,
   Select,
@@ -22,6 +21,7 @@ import {
   FormControl,
   // InputLabel, // Removed as it's not used
 } from '@mui/material';
+import { useTheme } from '@mui/material/styles'; // Corrected import for useTheme
 import type { Theme } from '@mui/material';
 import { css } from '@emotion/react';
 import MenuIcon from '@mui/icons-material/Menu';

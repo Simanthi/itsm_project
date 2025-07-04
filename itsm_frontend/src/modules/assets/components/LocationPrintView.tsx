@@ -12,7 +12,7 @@ import {
   Paper,
   Divider,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles'; // Reverted to original
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import type { Location as AssetLocation } from '../types'; // Updated type import

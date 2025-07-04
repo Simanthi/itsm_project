@@ -13,7 +13,7 @@ import {
   Divider,
   Chip,
 } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
+import { useTheme } from '@mui/material/styles'; // Reverted to original
 import PrintIcon from '@mui/icons-material/Print';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import { getCheckRequestById } from '../../../../api/procurementApi';
