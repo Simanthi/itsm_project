@@ -433,8 +433,8 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
-      });
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
 
@@ -451,8 +451,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester], // Memo requested by someone else
-        });
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo], // Memo requested by someone else
+        } as PaginatedResponse<PurchaseRequestMemo>);
         const user = userEvent.setup();
         renderWithProviders(<PurchaseRequestMemoList />);
 
@@ -470,8 +470,8 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
 
       await screen.findByText(approvedMemo.iom_id as string); // Ensure row is rendered
@@ -486,8 +486,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester], // Requested by 'otheruser'
-        });
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo], // Requested by 'otheruser'
+        } as PaginatedResponse<PurchaseRequestMemo>);
         renderWithProviders(<PurchaseRequestMemoList />);
 
         await screen.findByText(pendingMemoNotRequester.iom_id as string); // Ensure row is rendered
@@ -586,8 +586,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -596,8 +596,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-         count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
-      });
+         count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoNotRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -627,8 +627,8 @@ describe('PurchaseRequestMemoList', () => {
         hideSnackbar: vi.fn(),
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
-      });
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo);
 
       const user = userEvent.setup();
@@ -724,8 +724,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons if user is not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
-      });
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoIsRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
@@ -735,8 +735,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
