@@ -449,7 +449,6 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     // Tests for Cancel Button
-    // Line 527 error likely here or similar mockResolvedValueOnce
     it('shows Cancel button for pending memo if user is requester, opens dialog, confirms, and calls API', async () => {
       const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
@@ -492,7 +491,6 @@ describe('PurchaseRequestMemoList', () => {
       await waitFor(() => expect(getMemosMock).toHaveBeenCalledTimes(2));
     });
 
-    // Line 571 error likely here or similar mockResolvedValueOnce
     it('shows Cancel button for pending memo if user is staff, opens dialog, confirms, and calls API', async () => {
         const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
@@ -595,7 +593,6 @@ describe('PurchaseRequestMemoList', () => {
     });
 
     // Tests for Approve/Reject Buttons
-    // Line 658 error likely here or similar mockResolvedValueOnce
     it('handles Approve button click, dialog confirmation, API call, and UI updates', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
@@ -635,7 +632,6 @@ describe('PurchaseRequestMemoList', () => {
       expect(showSnackbar).toHaveBeenCalledWith('Purchase request approved successfully!', 'success');
     });
 
-    // Line 697 error likely here or similar mockResolvedValueOnce
     it('handles Reject button click, dialog confirmation, API call, and UI updates', async () => {
         vi.mocked(useAuthHook.useAuth).mockReturnValue({
             ...vi.mocked(useAuthHook.useAuth)(),
