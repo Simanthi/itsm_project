@@ -164,10 +164,16 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
             ).order_by('-created_at')
 
         user_groups = user.groups.all()
+        # User can see steps if:
+        # 1. Directly assigned to them (could be as a delegatee)
+        # 2. Assigned to a group they are part of
+        # 3. They were the original assigner of a step that was then delegated
         return ApprovalStep.objects.filter(
-            Q(assigned_approver_user=user) | Q(assigned_approver_group__in=user_groups),
+            (Q(assigned_approver_user=user) |
+             Q(assigned_approver_group__in=user_groups) |
+             Q(original_assigned_approver_user=user)),
             status='pending' # Typically users only care about pending steps for action
-        ).select_related(
+        ).distinct().select_related( # Added distinct() in case a user is both original and in group (less likely but safe)
             # 'purchase_request_memo', # Removed: content_object is GFK
             'content_type', 'approval_rule',
             'assigned_approver_user', 'assigned_approver_group', 'approved_by'
@@ -175,16 +181,31 @@ class ApprovalStepViewSet(viewsets.ModelViewSet):
 
     def _can_action_step(self, user, step):
         """ Helper to check if a user can action a step. """
-        if step.status != 'pending':
+        if step.status != 'pending': # and step.status != 'delegated' if that was used
             return False, "This step is not pending action."
 
-        is_assigned_user = step.assigned_approver_user == user
-        is_in_assigned_group = False
-        if step.assigned_approver_group:
-            is_in_assigned_group = user.groups.filter(pk=step.assigned_approver_group.pk).exists()
+        # Check if the user is the directly assigned user (could be a delegatee)
+        is_directly_assigned_user = step.assigned_approver_user == user
 
-        if not (is_assigned_user or is_in_assigned_group):
+        # Check if the user is a member of the assigned group
+        is_in_assigned_group = False
+        if step.assigned_approver_group and user.groups.filter(pk=step.assigned_approver_group.pk).exists():
+            is_in_assigned_group = True
+
+        # Check if the user is the original assigner of a delegated step
+        is_original_assigner = False
+        if step.original_assigned_approver_user and step.original_assigned_approver_user == user:
+            # This means the step was delegated, and the current user is the one who delegated it.
+            # Typically, the original assigner might still want to action it.
+            is_original_assigner = True
+
+        if not (is_directly_assigned_user or is_in_assigned_group or is_original_assigner):
             return False, "You are not authorized to action this approval step."
+
+        # If the step was delegated (i.e., original_assigned_approver_user is set)
+        # and the actioner is the original_assigned_approver_user,
+        # we might want to log this or handle it specially. For now, allowing action is the key.
+
         return True, ""
 
     @action(detail=True, methods=['post'])

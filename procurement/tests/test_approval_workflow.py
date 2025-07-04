@@ -407,6 +407,127 @@ class ApprovalWorkflowTests(TestCase):
     # TODO: Add tests for permissions on ApprovalRuleViewSet (e.g. only admin can create/edit rules)
     # TODO: Add tests for edge cases in rule conditions (e.g. null min/max amounts)
 
+
+    # --- Delegation Tests ---
+    def test_iom_step_assigned_to_delegatee(self):
+        ApprovalRule.objects.all().delete()
+        rule = ApprovalRule.objects.create(name='Rule for Delegation Test', order=10, approver_user=self.approver_user1, min_amount=50)
+
+        # Create active delegation for approver_user1 to approver_user2
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1,
+            delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=1),
+            end_date=timezone.now() + timezone.timedelta(days=1),
+            is_active=True
+        )
+
+        iom = self._create_iom(self.requester_user, {'estimated_cost': 100.00})
+        self.assertEqual(iom.status, 'pending_approval')
+        self.assertEqual(iom.approval_steps.count(), 1)
+        step = iom.approval_steps.first()
+
+        self.assertEqual(step.assigned_approver_user, self.approver_user2, "Step should be assigned to the delegatee.")
+        self.assertEqual(step.original_assigned_approver_user, self.approver_user1, "Original assigner should be recorded.")
+
+    def test_delegatee_can_action_step(self):
+        ApprovalRule.objects.all().delete()
+        rule = ApprovalRule.objects.create(name='Rule for Delegatee Action', order=10, approver_user=self.approver_user1, min_amount=50)
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=1), end_date=timezone.now() + timezone.timedelta(days=1), is_active=True
+        )
+        iom = self._create_iom(self.requester_user, {'estimated_cost': 100.00})
+        step = iom.approval_steps.first()
+
+        # Action by delegatee (approver_user2)
+        response = self._action_step(self.approver_user2, step.id, 'approve', {'comments': 'Approved by delegatee'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        step.refresh_from_db()
+        iom.refresh_from_db()
+        self.assertEqual(step.status, 'approved')
+        self.assertEqual(step.approved_by, self.approver_user2)
+        self.assertEqual(iom.status, 'approved')
+
+    def test_original_delegator_can_action_delegated_step(self):
+        ApprovalRule.objects.all().delete()
+        rule = ApprovalRule.objects.create(name='Rule for Delegator Action', order=10, approver_user=self.approver_user1, min_amount=50)
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=1), end_date=timezone.now() + timezone.timedelta(days=1), is_active=True
+        )
+        iom = self._create_iom(self.requester_user, {'estimated_cost': 100.00})
+        step = iom.approval_steps.first() # Step is assigned to approver_user2 (delegatee)
+
+        # Action by original delegator (approver_user1)
+        response = self._action_step(self.approver_user1, step.id, 'approve', {'comments': 'Approved by original delegator'})
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        step.refresh_from_db()
+        iom.refresh_from_db()
+        self.assertEqual(step.status, 'approved')
+        self.assertEqual(step.approved_by, self.approver_user1)
+        self.assertEqual(iom.status, 'approved')
+
+    def test_unauthorized_user_cannot_action_delegated_step(self):
+        ApprovalRule.objects.all().delete()
+        rule = ApprovalRule.objects.create(name='Rule for Unauthorized Action', order=10, approver_user=self.approver_user1, min_amount=50)
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=1), end_date=timezone.now() + timezone.timedelta(days=1), is_active=True
+        )
+        iom = self._create_iom(self.requester_user, {'estimated_cost': 100.00})
+        step = iom.approval_steps.first() # Step assigned to approver_user2 (delegatee)
+
+        # Action by an unrelated user (requester_user in this case, or a new User object)
+        unauthorized_user = User.objects.create_user(username='randomuser', password='password')
+        response = self._action_step(unauthorized_user, step.id, 'approve')
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND) # Object not found for this user via get_queryset
+        step.refresh_from_db()
+        self.assertEqual(step.status, 'pending')
+
+    def test_no_delegation_if_delegation_is_inactive_or_out_of_date_range(self):
+        ApprovalRule.objects.all().delete()
+        rule = ApprovalRule.objects.create(name='Rule No Delegation', order=10, approver_user=self.approver_user1, min_amount=50)
+
+        # Inactive delegation
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=1), end_date=timezone.now() + timezone.timedelta(days=1), is_active=False
+        )
+        iom_inactive = self._create_iom(self.requester_user, {'estimated_cost': 100.00, 'item_description': 'Inactive Test'})
+        step_inactive = iom_inactive.approval_steps.first()
+        self.assertEqual(step_inactive.assigned_approver_user, self.approver_user1, "Step should be assigned to original user if delegation inactive.")
+        self.assertIsNone(step_inactive.original_assigned_approver_user)
+
+        # Cleanup for next test part
+        iom_inactive.delete()
+        ApprovalDelegation.objects.all().delete()
+
+        # Past delegation
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() - timezone.timedelta(days=2), end_date=timezone.now() - timezone.timedelta(days=1), is_active=True
+        )
+        iom_past = self._create_iom(self.requester_user, {'estimated_cost': 100.00, 'item_description': 'Past Test'})
+        step_past = iom_past.approval_steps.first()
+        self.assertEqual(step_past.assigned_approver_user, self.approver_user1, "Step should be assigned to original user if delegation is past.")
+        self.assertIsNone(step_past.original_assigned_approver_user)
+
+        # Cleanup for next test part
+        iom_past.delete()
+        ApprovalDelegation.objects.all().delete()
+
+        # Future delegation
+        ApprovalDelegation.objects.create(
+            delegator=self.approver_user1, delegatee=self.approver_user2,
+            start_date=timezone.now() + timezone.timedelta(days=1), end_date=timezone.now() + timezone.timedelta(days=2), is_active=True
+        )
+        iom_future = self._create_iom(self.requester_user, {'estimated_cost': 100.00, 'item_description': 'Future Test'})
+        step_future = iom_future.approval_steps.first()
+        self.assertEqual(step_future.assigned_approver_user, self.approver_user1, "Step should be assigned to original user if delegation is future.")
+        self.assertIsNone(step_future.original_assigned_approver_user)
+
+
 # To run these tests: python manage.py test procurement.tests.test_approval_workflow
 
 # Note: The test `test_workflow_retrigger_clears_old_pending_steps` might need refinement
