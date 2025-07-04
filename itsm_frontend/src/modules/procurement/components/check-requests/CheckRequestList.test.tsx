@@ -321,11 +321,17 @@ describe('CheckRequestList', () => {
     // --- Submit for Approval Button ---
     it('shows "Submit for Approval" button for "pending_submission" CR if user is requester, and calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: pendingSubmissionCR.requested_by };
-      const results1: CheckRequest[] = [pendingSubmissionCR];
-      const results2: CheckRequest[] = [{ ...pendingSubmissionCR, status: 'pending_approval' }];
+
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [pendingSubmissionCR]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...pendingSubmissionCR, status: 'pending_approval' }]
+      };
+
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-        .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+        .mockResolvedValueOnce(mockResponse1)
+        .mockResolvedValueOnce(mockResponse2);
       const submitMock = vi.mocked(procurementApi.submitCheckRequestForApproval).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -368,11 +374,15 @@ describe('CheckRequestList', () => {
     // --- Approve/Reject by Accounts ---
     it('handles "Approve" by accounts: shows button, opens dialog, confirms, calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      const results1: CheckRequest[] = [pendingApprovalCR];
-      const results2: CheckRequest[] = [{ ...pendingApprovalCR, status: 'approved' }];
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [pendingApprovalCR]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'approved' }]
+      };
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-        .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+        .mockResolvedValueOnce(mockResponse1)
+        .mockResolvedValueOnce(mockResponse2);
       const approveMock = vi.mocked(procurementApi.approveCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -398,11 +408,15 @@ describe('CheckRequestList', () => {
 
     it('handles "Reject" by accounts: shows button, opens dialog, confirms, calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      const results1: CheckRequest[] = [pendingApprovalCR];
-      const results2: CheckRequest[] = [{ ...pendingApprovalCR, status: 'rejected' }];
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [pendingApprovalCR]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'rejected' }]
+      };
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-        .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+        .mockResolvedValueOnce(mockResponse1)
+        .mockResolvedValueOnce(mockResponse2);
       const rejectMock = vi.mocked(procurementApi.rejectCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -446,11 +460,15 @@ describe('CheckRequestList', () => {
     it('handles "Mark Payment Processing": shows button for approved CR if staff, calls API', async () => {
       const approvedCR: CheckRequest = { ...mockCRs[0], id: 205, cr_id: 'CR-APPROVED', status: 'approved' };
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      const results1: CheckRequest[] = [approvedCR];
-      const results2: CheckRequest[] = [{ ...approvedCR, status: 'payment_processing' }];
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [approvedCR]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...approvedCR, status: 'payment_processing' }]
+      };
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-        .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+        .mockResolvedValueOnce(mockResponse1)
+        .mockResolvedValueOnce(mockResponse2);
       const markProcessingMock = vi.mocked(procurementApi.markCheckRequestPaymentProcessing).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -490,11 +508,15 @@ describe('CheckRequestList', () => {
     it(`handles "Confirm Payment" for "approved" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstance = approvedCRForPayment;
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      const results1: CheckRequest[] = [crInstance];
-      const results2: CheckRequest[] = [{ ...crInstance, status: 'paid' }];
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [crInstance]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' }]
+      };
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-          .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+          .mockResolvedValueOnce(mockResponse1)
+          .mockResolvedValueOnce(mockResponse2);
         const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -562,11 +584,15 @@ describe('CheckRequestList', () => {
     it(`handles "Confirm Payment" for "payment_processing" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstance = processingCRForPayment;
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      const results1: CheckRequest[] = [crInstance];
-      const results2: CheckRequest[] = [{ ...crInstance, status: 'paid' }];
+      const mockResponse1: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [crInstance]
+      };
+      const mockResponse2: PaginatedResponse<CheckRequest> = {
+        count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' }]
+      };
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-          .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+          .mockResolvedValueOnce(mockResponse1)
+          .mockResolvedValueOnce(mockResponse2);
       const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -661,11 +687,15 @@ describe('CheckRequestList', () => {
         const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm()); // Auto-confirm
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
-        const results1: CheckRequest[] = [crInstance];
-        const results2: CheckRequest[] = [{ ...crInstance, status: 'cancelled' }];
+        const mockResponse1: PaginatedResponse<CheckRequest> = {
+          count: 1, next: null, previous: null, results: [crInstance]
+        };
+        const mockResponse2: PaginatedResponse<CheckRequest> = {
+          count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'cancelled' }]
+        };
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({ count: 1, results: results1 } as PaginatedResponse<CheckRequest>)
-          .mockResolvedValueOnce({ count: 1, results: results2 } as PaginatedResponse<CheckRequest>);
+          .mockResolvedValueOnce(mockResponse1)
+          .mockResolvedValueOnce(mockResponse2);
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
