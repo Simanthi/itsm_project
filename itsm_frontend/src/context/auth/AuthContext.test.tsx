@@ -154,21 +154,21 @@ describe('AuthContext', () => {
       expect(result.current.loading).toBe(false);
     });
      it('throws error and clears state if login API returns user with no ID', async () => {
-      // This is the corrected definition for the user object in the "user with no ID" test case.
-      const mockUserForInvalidIdTest: Omit<AuthUser, 'id'> & { department_id?: null; department_name?: null } = {
-        name: 'User Without ID',
-        email: 'no-id@example.com', // email is correctly a string
-        role: 'guest',              // Provide all other required fields for AuthUser
+      // Define a user object that is structurally an AuthUser but with an id that will fail runtime validation.
+      // All other fields, including email, must conform to AuthUser.
+      const userForApiInvalidId: AuthUser = {
+        id: undefined as any, // Makes !user.id true, or typeof user.id !== 'number' true. Cast to any for TS.
+        name: 'User With Invalid ID',
+        email: 'invalid-id@example.com', // Ensure email is a string.
+        role: 'guest',
         is_staff: false,
         groups: [],
-        department_id: null,      // Explicitly include optional fields as null or provide values
+        department_id: null, // Explicitly set optional fields
         department_name: null,
-        // id is intentionally omitted here due to Omit<AuthUser, 'id'>, so it will be undefined.
       };
       const mockInvalidLoginData = {
         token: 'new-token',
-        // Cast to AuthUser. The runtime check for 'id' in AuthContext's login function is what this test targets.
-        user: mockUserForInvalidIdTest as AuthUser
+        user: userForApiInvalidId, // This is now correctly typed as AuthUser.
       };
       vi.mocked(authApi.loginApi).mockResolvedValue(mockInvalidLoginData);
       const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});

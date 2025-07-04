@@ -135,10 +135,13 @@ describe('PurchaseOrderDetailView', () => {
     });
   });
 
-  it('renders "not found" state if API returns no purchase order', async () => {
-    vi.mocked(getPurchaseOrderById).mockImplementationOnce(async () => null as any); // Cast to any
-    renderComponent('1');
+  it('renders "not found" state if API call for non-existent ID fails', async () => {
+    const notFoundError = new Error('Purchase Order not found');
+    vi.mocked(getPurchaseOrderById).mockRejectedValueOnce(notFoundError);
+    renderComponent('1'); // Attempt to fetch PO with ID '1' that will be "not found"
     await waitFor(() => {
+      // The component should catch the error and display an appropriate message.
+      // This assertion might need to be adjusted if the component displays the error differently.
       expect(screen.getByText(/Purchase Order not found./i)).toBeInTheDocument();
     });
   });

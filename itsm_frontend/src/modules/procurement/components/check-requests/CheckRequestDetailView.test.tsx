@@ -138,19 +138,24 @@ describe('CheckRequestDetailView', () => {
     });
   });
 
-  it('renders "not found" state if API returns no check request', async () => {
-    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValueOnce(null); // Corrected: Use mockResolvedValueOnce for null
-    renderComponent('1');
+  it('renders "not found" state if API call for non-existent ID fails', async () => {
+    const notFoundError = new Error('Check Request not found');
+    vi.mocked(procurementApi.getCheckRequestById).mockRejectedValueOnce(notFoundError);
+    renderComponent('1'); // Attempt to fetch CR with ID '1' that will be "not found"
     await waitFor(() => {
+      // The component should catch the error and display an appropriate message.
+      // This assertion might need to be adjusted if the component displays the error differently.
       expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
     });
   });
 
   describe('Successful Data Display (Happy Path)', () => {
     // Helper to re-render with potentially different data for specific display tests
-    const setupAndRender = (data: CheckRequest | null) => {
-        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data); // Corrected: Use mockResolvedValue
-        renderComponent(data ? String(data.id) : '1');
+    // Changed data type to CheckRequest as API is not expected to resolve to null.
+    // "Not found" cases are tested with mockRejectedValueOnce.
+    const setupAndRender = (data: CheckRequest) => {
+        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data);
+        renderComponent(String(data.id)); // data will always be non-null here
     };
 
     it('renders all key check request details correctly', async () => {
@@ -162,6 +167,8 @@ describe('CheckRequestDetailView', () => {
       // Request Information
       expect(screen.getByText(`Request Information (${baseCheckRequestData.cr_id})`)).toBeInTheDocument();
       expect(screen.getByText('Status:')).toBeInTheDocument();
+      // The text check for status needs to be more robust if the status is rendered inside a Chip
+      // For now, we assume the test expects the raw status text to be found, which might fail if it's stylized.
       expect(screen.getByText(baseCheckRequestData.status.replace(/_/g, ' ').toUpperCase())).toBeInTheDocument();
       expect(screen.getByText('Requested By:')).toBeInTheDocument();
       expect(screen.getByText(baseCheckRequestData.requested_by_username)).toBeInTheDocument();
