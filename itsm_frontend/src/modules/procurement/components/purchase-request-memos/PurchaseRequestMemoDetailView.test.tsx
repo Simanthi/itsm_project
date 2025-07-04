@@ -130,9 +130,8 @@ describe('PurchaseRequestMemoDetailView', () => {
     vi.mocked(getPurchaseRequestMemoById).mockRejectedValueOnce(notFoundError);
     renderComponent('1'); // Attempt to fetch a memo that will "not be found"
     await waitFor(() => {
-      // The component should catch this error and display an appropriate message.
-      // This assertion might need to be adjusted based on actual component behavior.
-      expect(screen.getByText(/Internal Office Memo not found./i)).toBeInTheDocument();
+      // Component displays the error message in an Alert
+      expect(screen.getByText(/Failed to fetch memo details: Internal Office Memo not found/i)).toBeInTheDocument();
     });
   });
 

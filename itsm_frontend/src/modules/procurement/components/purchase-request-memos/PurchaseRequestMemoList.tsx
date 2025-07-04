@@ -119,8 +119,15 @@ const PurchaseRequestMemoList: React.FC = () => {
         authenticatedFetch,
         params,
       );
-      setMemos(response.results);
-      setTotalMemos(response.count);
+      if (response && response.results) {
+        setMemos(response.results);
+        setTotalMemos(response.count);
+      } else {
+        console.error('Received invalid response from getPurchaseRequestMemos:', response);
+        setMemos([]);
+        setTotalMemos(0);
+        setError('Failed to retrieve valid memo data structure.');
+      }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : String(err);
       setError(message || 'Failed to fetch purchase requests.');
