@@ -386,8 +386,15 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [{
+          ...mockMemos[0],
+          id: 101,
+          iom_id: 'IOM-101',
+          status: 'pending',
+          requested_by: 1, // mockUserStaff.id, but use literal to match pendingMemoIsRequester
+          requested_by_username: 'testuser', // mockUserStaff.name, but use literal
+        }],
+      });
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
 
@@ -404,8 +411,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
-        } as PaginatedResponse<PurchaseRequestMemo>);
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
+        });
         const user = userEvent.setup();
         renderWithProviders(<PurchaseRequestMemoList />);
 
@@ -423,8 +430,8 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [approvedMemo],
+      });
       renderWithProviders(<PurchaseRequestMemoList />);
 
       await screen.findByText(approvedMemo.iom_id as string);
@@ -439,8 +446,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
-        } as PaginatedResponse<PurchaseRequestMemo>);
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
+        });
         renderWithProviders(<PurchaseRequestMemoList />);
 
         await screen.findByText(pendingMemoNotRequester.iom_id as string);
@@ -472,11 +479,14 @@ describe('PurchaseRequestMemoList', () => {
       });
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo]
-        } as PaginatedResponse<PurchaseRequestMemo>)
+          count: 1, next: null, previous: null, results: [pendingMemoIsRequester] // Assuming pendingMemoIsRequester is needed for the first call by the test logic
+        })
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{...pendingMemoIsRequester, status: 'cancelled'} as PurchaseRequestMemo]
-        } as PaginatedResponse<PurchaseRequestMemo>);
+          count: 1, next: null, previous: null, results: [{
+            ...pendingMemoIsRequester, // Keep pendingMemoIsRequester as base for status change
+            status: 'cancelled'
+          }]
+        });
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -514,11 +524,11 @@ describe('PurchaseRequestMemoList', () => {
         });
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo]
-            } as PaginatedResponse<PurchaseRequestMemo>)
+              count: 1, next: null, previous: null, results: [pendingMemoNotRequester]
+            })
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'cancelled'} as PurchaseRequestMemo]
-            } as PaginatedResponse<PurchaseRequestMemo>);
+              count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'cancelled'}]
+            });
         const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -537,8 +547,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [approvedMemo],
+      });
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -547,8 +557,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-         count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+         count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
+      });
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoNotRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -578,8 +588,8 @@ describe('PurchaseRequestMemoList', () => {
         hideSnackbar: vi.fn(),
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
+      });
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo);
 
       const user = userEvent.setup();
@@ -601,11 +611,14 @@ describe('PurchaseRequestMemoList', () => {
 
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo]
-        } as PaginatedResponse<PurchaseRequestMemo>)
+          count: 1, next: null, previous: null, results: [pendingMemoNotRequester] // Assuming pendingMemoNotRequester is needed for the first call
+        })
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'approved'} as PurchaseRequestMemo]
-        } as PaginatedResponse<PurchaseRequestMemo>);
+          count: 1, next: null, previous: null, results: [{
+            ...pendingMemoNotRequester, // Keep pendingMemoNotRequester as base
+            status: 'approved'
+          }]
+        });
       const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -640,11 +653,14 @@ describe('PurchaseRequestMemoList', () => {
 
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo]
-            } as PaginatedResponse<PurchaseRequestMemo>)
+              count: 1, next: null, previous: null, results: [pendingMemoIsRequester] // Assuming pendingMemoIsRequester is needed for the first call
+            })
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [{...pendingMemoIsRequester, status: 'rejected'} as PurchaseRequestMemo]
-            } as PaginatedResponse<PurchaseRequestMemo>);
+              count: 1, next: null, previous: null, results: [{
+                ...pendingMemoIsRequester, // Keep pendingMemoIsRequester as base
+                status: 'rejected'
+              }]
+            });
         const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -675,8 +691,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons if user is not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
+      });
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoIsRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
@@ -686,8 +702,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
-      } as PaginatedResponse<PurchaseRequestMemo>);
+        count: 1, next: null, previous: null, results: [approvedMemo],
+      });
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
