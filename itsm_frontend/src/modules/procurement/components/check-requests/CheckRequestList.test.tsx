@@ -9,7 +9,7 @@ import CheckRequestList from './CheckRequestList';
 import * as procurementApi from '../../../../api/procurementApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
-import type { CheckRequest, PaginatedResponse } from '../../types';
+import type { CheckRequest, PaginatedResponse, CheckRequestStatus } from '../../types';
 
 // Mock API module
 vi.mock('../../../../api/procurementApi');
