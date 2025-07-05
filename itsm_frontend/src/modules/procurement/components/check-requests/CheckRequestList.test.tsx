@@ -286,7 +286,7 @@ describe('CheckRequestList', () => {
     // --- Edit Button ---
     it('shows Edit button for "pending_submission" CR if user is requester, and navigates', async () => {
       vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: pendingSubmissionCR.requested_by };
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingSubmissionCR] });
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
       const editButton = await screen.findByRole('button', { name: /edit/i });
@@ -297,14 +297,14 @@ describe('CheckRequestList', () => {
 
     it('shows Edit button for "pending_submission" CR if user is staff (not requester)', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR] });
       renderWithProviders(<CheckRequestList />);
       const editButton = await screen.findByRole('button', { name: /edit/i });
       expect(editButton).toBeInTheDocument();
     });
 
     it('does NOT show Edit button for "pending_approval" CR', async () => {
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
@@ -312,7 +312,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show Edit button for "pending_submission" CR if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(otherUserPendingSubmissionCR.cr_id!);
       expect(screen.queryByRole('button', { name: /edit/i })).not.toBeInTheDocument();
@@ -327,14 +327,14 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [pendingSubmissionCR as CheckRequest]
-        } as PaginatedResponse<CheckRequest>)
+          results: [pendingSubmissionCR]
+        })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{ ...pendingSubmissionCR, status: 'pending_approval' } as CheckRequest]
-        } as PaginatedResponse<CheckRequest>);
+          results: [{ ...pendingSubmissionCR, status: 'pending_approval' }]
+        });
       const submitMock = vi.mocked(procurementApi.submitCheckRequestForApproval).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -350,14 +350,14 @@ describe('CheckRequestList', () => {
 
     it('shows "Submit for Approval" button for "pending_submission" CR if user is staff (not requester)', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR] });
       renderWithProviders(<CheckRequestList />);
       const submitButton = await screen.findByRole('button', { name: /submit for approval/i });
       expect(submitButton).toBeInTheDocument();
     });
 
     it('does NOT show "Submit for Approval" button for "pending_approval" CR', async () => {
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /submit for approval/i })).not.toBeInTheDocument();
@@ -365,7 +365,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show "Submit for Approval" button for "pending_submission" CR if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [otherUserPendingSubmissionCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(otherUserPendingSubmissionCR.cr_id!);
       expect(screen.queryByRole('button', { name: /submit for approval/i })).not.toBeInTheDocument();
@@ -376,11 +376,11 @@ describe('CheckRequestList', () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest]
-        } as PaginatedResponse<CheckRequest>)
+          count: 1, next: null, previous: null, results: [pendingApprovalCR]
+        })
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'approved' } as CheckRequest]
-        } as PaginatedResponse<CheckRequest>);
+          count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'approved' }]
+        });
       const approveMock = vi.mocked(procurementApi.approveCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -405,11 +405,11 @@ describe('CheckRequestList', () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest]
-        } as PaginatedResponse<CheckRequest>)
+          count: 1, next: null, previous: null, results: [pendingApprovalCR]
+        })
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'rejected' } as CheckRequest]
-        } as PaginatedResponse<CheckRequest>);
+          count: 1, next: null, previous: null, results: [{ ...pendingApprovalCR, status: 'rejected' }]
+        });
       const rejectMock = vi.mocked(procurementApi.rejectCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -432,7 +432,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show Approve/Reject buttons for "pending_approval" CR if user is not staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
@@ -441,7 +441,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show Approve/Reject buttons for "pending_submission" CR even if user is staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingSubmissionCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingSubmissionCR.cr_id!);
       expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
@@ -454,11 +454,11 @@ describe('CheckRequestList', () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [approvedCR as CheckRequest]
-        } as PaginatedResponse<CheckRequest>)
+          count: 1, next: null, previous: null, results: [approvedCR]
+        })
         .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{ ...approvedCR, status: 'payment_processing' } as CheckRequest]
-        } as PaginatedResponse<CheckRequest>);
+          count: 1, next: null, previous: null, results: [{ ...approvedCR, status: 'payment_processing' }]
+        });
       const markProcessingMock = vi.mocked(procurementApi.markCheckRequestPaymentProcessing).mockResolvedValue(undefined);
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -474,7 +474,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show "Mark Payment Processing" button for non-approved CR', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /mark payment processing/i })).not.toBeInTheDocument();
@@ -483,7 +483,7 @@ describe('CheckRequestList', () => {
     it('does NOT show "Mark Payment Processing" button if user is not staff', async () => {
       const approvedCR: CheckRequest = { ...mockCRs[0], id: 205, cr_id: 'CR-APPROVED', status: 'approved' };
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(approvedCR.cr_id!);
       expect(screen.queryByRole('button', { name: /mark payment processing/i })).not.toBeInTheDocument();
@@ -498,11 +498,11 @@ describe('CheckRequestList', () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [crInstance as CheckRequest]
-          } as PaginatedResponse<CheckRequest>)
+            count: 1, next: null, previous: null, results: [crInstance]
+          })
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' } as CheckRequest]
-          } as PaginatedResponse<CheckRequest>);
+            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' }]
+          });
         const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -549,11 +549,11 @@ describe('CheckRequestList', () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [crInstance as CheckRequest]
-          } as PaginatedResponse<CheckRequest>)
+            count: 1, next: null, previous: null, results: [crInstance]
+          })
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' } as CheckRequest]
-          } as PaginatedResponse<CheckRequest>);
+            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'paid' }]
+          });
       const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
       const user = userEvent.setup();
@@ -597,7 +597,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show "Confirm Payment" button for "pending_approval" CR', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [pendingApprovalCR] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /confirm payment/i })).not.toBeInTheDocument();
@@ -605,7 +605,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show "Confirm Payment" button if user is not staff', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCRForPayment as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCRForPayment] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(approvedCRForPayment.cr_id!);
       expect(screen.queryByRole('button', { name: /confirm payment/i })).not.toBeInTheDocument();
@@ -625,11 +625,11 @@ describe('CheckRequestList', () => {
 
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [crInstance as CheckRequest]
-          } as PaginatedResponse<CheckRequest>)
+            count: 1, next: null, previous: null, results: [crInstance]
+          })
           .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'cancelled' } as CheckRequest]
-          } as PaginatedResponse<CheckRequest>);
+            count: 1, next: null, previous: null, results: [{ ...crInstance, status: 'cancelled' }]
+          });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -648,7 +648,7 @@ describe('CheckRequestList', () => {
 
     it('does NOT show "Cancel Request" button for "approved" CR', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
-      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCRForCancelTest as CheckRequest] } as PaginatedResponse<CheckRequest>);
+      vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({ count: 1, next: null, previous: null, results: [approvedCRForCancelTest] });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(approvedCRForCancelTest.cr_id!);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -660,7 +660,7 @@ describe('CheckRequestList', () => {
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [yetAnotherPendingSubmissionCR as CheckRequest] } as PaginatedResponse<CheckRequest>);
+          .mockResolvedValueOnce({ count: 1, next: null, previous: null, results: [yetAnotherPendingSubmissionCR] });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest);
 
         const user = userEvent.setup();
