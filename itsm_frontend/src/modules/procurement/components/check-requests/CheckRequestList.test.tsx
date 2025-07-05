@@ -393,8 +393,38 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{ // Inlining and modifying pendingSubmissionCR for second call
-            ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_approval', requested_by: mockUser.id
+          results: [{
+            id: 201,
+            cr_id: 'CR-SUBMIT',
+            purchase_order: mockCRs[0].purchase_order,
+            purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date,
+            status: 'pending_approval', // Changed status
+            amount: mockCRs[0].amount,
+            currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name,
+            requested_by: mockUser.id, // Matches pendingSubmissionCR's requested_by
+            requested_by_username: mockCRs[0].requested_by_username, // Assuming pendingSubmissionCR uses this
+            created_at: mockCRs[0].created_at,
+            updated_at: mockCRs[0].updated_at,
+            reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name,
+            attachments: mockCRs[0].attachments,
+            is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null,
+            invoice_date: null,
+            payee_address: null,
+            approved_by_accounts: null,
+            approved_by_accounts_username: null,
+            accounts_approval_date: null,
+            accounts_comments: null,
+            payment_method: null,
+            payment_date: null,
+            transaction_id: null,
+            payment_notes: null,
+            expense_category: null,
+            recurring_payment: null,
+            recurring_payment_details: null,
           }]
         });
       const submitMock = vi.mocked(procurementApi.submitCheckRequestForApproval).mockResolvedValue(undefined);
@@ -463,16 +493,34 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{ // Inlining pendingApprovalCR
-            ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
+          results: [{
+            id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id,
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username, // from pendingApprovalCR
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{ // Inlining and modifying pendingApprovalCR
-            ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'approved', requested_by: mockUser.id
+          results: [{
+            id: 202, cr_id: 'CR-APPROVE', status: 'approved', requested_by: mockUser.id, // status changed
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         });
       const approveMock = vi.mocked(procurementApi.approveCheckRequestByAccounts).mockResolvedValue(undefined);
@@ -503,16 +551,34 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{ // Inlining pendingApprovalCR
-            ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
+          results: [{
+            id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id,
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{ // Inlining and modifying pendingApprovalCR
-            ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'rejected', requested_by: mockUser.id
+          results: [{
+            id: 202, cr_id: 'CR-APPROVE', status: 'rejected', requested_by: mockUser.id, // status changed
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         });
       const rejectMock = vi.mocked(procurementApi.rejectCheckRequestByAccounts).mockResolvedValue(undefined);
@@ -578,7 +644,16 @@ describe('CheckRequestList', () => {
           next: null,
           previous: null,
           results: [{
-            ...mockCRs[0], id: approvedCRId, cr_id: 'CR-APPROVED', status: 'approved'
+            id: approvedCRId, cr_id: 'CR-APPROVED', status: 'approved',
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         })
         .mockResolvedValueOnce({
@@ -586,7 +661,16 @@ describe('CheckRequestList', () => {
           next: null,
           previous: null,
           results: [{
-            ...mockCRs[0], id: approvedCRId, cr_id: 'CR-APPROVED', status: 'payment_processing'
+            id: approvedCRId, cr_id: 'CR-APPROVED', status: 'payment_processing', // status changed
+            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+            payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+            expense_category: null, recurring_payment: null, recurring_payment_details: null,
           }]
         });
       const markProcessingMock = vi.mocked(procurementApi.markCheckRequestPaymentProcessing).mockResolvedValue(undefined);
@@ -645,13 +729,35 @@ describe('CheckRequestList', () => {
             count: 1,
             next: null,
             previous: null,
-            results: [{ ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'approved' }]
+            results: [{
+              id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'approved',
+              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+              expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           })
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{ ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'paid' }]
+            results: [{
+              id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'paid', // status changed
+              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+              expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           });
         const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -702,13 +808,35 @@ describe('CheckRequestList', () => {
             count: 1,
             next: null,
             previous: null,
-            results: [{ ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing' }]
+            results: [{
+              id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing',
+              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+              expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           })
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{ ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'paid' }]
+            results: [{
+              id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'paid', // status changed
+              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
+              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
+              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
+              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
+              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
+              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
+              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
+              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
+              expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           });
       const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -796,11 +924,35 @@ describe('CheckRequestList', () => {
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [currentCrInstance]
+          .mockResolvedValueOnce({ // For the first CR in the loop (pending_submission)
+            count: 1, next: null, previous: null, results: [{
+                id: currentCrInstance.id, cr_id: currentCrInstance.cr_id, status: currentCrInstance.status as CheckRequestStatus,
+                requested_by: currentCrInstance.requested_by, purchase_order: currentCrInstance.purchase_order,
+                purchase_order_number: currentCrInstance.purchase_order_number, request_date: currentCrInstance.request_date,
+                amount: currentCrInstance.amount, currency: currentCrInstance.currency, payee_name: currentCrInstance.payee_name,
+                requested_by_username: currentCrInstance.requested_by_username, created_at: currentCrInstance.created_at,
+                updated_at: currentCrInstance.updated_at, reason_for_payment: currentCrInstance.reason_for_payment,
+                expense_category_name: currentCrInstance.expense_category_name, attachments: currentCrInstance.attachments,
+                is_urgent: currentCrInstance.is_urgent, invoice_number: null, invoice_date: null, payee_address: null,
+                approved_by_accounts: null, approved_by_accounts_username: null, accounts_approval_date: null,
+                accounts_comments: null, payment_method: null, payment_date: null, transaction_id: null,
+                payment_notes: null, expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           })
-          .mockResolvedValueOnce({
-            count: 1, next: null, previous: null, results: [{ ...currentCrInstance, status: 'cancelled' }]
+          .mockResolvedValueOnce({ // For the first CR, after cancellation
+            count: 1, next: null, previous: null, results: [{
+                id: currentCrInstance.id, cr_id: currentCrInstance.cr_id, status: 'cancelled', // status changed
+                requested_by: currentCrInstance.requested_by, purchase_order: currentCrInstance.purchase_order,
+                purchase_order_number: currentCrInstance.purchase_order_number, request_date: currentCrInstance.request_date,
+                amount: currentCrInstance.amount, currency: currentCrInstance.currency, payee_name: currentCrInstance.payee_name,
+                requested_by_username: currentCrInstance.requested_by_username, created_at: currentCrInstance.created_at,
+                updated_at: currentCrInstance.updated_at, reason_for_payment: currentCrInstance.reason_for_payment,
+                expense_category_name: currentCrInstance.expense_category_name, attachments: currentCrInstance.attachments,
+                is_urgent: currentCrInstance.is_urgent, invoice_number: null, invoice_date: null, payee_address: null,
+                approved_by_accounts: null, approved_by_accounts_username: null, accounts_approval_date: null,
+                accounts_comments: null, payment_method: null, payment_date: null, transaction_id: null,
+                payment_notes: null, expense_category: null, recurring_payment: null, recurring_payment_details: null,
+            }]
           });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest).mockResolvedValue(undefined);
 
