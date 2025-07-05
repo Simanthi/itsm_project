@@ -759,7 +759,7 @@ describe('CheckRequestList', () => {
     // Inlining crInstance directly in the loop or defining them inline for each test
     [{status: 'pending_submission', id: 208, cr_id: 'CR-CANCEL-SUB'}, {status: 'pending_approval', id:209, cr_id: 'CR-CANCEL-APP'}].forEach((crData) => {
       it(`handles "Cancel Request" for "${crData.status}" CR: shows button, opens dialog, confirms, calls API`, async () => {
-        const currentCrInstance: CheckRequest = { ...mockCRs[0], ...crData, requested_by: mockUser.id };
+        const currentCrInstance: CheckRequest = { ...mockCRs[0], ...crData, status: crData.status as CheckRequestStatus, requested_by: mockUser.id };
         vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: currentCrInstance.requested_by };
 
         const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
