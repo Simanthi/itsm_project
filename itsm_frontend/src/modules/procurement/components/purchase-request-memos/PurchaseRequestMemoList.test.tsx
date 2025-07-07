@@ -387,6 +387,10 @@ describe('PurchaseRequestMemoList', () => {
   });
 
   describe('Action Buttons', () => {
+    // Define mockUserStaff and mockUserRegular first as they are used in other mock object definitions
+    const mockUserStaff = { id: 1, name: 'testuser', email: 'teststaff@example.com', role: 'admin', is_staff: true, groups: [] };
+    const mockUserRegular = { id: 2, name: 'regularJoe', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
+
     const pendingMemoIsRequester = createCompletePurchaseRequestMemo({
       // Explicit definition, not spreading mockMemos[0] directly if it causes issues
       id: 101, iom_id: 'IOM-101', item_description: 'Laptop for Requester', priority: 'high',
@@ -404,15 +408,12 @@ describe('PurchaseRequestMemoList', () => {
 
     const approvedMemo = createCompletePurchaseRequestMemo({
       id: 103, iom_id: 'IOM-103', item_description: 'Approved Item', priority: 'low',
-      department: 2, department_name: 'HR', requested_by: 1, requested_by_username: 'testuser',
+      department: 2, department_name: 'HR', requested_by: 1, requested_by_username: 'testuser', // Assuming testuser (staff) is the requester for this approved memo
       request_date: '2024-03-03T10:00:00Z', status: 'approved', estimated_cost: 200,
-      reason: 'Approved reason', quantity: 3, approver: mockUserStaff.id, approver_username: mockUserStaff.name, // mockUserStaff defined below
+      reason: 'Approved reason', quantity: 3, approver: mockUserStaff.id, approver_username: mockUserStaff.name,
       decision_date: '2024-03-04T10:00:00Z', approver_comments: 'Looks good',
       created_at: '2024-03-03T10:00:00Z', updated_at: '2024-03-04T10:00:00Z',
     });
-
-    const mockUserRegular = { id: 2, name: 'regularJoe', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
-    const mockUserStaff = { id: 1, name: 'testuser', email: 'teststaff@example.com', role: 'admin', is_staff: true, groups: [] };
 
 
     it('shows Edit button for pending memo if user is requester, and navigates on click', async () => {
@@ -531,12 +532,33 @@ describe('PurchaseRequestMemoList', () => {
         .mockResolvedValueOnce({ // After cancellation
           count: 1, next: null, previous: null,
           results: [
-            createCompletePurchaseRequestMemo({
-              ...pendingMemoIsRequester,
-              id: pendingMemoIsRequester.id, // Ensure ID consistency
-              status: 'cancelled', // Status changes
-              updated_at: new Date().toISOString(),
-            })
+            { // Manually define Memo after cancellation
+              id: pendingMemoIsRequester.id,
+              iom_id: pendingMemoIsRequester.iom_id,
+              item_description: pendingMemoIsRequester.item_description,
+              quantity: pendingMemoIsRequester.quantity,
+              reason: pendingMemoIsRequester.reason,
+              estimated_cost: pendingMemoIsRequester.estimated_cost,
+              requested_by: pendingMemoIsRequester.requested_by,
+              requested_by_username: pendingMemoIsRequester.requested_by_username,
+              request_date: pendingMemoIsRequester.request_date,
+              status: 'cancelled', // Changed
+              approver: null, // Reset or keep, depending on logic
+              approver_username: null,
+              decision_date: null,
+              approver_comments: 'Cancelled by user', // Or some default/null
+              department: pendingMemoIsRequester.department,
+              department_name: pendingMemoIsRequester.department_name,
+              project: pendingMemoIsRequester.project,
+              project_name: pendingMemoIsRequester.project_name,
+              priority: pendingMemoIsRequester.priority,
+              required_delivery_date: pendingMemoIsRequester.required_delivery_date,
+              suggested_vendor: pendingMemoIsRequester.suggested_vendor,
+              suggested_vendor_name: pendingMemoIsRequester.suggested_vendor_name,
+              attachments: pendingMemoIsRequester.attachments,
+              created_at: pendingMemoIsRequester.created_at,
+              updated_at: new Date().toISOString(), // Updated
+            } as PurchaseRequestMemo
           ]
         });
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
@@ -581,12 +603,33 @@ describe('PurchaseRequestMemoList', () => {
             .mockResolvedValueOnce({ // After cancellation by staff
               count: 1, next: null, previous: null,
               results: [
-                createCompletePurchaseRequestMemo({
-                  ...pendingMemoNotRequester,
-                  id: pendingMemoNotRequester.id, // Ensure ID consistency
-                  status: 'cancelled', // Status changes
-                  updated_at: new Date().toISOString(),
-                })
+                { // Manually define Memo after cancellation by staff
+                  id: pendingMemoNotRequester.id,
+                  iom_id: pendingMemoNotRequester.iom_id,
+                  item_description: pendingMemoNotRequester.item_description,
+                  quantity: pendingMemoNotRequester.quantity,
+                  reason: pendingMemoNotRequester.reason,
+                  estimated_cost: pendingMemoNotRequester.estimated_cost,
+                  requested_by: pendingMemoNotRequester.requested_by,
+                  requested_by_username: pendingMemoNotRequester.requested_by_username,
+                  request_date: pendingMemoNotRequester.request_date,
+                  status: 'cancelled', // Changed
+                  approver: null,
+                  approver_username: null,
+                  decision_date: null,
+                  approver_comments: 'Cancelled by staff',
+                  department: pendingMemoNotRequester.department,
+                  department_name: pendingMemoNotRequester.department_name,
+                  project: pendingMemoNotRequester.project,
+                  project_name: pendingMemoNotRequester.project_name,
+                  priority: pendingMemoNotRequester.priority,
+                  required_delivery_date: pendingMemoNotRequester.required_delivery_date,
+                  suggested_vendor: pendingMemoNotRequester.suggested_vendor,
+                  suggested_vendor_name: pendingMemoNotRequester.suggested_vendor_name,
+                  attachments: pendingMemoNotRequester.attachments,
+                  created_at: pendingMemoNotRequester.created_at,
+                  updated_at: new Date().toISOString(), // Updated
+                } as PurchaseRequestMemo
               ]
             });
         const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
@@ -677,16 +720,33 @@ describe('PurchaseRequestMemoList', () => {
         .mockResolvedValueOnce({ // After approval
           count: 1, next: null, previous: null,
           results: [
-            createCompletePurchaseRequestMemo({
-              ...pendingMemoNotRequester,
-              id: pendingMemoNotRequester.id, // Ensure ID consistency
-              status: 'approved', // Status changes
-              approver: mockUserStaff.id, // User who approved
+            { // Manually define Memo after approval
+              id: pendingMemoNotRequester.id,
+              iom_id: pendingMemoNotRequester.iom_id,
+              item_description: pendingMemoNotRequester.item_description,
+              quantity: pendingMemoNotRequester.quantity,
+              reason: pendingMemoNotRequester.reason,
+              estimated_cost: pendingMemoNotRequester.estimated_cost,
+              requested_by: pendingMemoNotRequester.requested_by,
+              requested_by_username: pendingMemoNotRequester.requested_by_username,
+              request_date: pendingMemoNotRequester.request_date,
+              status: 'approved', // Changed
+              approver: mockUserStaff.id,
               approver_username: mockUserStaff.name,
               decision_date: new Date().toISOString(),
               approver_comments: 'Approved by tests',
-              updated_at: new Date().toISOString(),
-            })
+              department: pendingMemoNotRequester.department,
+              department_name: pendingMemoNotRequester.department_name,
+              project: pendingMemoNotRequester.project,
+              project_name: pendingMemoNotRequester.project_name,
+              priority: pendingMemoNotRequester.priority,
+              required_delivery_date: pendingMemoNotRequester.required_delivery_date,
+              suggested_vendor: pendingMemoNotRequester.suggested_vendor,
+              suggested_vendor_name: pendingMemoNotRequester.suggested_vendor_name,
+              attachments: pendingMemoNotRequester.attachments,
+              created_at: pendingMemoNotRequester.created_at,
+              updated_at: new Date().toISOString(), // Updated
+            } as PurchaseRequestMemo
           ]
         });
       const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
@@ -729,16 +789,33 @@ describe('PurchaseRequestMemoList', () => {
             .mockResolvedValueOnce({ // After rejection
               count: 1, next: null, previous: null,
               results: [
-                createCompletePurchaseRequestMemo({
-                  ...pendingMemoIsRequester,
-                  id: pendingMemoIsRequester.id, // Ensure ID consistency
-                  status: 'rejected', // Status changes
-                  approver: mockUserStaff.id, // User who rejected
+                { // Manually define Memo after rejection
+                  id: pendingMemoIsRequester.id,
+                  iom_id: pendingMemoIsRequester.iom_id,
+                  item_description: pendingMemoIsRequester.item_description,
+                  quantity: pendingMemoIsRequester.quantity,
+                  reason: pendingMemoIsRequester.reason,
+                  estimated_cost: pendingMemoIsRequester.estimated_cost,
+                  requested_by: pendingMemoIsRequester.requested_by,
+                  requested_by_username: pendingMemoIsRequester.requested_by_username,
+                  request_date: pendingMemoIsRequester.request_date,
+                  status: 'rejected', // Changed
+                  approver: mockUserStaff.id,
                   approver_username: mockUserStaff.name,
                   decision_date: new Date().toISOString(),
                   approver_comments: 'Rejected for testing reasons',
-                  updated_at: new Date().toISOString(),
-                })
+                  department: pendingMemoIsRequester.department,
+                  department_name: pendingMemoIsRequester.department_name,
+                  project: pendingMemoIsRequester.project,
+                  project_name: pendingMemoIsRequester.project_name,
+                  priority: pendingMemoIsRequester.priority,
+                  required_delivery_date: pendingMemoIsRequester.required_delivery_date,
+                  suggested_vendor: pendingMemoIsRequester.suggested_vendor,
+                  suggested_vendor_name: pendingMemoIsRequester.suggested_vendor_name,
+                  attachments: pendingMemoIsRequester.attachments,
+                  created_at: pendingMemoIsRequester.created_at,
+                  updated_at: new Date().toISOString(), // Updated
+                } as PurchaseRequestMemo
               ]
             });
         const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
