@@ -61,16 +61,16 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
-const createCompletePurchaseRequestMemo = (memoData: Partial<PurchaseRequestMemo>): PurchaseRequestMemo => {
-  const defaults: PurchaseRequestMemo = {
+const помошникСозданияЗавершенногоМеморандумаОЗакупке = (данныеМеморандума: Partial<PurchaseRequestMemo>): PurchaseRequestMemo => {
+  const стандартныеЗначенияМемо: PurchaseRequestMemo = {
     id: 0,
-    item_description: "Default Item",
+    item_description: "Стандартный Элемент",
     quantity: 1,
-    reason: "Default Reason",
+    reason: "Стандартная Причина",
     estimated_cost: null,
     requested_by: 0,
-    requested_by_username: "defaultUser",
-    request_date: new Date().toISOString(),
+    requested_by_username: "стандартныйПользовательМемо",
+    request_date: "2024-01-01T00:00:00.000Z", // Fixed date
     status: 'pending',
     approver: null,
     approver_username: null,
@@ -86,25 +86,31 @@ const createCompletePurchaseRequestMemo = (memoData: Partial<PurchaseRequestMemo
     suggested_vendor: null,
     suggested_vendor_name: null,
     attachments: null,
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: "2024-01-01T00:00:00.000Z", // Fixed date
+    updated_at: "2024-01-01T00:00:00.000Z", // Fixed date
   };
-  return { ...defaults, ...memoData };
+  return { ...стандартныеЗначенияМемо, ...данныеМеморандума };
 };
 
+// Re-aliasing for clarity in tests
+const createCompletePurchaseRequestMemo = помошникСозданияЗавершенногоМеморандумаОЗакупке;
 
-const mockMemos: PurchaseRequestMemo[] = [
-  createCompletePurchaseRequestMemo({
-    id: 1, iom_id: 'IOM-001', item_description: 'Laptop Pro', priority: 'high', department: 1, department_name: 'IT',
-    requested_by: 1, requested_by_username: 'jdoe', request_date: '2024-01-15T10:00:00Z', status: 'pending', estimated_cost: 1500,
-    reason: 'Need new laptop', quantity: 1, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: null, approver_username: null, decision_date: null, approver_comments: null, created_at: '2024-01-15T10:00:00Z', updated_at: '2024-01-15T10:00:00Z',
-  }),
-  createCompletePurchaseRequestMemo({
-    id: 2, iom_id: 'IOM-002', item_description: 'Office Chairs', priority: 'medium', department: 2, department_name: 'HR',
-    requested_by: 2, requested_by_username: 'asmith', request_date: '2024-01-16T11:00:00Z', status: 'approved', estimated_cost: 300,
-    reason: 'New hires', quantity: 2, project: null, project_name: null, required_delivery_date: null, suggested_vendor: null, suggested_vendor_name: null, attachments: null, approver: 1, approver_username: 'admin', decision_date: '2024-01-17T10:00:00Z', approver_comments: 'Approved', created_at: '2024-01-16T11:00:00Z', updated_at: '2024-01-17T10:00:00Z',
-  }),
-];
+
+const mockMemo0_base = createCompletePurchaseRequestMemo({
+  id: 1, iom_id: 'IOM-001', item_description: 'Laptop Pro', priority: 'high', department: 1, department_name: 'IT',
+  requested_by: 1, requested_by_username: 'jdoe', request_date: '2024-01-15T10:00:00Z', status: 'pending', estimated_cost: 1500,
+  reason: 'Need new laptop', quantity: 1, created_at: '2024-01-15T10:00:00Z', updated_at: '2024-01-15T10:00:00Z',
+});
+
+const mockMemo1_base = createCompletePurchaseRequestMemo({
+  id: 2, iom_id: 'IOM-002', item_description: 'Office Chairs', priority: 'medium', department: 2, department_name: 'HR',
+  requested_by: 2, requested_by_username: 'asmith', request_date: '2024-01-16T11:00:00Z', status: 'approved', estimated_cost: 300,
+  reason: 'New hires', quantity: 2, approver: 1, approver_username: 'admin', decision_date: '2024-01-17T10:00:00Z', approver_comments: 'Approved',
+  created_at: '2024-01-16T11:00:00Z', updated_at: '2024-01-17T10:00:00Z',
+});
+
+
+const mockMemos: PurchaseRequestMemo[] = [mockMemo0_base, mockMemo1_base];
 
 const mockPaginatedMemosResponse: PaginatedResponse<PurchaseRequestMemo> = {
   count: mockMemos.length,
@@ -382,29 +388,27 @@ describe('PurchaseRequestMemoList', () => {
 
   describe('Action Buttons', () => {
     const pendingMemoIsRequester = createCompletePurchaseRequestMemo({
-      ...mockMemos[0],
-      id: 101,
-      iom_id: 'IOM-101',
-      status: 'pending',
-      requested_by: 1,
-      requested_by_username: 'testuser',
+      // Explicit definition, not spreading mockMemos[0] directly if it causes issues
+      id: 101, iom_id: 'IOM-101', item_description: 'Laptop for Requester', priority: 'high',
+      department: 1, department_name: 'IT', requested_by: 1, requested_by_username: 'testuser',
+      request_date: '2024-03-01T10:00:00Z', status: 'pending', estimated_cost: 1200,
+      reason: 'Requester needs laptop', quantity: 1, created_at: '2024-03-01T10:00:00Z', updated_at: '2024-03-01T10:00:00Z',
     });
 
     const pendingMemoNotRequester = createCompletePurchaseRequestMemo({
-        ...mockMemos[0],
-        id: 102,
-        iom_id: 'IOM-102',
-        status: 'pending',
-        requested_by: 99,
-        requested_by_username: 'otheruser',
+        id: 102, iom_id: 'IOM-102', item_description: 'Laptop for Other', priority: 'medium',
+        department: 1, department_name: 'IT', requested_by: 99, requested_by_username: 'otheruser',
+        request_date: '2024-03-02T10:00:00Z', status: 'pending', estimated_cost: 1300,
+        reason: 'Other user needs laptop', quantity: 1, created_at: '2024-03-02T10:00:00Z', updated_at: '2024-03-02T10:00:00Z',
     });
 
     const approvedMemo = createCompletePurchaseRequestMemo({
-      ...mockMemos[1],
-      id: 103,
-      iom_id: 'IOM-103',
-      status: 'approved',
-      requested_by: 1,
+      id: 103, iom_id: 'IOM-103', item_description: 'Approved Item', priority: 'low',
+      department: 2, department_name: 'HR', requested_by: 1, requested_by_username: 'testuser',
+      request_date: '2024-03-03T10:00:00Z', status: 'approved', estimated_cost: 200,
+      reason: 'Approved reason', quantity: 3, approver: mockUserStaff.id, approver_username: mockUserStaff.name, // mockUserStaff defined below
+      decision_date: '2024-03-04T10:00:00Z', approver_comments: 'Looks good',
+      created_at: '2024-03-03T10:00:00Z', updated_at: '2024-03-04T10:00:00Z',
     });
 
     const mockUserRegular = { id: 2, name: 'regularJoe', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
