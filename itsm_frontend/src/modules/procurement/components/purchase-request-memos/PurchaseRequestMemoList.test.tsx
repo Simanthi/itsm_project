@@ -419,28 +419,23 @@ describe('PurchaseRequestMemoList', () => {
     it('shows Edit button for pending memo if user is requester, and navigates on click', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({
         ...vi.mocked(useAuthHook.useAuth)(),
-        user: mockUserStaff,
+        user: { ...mockUserStaff, id: pendingMemoIsRequester.requested_by }, // Ensure user matches memo's requester
         isAuthenticated: true,
       });
+
+      const explicitPendingMemoIsRequester: PurchaseRequestMemo = {
+        id: 101, iom_id: 'IOM-101', item_description: 'Laptop for Requester', priority: 'high',
+        department: 1, department_name: 'IT', requested_by: 1, requested_by_username: 'testuser',
+        request_date: '2024-03-01T10:00:00Z', status: 'pending', estimated_cost: 1200,
+        reason: 'Requester needs laptop', quantity: 1, created_at: '2024-03-01T10:00:00Z', updated_at: '2024-03-01T10:00:00Z',
+        approver: null, approver_username: null, decision_date: null, approver_comments: null,
+        project: null, project_name: null, required_delivery_date: null, suggested_vendor: null,
+        suggested_vendor_name: null, attachments: null,
+      };
+
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
         count: 1, next: null, previous: null,
-        results: [
-          createCompletePurchaseRequestMemo({
-            // Explicit definition for pendingMemoIsRequester
-            id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
-            department: mockMemos[0].department, department_name: mockMemos[0].department_name,
-            requested_by: 1, requested_by_username: 'testuser', // Overrides from pendingMemoIsRequester
-            request_date: mockMemos[0].request_date, status: 'pending' as PurchaseRequestStatus, // Override from pendingMemoIsRequester
-            estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
-            project: mockMemos[0].project, project_name: mockMemos[0].project_name,
-            required_delivery_date: mockMemos[0].required_delivery_date,
-            suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
-            attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
-            approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
-            approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
-            updated_at: mockMemos[0].updated_at,
-          })
-        ],
+        results: [explicitPendingMemoIsRequester],
       });
       const user = userEvent.setup();
       renderWithProviders(<PurchaseRequestMemoList />);
@@ -533,30 +528,30 @@ describe('PurchaseRequestMemoList', () => {
           count: 1, next: null, previous: null,
           results: [
             { // Manually define Memo after cancellation
-              id: pendingMemoIsRequester.id,
-              iom_id: pendingMemoIsRequester.iom_id,
-              item_description: pendingMemoIsRequester.item_description,
-              quantity: pendingMemoIsRequester.quantity,
-              reason: pendingMemoIsRequester.reason,
-              estimated_cost: pendingMemoIsRequester.estimated_cost,
-              requested_by: pendingMemoIsRequester.requested_by,
-              requested_by_username: pendingMemoIsRequester.requested_by_username,
-              request_date: pendingMemoIsRequester.request_date,
+              id: pendingMemoIsRequester.id, // Should be 101
+              iom_id: pendingMemoIsRequester.iom_id, // 'IOM-101'
+              item_description: pendingMemoIsRequester.item_description, // 'Laptop for Requester'
+              quantity: pendingMemoIsRequester.quantity, // 1
+              reason: pendingMemoIsRequester.reason, // 'Requester needs laptop'
+              estimated_cost: pendingMemoIsRequester.estimated_cost, // 1200
+              requested_by: pendingMemoIsRequester.requested_by, // 1
+              requested_by_username: pendingMemoIsRequester.requested_by_username, // 'testuser'
+              request_date: pendingMemoIsRequester.request_date, // '2024-03-01T10:00:00Z'
               status: 'cancelled', // Changed
-              approver: null, // Reset or keep, depending on logic
+              approver: null,
               approver_username: null,
               decision_date: null,
-              approver_comments: 'Cancelled by user', // Or some default/null
-              department: pendingMemoIsRequester.department,
-              department_name: pendingMemoIsRequester.department_name,
-              project: pendingMemoIsRequester.project,
-              project_name: pendingMemoIsRequester.project_name,
-              priority: pendingMemoIsRequester.priority,
-              required_delivery_date: pendingMemoIsRequester.required_delivery_date,
-              suggested_vendor: pendingMemoIsRequester.suggested_vendor,
-              suggested_vendor_name: pendingMemoIsRequester.suggested_vendor_name,
-              attachments: pendingMemoIsRequester.attachments,
-              created_at: pendingMemoIsRequester.created_at,
+              approver_comments: 'Cancelled by user',
+              department: pendingMemoIsRequester.department, // 1
+              department_name: pendingMemoIsRequester.department_name, // 'IT'
+              project: null,
+              project_name: null,
+              priority: 'high',
+              required_delivery_date: null,
+              suggested_vendor: null,
+              suggested_vendor_name: null,
+              attachments: null,
+              created_at: pendingMemoIsRequester.created_at, // '2024-03-01T10:00:00Z'
               updated_at: new Date().toISOString(), // Updated
             } as PurchaseRequestMemo
           ]
@@ -604,30 +599,30 @@ describe('PurchaseRequestMemoList', () => {
               count: 1, next: null, previous: null,
               results: [
                 { // Manually define Memo after cancellation by staff
-                  id: pendingMemoNotRequester.id,
-                  iom_id: pendingMemoNotRequester.iom_id,
-                  item_description: pendingMemoNotRequester.item_description,
-                  quantity: pendingMemoNotRequester.quantity,
-                  reason: pendingMemoNotRequester.reason,
-                  estimated_cost: pendingMemoNotRequester.estimated_cost,
-                  requested_by: pendingMemoNotRequester.requested_by,
-                  requested_by_username: pendingMemoNotRequester.requested_by_username,
-                  request_date: pendingMemoNotRequester.request_date,
+                  id: pendingMemoNotRequester.id, // 102
+                  iom_id: pendingMemoNotRequester.iom_id, // 'IOM-102'
+                  item_description: pendingMemoNotRequester.item_description, // 'Laptop for Other'
+                  quantity: pendingMemoNotRequester.quantity, // 1
+                  reason: pendingMemoNotRequester.reason, // 'Other user needs laptop'
+                  estimated_cost: pendingMemoNotRequester.estimated_cost, // 1300
+                  requested_by: pendingMemoNotRequester.requested_by, // 99
+                  requested_by_username: pendingMemoNotRequester.requested_by_username, // 'otheruser'
+                  request_date: pendingMemoNotRequester.request_date, // '2024-03-02T10:00:00Z'
                   status: 'cancelled', // Changed
                   approver: null,
                   approver_username: null,
                   decision_date: null,
                   approver_comments: 'Cancelled by staff',
-                  department: pendingMemoNotRequester.department,
-                  department_name: pendingMemoNotRequester.department_name,
-                  project: pendingMemoNotRequester.project,
-                  project_name: pendingMemoNotRequester.project_name,
-                  priority: pendingMemoNotRequester.priority,
-                  required_delivery_date: pendingMemoNotRequester.required_delivery_date,
-                  suggested_vendor: pendingMemoNotRequester.suggested_vendor,
-                  suggested_vendor_name: pendingMemoNotRequester.suggested_vendor_name,
-                  attachments: pendingMemoNotRequester.attachments,
-                  created_at: pendingMemoNotRequester.created_at,
+                  department: pendingMemoNotRequester.department, // 1
+                  department_name: pendingMemoNotRequester.department_name, // 'IT'
+                  project: null,
+                  project_name: null,
+                  priority: 'medium',
+                  required_delivery_date: null,
+                  suggested_vendor: null,
+                  suggested_vendor_name: null,
+                  attachments: null,
+                  created_at: pendingMemoNotRequester.created_at, // '2024-03-02T10:00:00Z'
                   updated_at: new Date().toISOString(), // Updated
                 } as PurchaseRequestMemo
               ]
@@ -721,30 +716,30 @@ describe('PurchaseRequestMemoList', () => {
           count: 1, next: null, previous: null,
           results: [
             { // Manually define Memo after approval
-              id: pendingMemoNotRequester.id,
-              iom_id: pendingMemoNotRequester.iom_id,
-              item_description: pendingMemoNotRequester.item_description,
-              quantity: pendingMemoNotRequester.quantity,
-              reason: pendingMemoNotRequester.reason,
-              estimated_cost: pendingMemoNotRequester.estimated_cost,
-              requested_by: pendingMemoNotRequester.requested_by,
-              requested_by_username: pendingMemoNotRequester.requested_by_username,
-              request_date: pendingMemoNotRequester.request_date,
+              id: pendingMemoNotRequester.id, // 102
+              iom_id: pendingMemoNotRequester.iom_id, // 'IOM-102'
+              item_description: pendingMemoNotRequester.item_description, // 'Laptop for Other'
+              quantity: pendingMemoNotRequester.quantity, // 1
+              reason: pendingMemoNotRequester.reason, // 'Other user needs laptop'
+              estimated_cost: pendingMemoNotRequester.estimated_cost, // 1300
+              requested_by: pendingMemoNotRequester.requested_by, // 99
+              requested_by_username: pendingMemoNotRequester.requested_by_username, // 'otheruser'
+              request_date: pendingMemoNotRequester.request_date, // '2024-03-02T10:00:00Z'
               status: 'approved', // Changed
-              approver: mockUserStaff.id,
-              approver_username: mockUserStaff.name,
-              decision_date: new Date().toISOString(),
-              approver_comments: 'Approved by tests',
-              department: pendingMemoNotRequester.department,
-              department_name: pendingMemoNotRequester.department_name,
-              project: pendingMemoNotRequester.project,
-              project_name: pendingMemoNotRequester.project_name,
-              priority: pendingMemoNotRequester.priority,
-              required_delivery_date: pendingMemoNotRequester.required_delivery_date,
-              suggested_vendor: pendingMemoNotRequester.suggested_vendor,
-              suggested_vendor_name: pendingMemoNotRequester.suggested_vendor_name,
-              attachments: pendingMemoNotRequester.attachments,
-              created_at: pendingMemoNotRequester.created_at,
+              approver: mockUserStaff.id, // User who approved (testuser, id 1)
+              approver_username: mockUserStaff.name, // 'testuser'
+              decision_date: new Date().toISOString(), // Set
+              approver_comments: 'Approved by tests', // Set
+              department: pendingMemoNotRequester.department, // 1
+              department_name: pendingMemoNotRequester.department_name, // 'IT'
+              project: null,
+              project_name: null,
+              priority: 'medium',
+              required_delivery_date: null,
+              suggested_vendor: null,
+              suggested_vendor_name: null,
+              attachments: null,
+              created_at: pendingMemoNotRequester.created_at, // '2024-03-02T10:00:00Z'
               updated_at: new Date().toISOString(), // Updated
             } as PurchaseRequestMemo
           ]
@@ -790,30 +785,30 @@ describe('PurchaseRequestMemoList', () => {
               count: 1, next: null, previous: null,
               results: [
                 { // Manually define Memo after rejection
-                  id: pendingMemoIsRequester.id,
-                  iom_id: pendingMemoIsRequester.iom_id,
-                  item_description: pendingMemoIsRequester.item_description,
-                  quantity: pendingMemoIsRequester.quantity,
-                  reason: pendingMemoIsRequester.reason,
-                  estimated_cost: pendingMemoIsRequester.estimated_cost,
-                  requested_by: pendingMemoIsRequester.requested_by,
-                  requested_by_username: pendingMemoIsRequester.requested_by_username,
-                  request_date: pendingMemoIsRequester.request_date,
+                  id: pendingMemoIsRequester.id, // 101
+                  iom_id: pendingMemoIsRequester.iom_id, // 'IOM-101'
+                  item_description: pendingMemoIsRequester.item_description, // 'Laptop for Requester'
+                  quantity: pendingMemoIsRequester.quantity, // 1
+                  reason: pendingMemoIsRequester.reason, // 'Requester needs laptop'
+                  estimated_cost: pendingMemoIsRequester.estimated_cost, // 1200
+                  requested_by: pendingMemoIsRequester.requested_by, // 1
+                  requested_by_username: pendingMemoIsRequester.requested_by_username, // 'testuser'
+                  request_date: pendingMemoIsRequester.request_date, // '2024-03-01T10:00:00Z'
                   status: 'rejected', // Changed
-                  approver: mockUserStaff.id,
-                  approver_username: mockUserStaff.name,
-                  decision_date: new Date().toISOString(),
-                  approver_comments: 'Rejected for testing reasons',
-                  department: pendingMemoIsRequester.department,
-                  department_name: pendingMemoIsRequester.department_name,
-                  project: pendingMemoIsRequester.project,
-                  project_name: pendingMemoIsRequester.project_name,
-                  priority: pendingMemoIsRequester.priority,
-                  required_delivery_date: pendingMemoIsRequester.required_delivery_date,
-                  suggested_vendor: pendingMemoIsRequester.suggested_vendor,
-                  suggested_vendor_name: pendingMemoIsRequester.suggested_vendor_name,
-                  attachments: pendingMemoIsRequester.attachments,
-                  created_at: pendingMemoIsRequester.created_at,
+                  approver: mockUserStaff.id, // User who rejected (testuser, id 1)
+                  approver_username: mockUserStaff.name, // 'testuser'
+                  decision_date: new Date().toISOString(), // Set
+                  approver_comments: 'Rejected for testing reasons', // Set
+                  department: pendingMemoIsRequester.department, // 1
+                  department_name: pendingMemoIsRequester.department_name, // 'IT'
+                  project: null,
+                  project_name: null,
+                  priority: 'high',
+                  required_delivery_date: null,
+                  suggested_vendor: null,
+                  suggested_vendor_name: null,
+                  attachments: null,
+                  created_at: pendingMemoIsRequester.created_at, // '2024-03-01T10:00:00Z'
                   updated_at: new Date().toISOString(), // Updated
                 } as PurchaseRequestMemo
               ]

@@ -10,7 +10,7 @@ import * as procurementApi from '../../../../api/procurementApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { CheckRequest, PaginatedResponse, CheckRequestStatus, ConfirmPaymentPayload, PaymentMethod } from '../../types'; // Added ConfirmPaymentPayload
+import type { CheckRequest, PaginatedResponse, CheckRequestStatus, ConfirmPaymentPayload } from '../../types'; // Removed PaymentMethod
 
 // Mock API module
 vi.mock('../../../../api/procurementApi');
@@ -455,31 +455,32 @@ describe('CheckRequestList', () => {
             })
           ]
         })
-        .mockResolvedValueOnce({ // State after submission
+        .mockResolvedValueOnce({ // State after submission - EXTREMELY EXPLICIT MOCK
           count: 1,
           next: null,
           previous: null,
           results: [
-            { // Manually define the CR object after submission
-              id: pendingSubmissionCR.id,
-              cr_id: pendingSubmissionCR.cr_id,
-              status: 'pending_approval', // Changed
-              requested_by: mockUser.id,
-              requested_by_username: mockUserStaff.name, // Matches the current user doing the action for consistency
-              purchase_order: pendingSubmissionCR.purchase_order,
-              purchase_order_number: pendingSubmissionCR.purchase_order_number,
-              request_date: pendingSubmissionCR.request_date,
-              amount: pendingSubmissionCR.amount,
-              currency: pendingSubmissionCR.currency,
-              payee_name: pendingSubmissionCR.payee_name,
-              reason_for_payment: pendingSubmissionCR.reason_for_payment,
-              expense_category_name: pendingSubmissionCR.expense_category_name,
-              is_urgent: pendingSubmissionCR.is_urgent,
-              created_at: pendingSubmissionCR.created_at,
-              updated_at: new Date().toISOString(), // Updated
-              invoice_number: pendingSubmissionCR.invoice_number,
-              invoice_date: pendingSubmissionCR.invoice_date,
-              payee_address: pendingSubmissionCR.payee_address,
+            {
+              id: 201, // Matches pendingSubmissionCR.id
+              cr_id: 'CR-SUBMIT', // Matches pendingSubmissionCR.cr_id
+              status: 'pending_approval', // <<<< Main change for this state
+              requested_by: 1, // mockUser.id
+              requested_by_username: 'Staff User', // mockUserStaff.name
+              purchase_order: 1,
+              purchase_order_number: 'PO-001',
+              request_date: '2024-02-01T10:00:00Z',
+              amount: "500.00",
+              currency: 'USD',
+              payee_name: 'Vendor X',
+              reason_for_payment: 'Payment for PO-001',
+              expense_category_name: 'Software',
+              is_urgent: false,
+              created_at: '2024-02-01T10:00:00Z', // Original creation
+              updated_at: '2024-03-15T12:00:00Z', // New updated_at
+              // All optional fields explicitly set
+              invoice_number: null,
+              invoice_date: null,
+              payee_address: null,
               approved_by_accounts: null,
               approved_by_accounts_username: null,
               accounts_approval_date: null,
@@ -488,10 +489,10 @@ describe('CheckRequestList', () => {
               payment_date: null,
               transaction_id: null,
               payment_notes: null,
-              expense_category: pendingSubmissionCR.expense_category,
-              recurring_payment: pendingSubmissionCR.recurring_payment,
-              recurring_payment_details: pendingSubmissionCR.recurring_payment_details,
-              attachments: pendingSubmissionCR.attachments,
+              expense_category: null,
+              recurring_payment: null,
+              recurring_payment_details: null,
+              attachments: null,
             } as CheckRequest
           ]
         });
