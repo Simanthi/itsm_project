@@ -10,7 +10,7 @@ import * as procurementApi from '../../../../api/procurementApi';
 import * as genericIomApi from '../../../../api/genericIomApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
-import type { PurchaseRequestMemo, PaginatedResponse } from '../../types/procurementTypes';
+import type { PurchaseRequestMemo, PaginatedResponse, PurchaseRequestStatus } from '../../types/procurementTypes';
 import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
 
