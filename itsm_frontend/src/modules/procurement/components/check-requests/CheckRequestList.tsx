@@ -115,15 +115,11 @@ const CheckRequestList: React.FC = () => {
     };
     try {
       const response = await getCheckRequests(authenticatedFetch, params);
-      // <--- ADD CONSOLE.LOG HERE --->
-      console.log('CheckRequestList received API response:', JSON.stringify(response, null, 2));
-      // <--- END CONSOLE.LOG --->
       setCheckRequests(response.results);
       setTotalRequests(response.count);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : String(err);
       setError(msg);
-      console.error('CheckRequestList API error:', msg, err);
       showSnackbar(`Error fetching check requests: ${msg}`, 'error');
     } finally {
       setIsLoading(false);
