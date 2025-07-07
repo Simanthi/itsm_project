@@ -9,8 +9,7 @@ import CheckRequestList from './CheckRequestList';
 import * as procurementApi from '../../../../api/procurementApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { CheckRequest, PaginatedResponse, CheckRequestStatus, ConfirmPaymentPayload } from '../../types'; // Removed PaymentMethod
+import type { CheckRequest, PaginatedResponse, CheckRequestStatus, ConfirmPaymentPayload } from '../../types'; // PaymentMethod was removed, so eslint-disable is no longer needed here.
 
 // Mock API module
 vi.mock('../../../../api/procurementApi');
@@ -40,22 +39,20 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 // Helper to create a fully formed CheckRequest object with all optional fields
-const базовыйПолностьюЗаполненныйОбъектЗапросаНаЧек = (данныеОВнесенииИзмененийВЗапросНаЧек: Partial<CheckRequest>): CheckRequest => {
-  // Renamed to avoid any potential naming conflicts or weirdness with "defaults" if that's a keyword somewhere unexpected.
-  // Using a non-English name for the variable to be absolutely sure it doesn't clash.
-  const стандартныеЗначения: CheckRequest = {
+const createCompleteCheckRequest = (crData: Partial<CheckRequest>): CheckRequest => {
+  const defaults: CheckRequest = { // Reverted to "defaults" and English names
     id: 0,
     purchase_order: null,
     purchase_order_number: null,
     invoice_number: null,
     invoice_date: null,
     amount: "0.00",
-    payee_name: "Стандартный Получатель",
+    payee_name: "Default Payee",
     payee_address: null,
-    reason_for_payment: "Стандартная Причина",
+    reason_for_payment: "Default Reason",
     requested_by: 0,
-    requested_by_username: "стандартныйПользователь",
-    request_date: "2024-01-01T00:00:00.000Z", // Fixed date string
+    requested_by_username: "defaultuser",
+    request_date: "2024-01-01T00:00:00.000Z", // Keep fixed date string for determinism
     status: 'pending_submission',
     approved_by_accounts: null,
     approved_by_accounts_username: null,
@@ -73,14 +70,12 @@ const базовыйПолностьюЗаполненныйОбъектЗапр
     recurring_payment_details: null,
     attachments: null,
     currency: 'USD',
-    created_at: "2024-01-01T00:00:00.000Z", // Fixed date string
-    updated_at: "2024-01-01T00:00:00.000Z", // Fixed date string
+    created_at: "2024-01-01T00:00:00.000Z", // Keep fixed date string
+    updated_at: "2024-01-01T00:00:00.000Z", // Keep fixed date string
   };
-  return { ...стандартныеЗначения, ...данныеОВнесенииИзмененийВЗапросНаЧек };
+  return { ...defaults, ...crData };
 };
 
-// Re-aliasing for clarity in tests
-const createCompleteCheckRequest = базовыйПолностьюЗаполненныйОбъектЗапросаНаЧек;
 
 const mockCR0_base = createCompleteCheckRequest({
   id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001',
