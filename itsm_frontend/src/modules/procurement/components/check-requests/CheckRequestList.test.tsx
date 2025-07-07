@@ -38,13 +38,51 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
+// Helper to create a fully formed CheckRequest object with all optional fields
+const createCompleteCheckRequest = (crData: Partial<CheckRequest>): CheckRequest => {
+  const defaults: CheckRequest = {
+    id: 0,
+    purchase_order: null,
+    purchase_order_number: null,
+    invoice_number: null,
+    invoice_date: null,
+    amount: "0.00",
+    payee_name: "Default Payee",
+    payee_address: null,
+    reason_for_payment: "Default Reason",
+    requested_by: 0,
+    requested_by_username: "defaultuser",
+    request_date: new Date().toISOString(),
+    status: 'pending_submission',
+    approved_by_accounts: null,
+    approved_by_accounts_username: null,
+    accounts_approval_date: null,
+    accounts_comments: null,
+    payment_method: null,
+    payment_date: null,
+    transaction_id: null,
+    payment_notes: null,
+    cr_id: null,
+    expense_category: null,
+    expense_category_name: null,
+    is_urgent: false,
+    recurring_payment: null,
+    recurring_payment_details: null,
+    attachments: null,
+    currency: 'USD',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+  return { ...defaults, ...crData };
+};
+
 const mockCRs: CheckRequest[] = [
-  {
+  createCompleteCheckRequest({
     id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD', payee_name: 'Vendor X', requested_by: 1, requested_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
-  },
-  {
+  }),
+  createCompleteCheckRequest({
     id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by: 2, requested_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
-  },
+  }),
 ];
 
 const mockPaginatedCRsResponse: PaginatedResponse<CheckRequest> = {
@@ -271,15 +309,15 @@ describe('CheckRequestList', () => {
   });
 
   describe('Action Buttons', () => {
-    const pendingSubmissionCR: CheckRequest = {
-      ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id
-    };
-    const pendingApprovalCR: CheckRequest = {
-      ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-    };
-     const otherUserPendingSubmissionCR: CheckRequest = {
+    const pendingSubmissionCR = createCompleteCheckRequest({
+      ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id, requested_by_username: mockUser.name
+    });
+    const pendingApprovalCR = createCompleteCheckRequest({
+      ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id, requested_by_username: mockUser.name
+    });
+     const otherUserPendingSubmissionCR = createCompleteCheckRequest({
       ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
-    };
+    });
     const mockUserStaff = { id: 1, name: 'Staff User', email: 'staff@example.com', role: 'admin', is_staff: true, groups: [] };
     const mockUserRegular = { id: 2, name: 'Regular User', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
 
@@ -290,9 +328,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingSubmissionCR
-          ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id
-        }]
+        results: [pendingSubmissionCR]
       });
       const user = userEvent.setup();
       renderWithProviders(<CheckRequestList />);
@@ -308,9 +344,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining otherUserPendingSubmissionCR
-          ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
-        }]
+        results: [otherUserPendingSubmissionCR]
       });
       renderWithProviders(<CheckRequestList />);
       const editButton = await screen.findByRole('button', { name: /edit/i });
@@ -322,9 +356,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingApprovalCR
-          ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-        }]
+        results: [pendingApprovalCR]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
@@ -337,9 +369,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining otherUserPendingSubmissionCR
-          ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
-        }]
+        results: [otherUserPendingSubmissionCR]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(otherUserPendingSubmissionCR.cr_id!);
@@ -355,77 +385,26 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 201,
-            cr_id: 'CR-SUBMIT',
-            purchase_order: 1,
-            purchase_order_number: 'PO-001',
-            request_date: '2024-02-01T10:00:00Z',
-            status: 'pending_submission',
-            amount: "500",
-                            currency: 'USD',
-            payee_name: 'Vendor X',
-            requested_by: mockUser.id,
-            requested_by_username: 'testuser',
-            created_at: '2024-02-01T10:00:00Z',
-            updated_at: '2024-02-01T10:00:00Z',
-            reason_for_payment: 'Payment for PO-001',
-            expense_category_name: 'Software',
-            attachments: null,
-            is_urgent: false,
-            invoice_number: null,
-            invoice_date: null,
-            payee_address: null,
-            approved_by_accounts: null,
-            approved_by_accounts_username: null,
-            accounts_approval_date: null,
-            accounts_comments: null,
-            payment_method: null,
-            payment_date: null,
-            transaction_id: null,
-            payment_notes: null,
-            expense_category: null,
-            recurring_payment: null,
-            recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingSubmissionCR, // Use the fully defined pendingSubmissionCR
+              requested_by: mockUser.id, // Ensure this matches the test condition
+              requested_by_username: mockUserStaff.name, // Align username
+            })
+          ]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 201,
-            cr_id: 'CR-SUBMIT',
-            purchase_order: mockCRs[0].purchase_order,
-            purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date,
-            status: 'pending_approval', // Changed status
-            amount: mockCRs[0].amount,
-            currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name,
-            requested_by: mockUser.id, // Matches pendingSubmissionCR's requested_by
-            requested_by_username: mockCRs[0].requested_by_username, // Assuming pendingSubmissionCR uses this
-            created_at: mockCRs[0].created_at,
-            updated_at: mockCRs[0].updated_at,
-            reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name,
-            attachments: mockCRs[0].attachments,
-            is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null,
-            invoice_date: null,
-            payee_address: null,
-            approved_by_accounts: null,
-            approved_by_accounts_username: null,
-            accounts_approval_date: null,
-            accounts_comments: null,
-            payment_method: null,
-            payment_date: null,
-            transaction_id: null,
-            payment_notes: null,
-            expense_category: null,
-            recurring_payment: null,
-            recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingSubmissionCR,
+              status: 'pending_approval', // Changed status
+              requested_by: mockUser.id, // Ensure this matches
+              requested_by_username: mockUserStaff.name, // Align username
+            })
+          ]
         });
       const submitMock = vi.mocked(procurementApi.submitCheckRequestForApproval).mockResolvedValue(undefined);
       const user = userEvent.setup();
@@ -435,8 +414,7 @@ describe('CheckRequestList', () => {
       expect(submitButton).toBeInTheDocument();
 
       await user.click(submitButton);
-      // Note: pendingSubmissionCR.id (201) is used here. Ensure inlined object has this ID.
-      await waitFor(() => expect(submitMock).toHaveBeenCalledWith(expect.any(Function), 201));
+      await waitFor(() => expect(submitMock).toHaveBeenCalledWith(expect.any(Function), pendingSubmissionCR.id));
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request submitted for approval!', 'success');
     });
@@ -447,9 +425,7 @@ describe('CheckRequestList', () => {
          count: 1,
          next: null,
          previous: null,
-         results: [{ // Inlining otherUserPendingSubmissionCR
-            ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
-         }]
+         results: [otherUserPendingSubmissionCR]
        });
       renderWithProviders(<CheckRequestList />);
       const submitButton = await screen.findByRole('button', { name: /submit for approval/i });
@@ -461,9 +437,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingApprovalCR
-          ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-        }]
+        results: [pendingApprovalCR]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(pendingApprovalCR.cr_id!);
@@ -476,9 +450,7 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining otherUserPendingSubmissionCR
-           ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
-        }]
+        results: [otherUserPendingSubmissionCR]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText(otherUserPendingSubmissionCR.cr_id!);
@@ -493,35 +465,24 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id,
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username, // from pendingApprovalCR
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingApprovalCR, // Use the fully defined pendingApprovalCR
+              requested_by_username: mockUserStaff.name, // Align username for consistency if needed
+            })
+          ]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 202, cr_id: 'CR-APPROVE', status: 'approved', requested_by: mockUser.id, // status changed
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingApprovalCR,
+              status: 'approved', // Changed status
+              requested_by_username: mockUserStaff.name,
+            })
+          ]
         });
       const approveMock = vi.mocked(procurementApi.approveCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
@@ -538,8 +499,7 @@ describe('CheckRequestList', () => {
       const confirmButton = screen.getByRole('button', { name: /Confirm Approval/i });
       await user.click(confirmButton);
 
-      // Note: pendingApprovalCR.id (202) is used here. Ensure inlined object has this ID.
-      await waitFor(() => expect(approveMock).toHaveBeenCalledWith(expect.any(Function), 202, { comments: 'Approved by Accounts test' }));
+      await waitFor(() => expect(approveMock).toHaveBeenCalledWith(expect.any(Function), pendingApprovalCR.id, { comments: 'Approved by Accounts test' }));
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request approved by accounts!', 'success');
     });
@@ -551,35 +511,24 @@ describe('CheckRequestList', () => {
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id,
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingApprovalCR,
+              requested_by_username: mockUserStaff.name,
+            })
+          ]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: 202, cr_id: 'CR-APPROVE', status: 'rejected', requested_by: mockUser.id, // status changed
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by_username: mockCRs[0].requested_by_username,
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [
+            createCompleteCheckRequest({
+              ...pendingApprovalCR,
+              status: 'rejected', // status changed
+              requested_by_username: mockUserStaff.name,
+            })
+          ]
         });
       const rejectMock = vi.mocked(procurementApi.rejectCheckRequestByAccounts).mockResolvedValue(undefined);
       const user = userEvent.setup();
@@ -596,8 +545,7 @@ describe('CheckRequestList', () => {
       const confirmButton = screen.getByRole('button', { name: /Confirm Rejection/i });
       await user.click(confirmButton);
 
-      // Note: pendingApprovalCR.id (202) is used here.
-      await waitFor(() => expect(rejectMock).toHaveBeenCalledWith(expect.any(Function), 202, { comments: 'Rejected by Accounts test' }));
+      await waitFor(() => expect(rejectMock).toHaveBeenCalledWith(expect.any(Function), pendingApprovalCR.id, { comments: 'Rejected by Accounts test' }));
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2));
       expect(vi.mocked(useUIHook.useUI)().showSnackbar).toHaveBeenCalledWith('Request rejected by accounts!', 'success');
     });
@@ -608,12 +556,10 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingApprovalCR
-          ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-        }]
+        results: [pendingApprovalCR]
       });
       renderWithProviders(<CheckRequestList />);
-      await screen.findByText(pendingApprovalCR.cr_id!); // pendingApprovalCR still used for findByText
+      await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /reject/i })).not.toBeInTheDocument();
     });
@@ -624,54 +570,33 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingSubmissionCR
-          ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id
-        }]
+        results: [pendingSubmissionCR]
       });
       renderWithProviders(<CheckRequestList />);
-      await screen.findByText(pendingSubmissionCR.cr_id!); // pendingSubmissionCR still used for findByText
+      await screen.findByText(pendingSubmissionCR.cr_id!);
       expect(screen.queryByRole('button', { name: /approve/i })).not.toBeInTheDocument();
       expect(screen.queryByRole('button', { name: /reject/i })).not.toBeInTheDocument();
     });
 
     // --- Mark Payment Processing ---
     it('handles "Mark Payment Processing": shows button for approved CR if staff, calls API', async () => {
-      const approvedCRId = 205; // Store ID for consistency
+      const approvedCRId = 205;
+      const approvedCR = createCompleteCheckRequest({
+        ...mockCRs[0], id: approvedCRId, cr_id: 'CR-APPROVED', status: 'approved', requested_by_username: mockCRs[0].requested_by_username
+      });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: approvedCRId, cr_id: 'CR-APPROVED', status: 'approved',
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [approvedCR]
         })
         .mockResolvedValueOnce({
           count: 1,
           next: null,
           previous: null,
-          results: [{
-            id: approvedCRId, cr_id: 'CR-APPROVED', status: 'payment_processing', // status changed
-            purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-            request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-            payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-            created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-            expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-            invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-            approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-            payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-            expense_category: null, recurring_payment: null, recurring_payment_details: null,
-          }]
+          results: [createCompleteCheckRequest({ ...approvedCR, status: 'payment_processing' })]
         });
       const markProcessingMock = vi.mocked(procurementApi.markCheckRequestPaymentProcessing).mockResolvedValue(undefined);
       const user = userEvent.setup();
@@ -692,72 +617,46 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingApprovalCR
-          ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-        }]
+        results: [pendingApprovalCR] // Use the fully defined pendingApprovalCR
       });
       renderWithProviders(<CheckRequestList />);
-      await screen.findByText(pendingApprovalCR.cr_id!); // Using original variable for findByText
+      await screen.findByText(pendingApprovalCR.cr_id!);
       expect(screen.queryByRole('button', { name: /mark payment processing/i })).not.toBeInTheDocument();
     });
 
     it('does NOT show "Mark Payment Processing" button if user is not staff', async () => {
-      // const approvedCR: CheckRequest = { ...mockCRs[0], id: 205, cr_id: 'CR-APPROVED', status: 'approved' };
+      const approvedCR = createCompleteCheckRequest({ ...mockCRs[0], id: 205, cr_id: 'CR-APPROVED', status: 'approved' });
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({
         count: 1,
         next: null,
         previous: null,
-        results: [{
-          ...mockCRs[0], id: 205, cr_id: 'CR-APPROVED', status: 'approved'
-        }]
+        results: [approvedCR]
       });
       renderWithProviders(<CheckRequestList />);
-      await screen.findByText('CR-APPROVED'); // Use cr_id for findByText
+      await screen.findByText('CR-APPROVED');
       expect(screen.queryByRole('button', { name: /mark payment processing/i })).not.toBeInTheDocument();
     });
 
     // --- Confirm Payment ---
-    // const approvedCRForPayment: CheckRequest = { ...mockCRs[0], id: 206, cr_id: 'CR-PAY-APPROVED', status: 'approved' };
-    // const processingCRForPayment: CheckRequest = { ...mockCRs[0], id: 207, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing' };
-
     it(`handles "Confirm Payment" for "approved" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstanceId = 206;
+      const approvedCRForPayment = createCompleteCheckRequest({
+        ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'approved', requested_by_username: mockCRs[0].requested_by_username
+      });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{
-              id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'approved',
-              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-              expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+            results: [approvedCRForPayment]
           })
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{
-              id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'paid', // status changed
-              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-              expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+            results: [createCompleteCheckRequest({ ...approvedCRForPayment, status: 'paid' })]
           });
         const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -792,7 +691,7 @@ describe('CheckRequestList', () => {
         await user.click(confirmDialogButton);
         await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
           expect.any(Function),
-          crInstanceId, // Use stored ID
+          approvedCRForPayment.id,
           expect.objectContaining(expectedPayload)
         ), { timeout: 7000 });
 
@@ -802,41 +701,22 @@ describe('CheckRequestList', () => {
 
     it(`handles "Confirm Payment" for "payment_processing" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstanceId = 207;
+      const processingCRForPayment = createCompleteCheckRequest({
+         ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing', requested_by_username: mockCRs[0].requested_by_username
+      });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{
-              id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing',
-              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-              expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+            results: [processingCRForPayment]
           })
           .mockResolvedValueOnce({
             count: 1,
             next: null,
             previous: null,
-            results: [{
-              id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'paid', // status changed
-              purchase_order: mockCRs[0].purchase_order, purchase_order_number: mockCRs[0].purchase_order_number,
-              request_date: mockCRs[0].request_date, amount: mockCRs[0].amount, currency: mockCRs[0].currency,
-              payee_name: mockCRs[0].payee_name, requested_by: mockCRs[0].requested_by, requested_by_username: mockCRs[0].requested_by_username,
-              created_at: mockCRs[0].created_at, updated_at: mockCRs[0].updated_at, reason_for_payment: mockCRs[0].reason_for_payment,
-              expense_category_name: mockCRs[0].expense_category_name, attachments: mockCRs[0].attachments, is_urgent: mockCRs[0].is_urgent,
-              invoice_number: null, invoice_date: null, payee_address: null, approved_by_accounts: null,
-              approved_by_accounts_username: null, accounts_approval_date: null, accounts_comments: null,
-              payment_method: null, payment_date: null, transaction_id: null, payment_notes: null,
-              expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+            results: [createCompleteCheckRequest({ ...processingCRForPayment, status: 'paid' })]
           });
       const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -871,7 +751,7 @@ describe('CheckRequestList', () => {
       await user.click(confirmDialogButton);
       await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
         expect.any(Function),
-        crInstanceId, // Use stored ID
+          processingCRForPayment.id,
         expect.objectContaining(expectedPayload)
       ), { timeout: 7000 });
 
@@ -885,24 +765,23 @@ describe('CheckRequestList', () => {
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining pendingApprovalCR
-          ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id
-        }]
+        results: [pendingApprovalCR]
       });
       renderWithProviders(<CheckRequestList />);
-      await screen.findByText('CR-APPROVE');
+      await screen.findByText('CR-APPROVE'); // Relies on pendingApprovalCR.cr_id being 'CR-APPROVE'
       expect(screen.queryByRole('button', { name: /confirm payment/i })).not.toBeInTheDocument();
     });
 
     it('does NOT show "Confirm Payment" button if user is not staff', async () => {
+      const approvedCRForPayment = createCompleteCheckRequest({
+        ...mockCRs[0], id: 206, cr_id: 'CR-PAY-APPROVED', status: 'approved'
+      });
       vi.mocked(useAuthHook.useAuth)().user = mockUserRegular;
       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({
         count: 1,
         next: null,
         previous: null,
-        results: [{ // Inlining approvedCRForPayment
-          ...mockCRs[0], id: 206, cr_id: 'CR-PAY-APPROVED', status: 'approved'
-        }]
+        results: [approvedCRForPayment]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText('CR-PAY-APPROVED');
@@ -910,49 +789,28 @@ describe('CheckRequestList', () => {
     });
 
     // --- Cancel Request ---
-    // const yetAnotherPendingSubmissionCR: CheckRequest = { ...mockCRs[0], id: 208, cr_id: 'CR-CANCEL-SUB', status: 'pending_submission', requested_by: mockUser.id };
-    // const yetAnotherPendingApprovalCR: CheckRequest = { ...mockCRs[0], id: 209, cr_id: 'CR-CANCEL-APP', status: 'pending_approval', requested_by: mockUser.id };
-    // const approvedCRForCancelTest: CheckRequest = { ...mockCRs[0], id: 210, cr_id: 'CR-CANCEL-APPROVED', status: 'approved' };
-
-    // Inlining crInstance directly in the loop or defining them inline for each test
     [{status: 'pending_submission', id: 208, cr_id: 'CR-CANCEL-SUB'}, {status: 'pending_approval', id:209, cr_id: 'CR-CANCEL-APP'}].forEach((crData) => {
       it(`handles "Cancel Request" for "${crData.status}" CR: shows button, opens dialog, confirms, calls API`, async () => {
-        const currentCrInstance: CheckRequest = { ...mockCRs[0], ...crData, status: crData.status as CheckRequestStatus, requested_by: mockUser.id };
+        const currentCrInstance = createCompleteCheckRequest({
+          ...mockCRs[0],
+          ...crData,
+          status: crData.status as CheckRequestStatus,
+          requested_by: mockUser.id, // Ensure requested_by is set for the logic
+          requested_by_username: mockUserStaff.name, // And username
+        });
         vi.mocked(useAuthHook.useAuth)().user = { ...mockUserStaff, id: currentCrInstance.requested_by };
 
         const mockShowConfirmDialog = vi.fn((_title, _message, onConfirm) => onConfirm());
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({ // For the first CR in the loop (pending_submission)
-            count: 1, next: null, previous: null, results: [{
-                id: currentCrInstance.id, cr_id: currentCrInstance.cr_id, status: currentCrInstance.status as CheckRequestStatus,
-                requested_by: currentCrInstance.requested_by, purchase_order: currentCrInstance.purchase_order,
-                purchase_order_number: currentCrInstance.purchase_order_number, request_date: currentCrInstance.request_date,
-                amount: currentCrInstance.amount, currency: currentCrInstance.currency, payee_name: currentCrInstance.payee_name,
-                requested_by_username: currentCrInstance.requested_by_username, created_at: currentCrInstance.created_at,
-                updated_at: currentCrInstance.updated_at, reason_for_payment: currentCrInstance.reason_for_payment,
-                expense_category_name: currentCrInstance.expense_category_name, attachments: currentCrInstance.attachments,
-                is_urgent: currentCrInstance.is_urgent, invoice_number: null, invoice_date: null, payee_address: null,
-                approved_by_accounts: null, approved_by_accounts_username: null, accounts_approval_date: null,
-                accounts_comments: null, payment_method: null, payment_date: null, transaction_id: null,
-                payment_notes: null, expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+          .mockResolvedValueOnce({
+            count: 1, next: null, previous: null, results: [currentCrInstance]
           })
-          .mockResolvedValueOnce({ // For the first CR, after cancellation
-            count: 1, next: null, previous: null, results: [{
-                id: currentCrInstance.id, cr_id: currentCrInstance.cr_id, status: 'cancelled', // status changed
-                requested_by: currentCrInstance.requested_by, purchase_order: currentCrInstance.purchase_order,
-                purchase_order_number: currentCrInstance.purchase_order_number, request_date: currentCrInstance.request_date,
-                amount: currentCrInstance.amount, currency: currentCrInstance.currency, payee_name: currentCrInstance.payee_name,
-                requested_by_username: currentCrInstance.requested_by_username, created_at: currentCrInstance.created_at,
-                updated_at: currentCrInstance.updated_at, reason_for_payment: currentCrInstance.reason_for_payment,
-                expense_category_name: currentCrInstance.expense_category_name, attachments: currentCrInstance.attachments,
-                is_urgent: currentCrInstance.is_urgent, invoice_number: null, invoice_date: null, payee_address: null,
-                approved_by_accounts: null, approved_by_accounts_username: null, accounts_approval_date: null,
-                accounts_comments: null, payment_method: null, payment_date: null, transaction_id: null,
-                payment_notes: null, expense_category: null, recurring_payment: null, recurring_payment_details: null,
-            }]
+          .mockResolvedValueOnce({
+            count: 1, next: null, previous: null, results: [
+              createCompleteCheckRequest({ ...currentCrInstance, status: 'cancelled' })
+            ]
           });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest).mockResolvedValue(undefined);
 
@@ -971,12 +829,15 @@ describe('CheckRequestList', () => {
     });
 
     it('does NOT show "Cancel Request" button for "approved" CR', async () => {
+      const approvedCRForCancelTest = createCompleteCheckRequest({
+         ...mockCRs[0], id: 210, cr_id: 'CR-CANCEL-APPROVED', status: 'approved'
+      });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       vi.mocked(procurementApi.getCheckRequests).mockResolvedValue({
         count: 1,
         next: null,
         previous: null,
-        results: [{ ...mockCRs[0], id: 210, cr_id: 'CR-CANCEL-APPROVED', status: 'approved' }]
+        results: [approvedCRForCancelTest]
       });
       renderWithProviders(<CheckRequestList />);
       await screen.findByText('CR-CANCEL-APPROVED');
@@ -984,6 +845,9 @@ describe('CheckRequestList', () => {
     });
 
     it('Cancel dialog dismissal does not call API', async () => {
+        const yetAnotherPendingSubmissionCR = createCompleteCheckRequest({
+          ...mockCRs[0], id: 208, cr_id: 'CR-CANCEL-SUB', status: 'pending_submission', requested_by: mockUser.id
+        });
         vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
         const mockShowConfirmDialog = vi.fn((_title, _message, _onConfirm, onCancel) => { if(onCancel) onCancel(); });
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
@@ -993,7 +857,7 @@ describe('CheckRequestList', () => {
             count: 1,
             next: null,
             previous: null,
-            results: [{ ...mockCRs[0], id: 208, cr_id: 'CR-CANCEL-SUB', status: 'pending_submission', requested_by: mockUser.id }]
+            results: [yetAnotherPendingSubmissionCR]
           });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest);
 
