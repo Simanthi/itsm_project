@@ -10,7 +10,7 @@ import * as procurementApi from '../../../../api/procurementApi';
 import * as genericIomApi from '../../../../api/genericIomApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
-import type { PurchaseRequestMemo, PaginatedResponse, PurchaseRequestStatus } from '../../types/procurementTypes';
+import type { PurchaseRequestMemo, PaginatedResponse } from '../../types/procurementTypes'; // Removed PurchaseRequestStatus
 import type { IOMTemplate } from '../../../iomTemplateAdmin/types/iomTemplateAdminTypes';
 
 
@@ -61,16 +61,16 @@ const renderWithProviders = (ui: React.ReactElement) => {
   );
 };
 
-const помошникСозданияЗавершенногоМеморандумаОЗакупке = (данныеМеморандума: Partial<PurchaseRequestMemo>): PurchaseRequestMemo => {
-  const стандартныеЗначенияМемо: PurchaseRequestMemo = {
+const createCompletePurchaseRequestMemo = (memoData: Partial<PurchaseRequestMemo>): PurchaseRequestMemo => {
+  const defaults: PurchaseRequestMemo = { // Reverted to "defaults" and English names
     id: 0,
-    item_description: "Стандартный Элемент",
+    item_description: "Default Item",
     quantity: 1,
-    reason: "Стандартная Причина",
+    reason: "Default Reason",
     estimated_cost: null,
     requested_by: 0,
-    requested_by_username: "стандартныйПользовательМемо",
-    request_date: "2024-01-01T00:00:00.000Z", // Fixed date
+    requested_by_username: "defaultUserMemo", // Adjusted for uniqueness from CR helper
+    request_date: "2024-01-01T00:00:00.000Z", // Keep fixed date
     status: 'pending',
     approver: null,
     approver_username: null,
@@ -86,14 +86,11 @@ const помошникСозданияЗавершенногоМеморанду
     suggested_vendor: null,
     suggested_vendor_name: null,
     attachments: null,
-    created_at: "2024-01-01T00:00:00.000Z", // Fixed date
-    updated_at: "2024-01-01T00:00:00.000Z", // Fixed date
+    created_at: "2024-01-01T00:00:00.000Z", // Keep fixed date
+    updated_at: "2024-01-01T00:00:00.000Z", // Keep fixed date
   };
-  return { ...стандартныеЗначенияМемо, ...данныеМеморандума };
+  return { ...defaults, ...memoData };
 };
-
-// Re-aliasing for clarity in tests
-const createCompletePurchaseRequestMemo = помошникСозданияЗавершенногоМеморандумаОЗакупке;
 
 
 const mockMemo0_base = createCompletePurchaseRequestMemo({
