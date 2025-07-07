@@ -386,23 +386,25 @@ describe('CheckRequestList', () => {
           next: null,
           previous: null,
           results: [
-            createCompleteCheckRequest({
-              ...pendingSubmissionCR, // Use the fully defined pendingSubmissionCR
-              requested_by: mockUser.id, // Ensure this matches the test condition
-              requested_by_username: mockUserStaff.name, // Align username
+            createCompleteCheckRequest({ // Initial state for the test
+              ...pendingSubmissionCR,
+              requested_by: mockUser.id,
+              requested_by_username: mockUserStaff.name,
             })
           ]
         })
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // State after submission
           count: 1,
           next: null,
           previous: null,
           results: [
             createCompleteCheckRequest({
               ...pendingSubmissionCR,
-              status: 'pending_approval', // Changed status
-              requested_by: mockUser.id, // Ensure this matches
-              requested_by_username: mockUserStaff.name, // Align username
+              id: pendingSubmissionCR.id, // Ensure ID is consistent
+              status: 'pending_approval', // Status changes
+              requested_by: mockUser.id, // Remains the same
+              requested_by_username: mockUserStaff.name, // Remains the same
+              updated_at: new Date().toISOString(), // Typically updated
             })
           ]
         });
@@ -461,26 +463,31 @@ describe('CheckRequestList', () => {
     it('handles "Approve" by accounts: shows button, opens dialog, confirms, calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // Initial state
           count: 1,
           next: null,
           previous: null,
           results: [
             createCompleteCheckRequest({
-              ...pendingApprovalCR, // Use the fully defined pendingApprovalCR
-              requested_by_username: mockUserStaff.name, // Align username for consistency if needed
+              ...pendingApprovalCR, // ID 202, status 'pending_approval'
+              requested_by_username: mockUserStaff.name,
             })
           ]
         })
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // State after approval
           count: 1,
           next: null,
           previous: null,
           results: [
             createCompleteCheckRequest({
-              ...pendingApprovalCR,
-              status: 'approved', // Changed status
-              requested_by_username: mockUserStaff.name,
+              ...pendingApprovalCR, // Spread base to keep other fields
+              id: pendingApprovalCR.id, // Ensure ID is consistent (202)
+              status: 'approved', // Status changes
+              approved_by_accounts: mockUserStaff.id,
+              approved_by_accounts_username: mockUserStaff.name,
+              accounts_approval_date: new Date().toISOString(),
+              accounts_comments: 'Approved by Accounts test',
+              updated_at: new Date().toISOString(),
             })
           ]
         });
@@ -507,26 +514,33 @@ describe('CheckRequestList', () => {
     it('handles "Reject" by accounts: shows button, opens dialog, confirms, calls API', async () => {
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // Initial state
           count: 1,
           next: null,
           previous: null,
           results: [
             createCompleteCheckRequest({
-              ...pendingApprovalCR,
+              ...pendingApprovalCR, // ID 202, status 'pending_approval'
               requested_by_username: mockUserStaff.name,
             })
           ]
         })
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // State after rejection
           count: 1,
           next: null,
           previous: null,
           results: [
             createCompleteCheckRequest({
               ...pendingApprovalCR,
-              status: 'rejected', // status changed
-              requested_by_username: mockUserStaff.name,
+              id: pendingApprovalCR.id, // Ensure ID is consistent (202)
+              status: 'rejected', // Status changes
+              // Backend might set approved_by_accounts to the user who rejected,
+              // and accounts_approval_date. For simplicity, we ensure status and comments.
+              approved_by_accounts: mockUserStaff.id, // User who rejected
+              approved_by_accounts_username: mockUserStaff.name,
+              accounts_approval_date: new Date().toISOString(),
+              accounts_comments: 'Rejected by Accounts test', // Comments are key
+              updated_at: new Date().toISOString(),
             })
           ]
         });
@@ -582,21 +596,35 @@ describe('CheckRequestList', () => {
     it('handles "Mark Payment Processing": shows button for approved CR if staff, calls API', async () => {
       const approvedCRId = 205;
       const approvedCR = createCompleteCheckRequest({
-        ...mockCRs[0], id: approvedCRId, cr_id: 'CR-APPROVED', status: 'approved', requested_by_username: mockCRs[0].requested_by_username
+        ...mockCRs[0],
+        id: approvedCRId,
+        cr_id: 'CR-APPROVED',
+        status: 'approved',
+        requested_by_username: mockCRs[0].requested_by_username,
+        // Make sure it has fields that might be expected by rendering logic
+        payee_name: 'Test Payee for Processing',
+        amount: "100.00",
       });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // Initial state: an approved CR
           count: 1,
           next: null,
           previous: null,
           results: [approvedCR]
         })
-        .mockResolvedValueOnce({
+        .mockResolvedValueOnce({ // State after marking as payment_processing
           count: 1,
           next: null,
           previous: null,
-          results: [createCompleteCheckRequest({ ...approvedCR, status: 'payment_processing' })]
+          results: [
+            createCompleteCheckRequest({
+              ...approvedCR,
+              id: approvedCR.id, // Ensure ID consistency
+              status: 'payment_processing', // Status changes
+              updated_at: new Date().toISOString(),
+            })
+          ]
         });
       const markProcessingMock = vi.mocked(procurementApi.markCheckRequestPaymentProcessing).mockResolvedValue(undefined);
       const user = userEvent.setup();
@@ -642,21 +670,38 @@ describe('CheckRequestList', () => {
     it(`handles "Confirm Payment" for "approved" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstanceId = 206;
       const approvedCRForPayment = createCompleteCheckRequest({
-        ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-APPROVED', status: 'approved', requested_by_username: mockCRs[0].requested_by_username
+        ...mockCRs[0],
+        id: crInstanceId,
+        cr_id: 'CR-PAY-APPROVED',
+        status: 'approved',
+        requested_by_username: mockCRs[0].requested_by_username,
+        payee_name: "Payee for Payment Test",
+        amount: "123.45",
       });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // Initial: approved CR
             count: 1,
             next: null,
             previous: null,
             results: [approvedCRForPayment]
           })
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // After payment confirmation
             count: 1,
             next: null,
             previous: null,
-            results: [createCompleteCheckRequest({ ...approvedCRForPayment, status: 'paid' })]
+            results: [
+              createCompleteCheckRequest({
+                ...approvedCRForPayment,
+                id: approvedCRForPayment.id,
+                status: 'paid', // Status changes
+                payment_method: 'ach', // From expectedPayload
+                payment_date: (expectedPayload as ConfirmPaymentPayload).payment_date, // from expectedPayload
+                transaction_id: 'ACH-TXN-12345', // from expectedPayload
+                payment_notes: 'Payment processed via ACH.', // from expectedPayload
+                updated_at: new Date().toISOString(),
+              })
+            ]
           });
         const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -702,21 +747,38 @@ describe('CheckRequestList', () => {
     it(`handles "Confirm Payment" for "payment_processing" CR: shows button, opens dialog, fills details, confirms, calls API`, async () => {
       const crInstanceId = 207;
       const processingCRForPayment = createCompleteCheckRequest({
-         ...mockCRs[0], id: crInstanceId, cr_id: 'CR-PAY-PROCESSING', status: 'payment_processing', requested_by_username: mockCRs[0].requested_by_username
+         ...mockCRs[0],
+         id: crInstanceId,
+         cr_id: 'CR-PAY-PROCESSING',
+         status: 'payment_processing',
+         requested_by_username: mockCRs[0].requested_by_username,
+         payee_name: "Payee for Processing Payment Test",
+         amount: "678.90",
       });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // Initial: payment_processing CR
             count: 1,
             next: null,
             previous: null,
             results: [processingCRForPayment]
           })
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // After payment confirmation
             count: 1,
             next: null,
             previous: null,
-            results: [createCompleteCheckRequest({ ...processingCRForPayment, status: 'paid' })]
+            results: [
+              createCompleteCheckRequest({
+                ...processingCRForPayment,
+                id: processingCRForPayment.id,
+                status: 'paid', // Status changes
+                payment_method: 'check', // From expectedPayload
+                payment_date: (expectedPayload as ConfirmPaymentPayload).payment_date, // from expectedPayload
+                transaction_id: 'CHECK-67890', // from expectedPayload
+                payment_notes: 'Payment processed via Check for payment_processing.', // from expectedPayload
+                updated_at: new Date().toISOString(),
+              })
+            ]
           });
       const confirmPaymentMock = vi.mocked(procurementApi.confirmCheckRequestPayment).mockResolvedValue(undefined);
 
@@ -804,12 +866,17 @@ describe('CheckRequestList', () => {
         vi.mocked(useUIHook.useUI)().showConfirmDialog = mockShowConfirmDialog;
 
         const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // Initial: CR to be cancelled
             count: 1, next: null, previous: null, results: [currentCrInstance]
           })
-          .mockResolvedValueOnce({
+          .mockResolvedValueOnce({ // After cancellation
             count: 1, next: null, previous: null, results: [
-              createCompleteCheckRequest({ ...currentCrInstance, status: 'cancelled' })
+              createCompleteCheckRequest({
+                ...currentCrInstance,
+                id: currentCrInstance.id,
+                status: 'cancelled', // Status changes
+                updated_at: new Date().toISOString(),
+              })
             ]
           });
         const cancelMock = vi.mocked(procurementApi.cancelCheckRequest).mockResolvedValue(undefined);
