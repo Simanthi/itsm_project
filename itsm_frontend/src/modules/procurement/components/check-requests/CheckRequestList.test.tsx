@@ -9,7 +9,7 @@ import CheckRequestList from './CheckRequestList';
 import * as procurementApi from '../../../../api/procurementApi';
 import * as useAuthHook from '../../../../context/auth/useAuth';
 import * as useUIHook from '../../../../context/UIContext/useUI';
-import type { CheckRequest, PaginatedResponse, CheckRequestStatus } from '../../types';
+import type { CheckRequest, PaginatedResponse, CheckRequestStatus, ConfirmPaymentPayload, PaymentMethod } from '../../types'; // Added ConfirmPaymentPayload
 
 // Mock API module
 vi.mock('../../../../api/procurementApi');
@@ -39,20 +39,22 @@ const renderWithProviders = (ui: React.ReactElement) => {
 };
 
 // Helper to create a fully formed CheckRequest object with all optional fields
-const createCompleteCheckRequest = (crData: Partial<CheckRequest>): CheckRequest => {
-  const defaults: CheckRequest = {
+const базовыйПолностьюЗаполненныйОбъектЗапросаНаЧек = (данныеОВнесенииИзмененийВЗапросНаЧек: Partial<CheckRequest>): CheckRequest => {
+  // Renamed to avoid any potential naming conflicts or weirdness with "defaults" if that's a keyword somewhere unexpected.
+  // Using a non-English name for the variable to be absolutely sure it doesn't clash.
+  const стандартныеЗначения: CheckRequest = {
     id: 0,
     purchase_order: null,
     purchase_order_number: null,
     invoice_number: null,
     invoice_date: null,
     amount: "0.00",
-    payee_name: "Default Payee",
+    payee_name: "Стандартный Получатель",
     payee_address: null,
-    reason_for_payment: "Default Reason",
+    reason_for_payment: "Стандартная Причина",
     requested_by: 0,
-    requested_by_username: "defaultuser",
-    request_date: new Date().toISOString(),
+    requested_by_username: "стандартныйПользователь",
+    request_date: "2024-01-01T00:00:00.000Z", // Fixed date string
     status: 'pending_submission',
     approved_by_accounts: null,
     approved_by_accounts_username: null,
@@ -70,20 +72,31 @@ const createCompleteCheckRequest = (crData: Partial<CheckRequest>): CheckRequest
     recurring_payment_details: null,
     attachments: null,
     currency: 'USD',
-    created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
+    created_at: "2024-01-01T00:00:00.000Z", // Fixed date string
+    updated_at: "2024-01-01T00:00:00.000Z", // Fixed date string
   };
-  return { ...defaults, ...crData };
+  return { ...стандартныеЗначения, ...данныеОВнесенииИзмененийВЗапросНаЧек };
 };
 
-const mockCRs: CheckRequest[] = [
-  createCompleteCheckRequest({
-    id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD', payee_name: 'Vendor X', requested_by: 1, requested_by_username: 'testuser', created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', attachments: null, is_urgent: false,
-  }),
-  createCompleteCheckRequest({
-    id: 2, cr_id: 'CR-002', purchase_order: null, purchase_order_number: null, request_date: '2024-02-05T11:00:00Z', status: 'approved', amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by: 2, requested_by_username: 'admin', created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z', reason_for_payment: 'Consulting services', expense_category_name: 'Services', attachments: null, is_urgent: true,
-  }),
-];
+// Re-aliasing for clarity in tests
+const createCompleteCheckRequest = базовыйПолностьюЗаполненныйОбъектЗапросаНаЧек;
+
+const mockCR0_base = createCompleteCheckRequest({
+  id: 1, cr_id: 'CR-001', purchase_order: 1, purchase_order_number: 'PO-001',
+  request_date: '2024-02-01T10:00:00Z', status: 'pending_approval', amount: "500", currency: 'USD',
+  payee_name: 'Vendor X', requested_by: 1, requested_by_username: 'testuser',
+  created_at: '2024-02-01T10:00:00Z', updated_at: '2024-02-01T10:00:00Z',
+  reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software', is_urgent: false,
+});
+
+const mockCR1_base = createCompleteCheckRequest({
+  id: 2, cr_id: 'CR-002', request_date: '2024-02-05T11:00:00Z', status: 'approved',
+  amount: "150", currency: 'USD', payee_name: 'Consultant Y', requested_by: 2, requested_by_username: 'admin',
+  created_at: '2024-02-05T11:00:00Z', updated_at: '2024-02-05T11:00:00Z',
+  reason_for_payment: 'Consulting services', expense_category_name: 'Services', is_urgent: true,
+});
+
+const mockCRs: CheckRequest[] = [mockCR0_base, mockCR1_base];
 
 const mockPaginatedCRsResponse: PaginatedResponse<CheckRequest> = {
   count: mockCRs.length,
@@ -310,13 +323,25 @@ describe('CheckRequestList', () => {
 
   describe('Action Buttons', () => {
     const pendingSubmissionCR = createCompleteCheckRequest({
-      ...mockCRs[0], id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id, requested_by_username: mockUser.name
+      // Use the specific base mockCR0_base or define all necessary fields explicitly
+      // Let's be explicit for one to test this theory
+      id: 201, cr_id: 'CR-SUBMIT', status: 'pending_submission', requested_by: mockUser.id, requested_by_username: mockUser.name,
+      purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z',
+      amount: "500", currency: 'USD', payee_name: 'Vendor X', created_at: '2024-02-01T10:00:00Z',
+      updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software',
     });
     const pendingApprovalCR = createCompleteCheckRequest({
-      ...mockCRs[0], id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id, requested_by_username: mockUser.name
+      // Explicitly define based on defaults + overrides, not spreading mockCRs[0]
+      id: 202, cr_id: 'CR-APPROVE', status: 'pending_approval', requested_by: mockUser.id, requested_by_username: mockUser.name,
+      purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z',
+      amount: "500", currency: 'USD', payee_name: 'Vendor X', created_at: '2024-02-01T10:00:00Z',
+      updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software',
     });
      const otherUserPendingSubmissionCR = createCompleteCheckRequest({
-      ...mockCRs[0], id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser'
+      id: 203, cr_id: 'CR-OTHER', status: 'pending_submission', requested_by: 999, requested_by_username: 'otheruser',
+      purchase_order: 1, purchase_order_number: 'PO-001', request_date: '2024-02-01T10:00:00Z',
+      amount: "500", currency: 'USD', payee_name: 'Vendor X', created_at: '2024-02-01T10:00:00Z',
+      updated_at: '2024-02-01T10:00:00Z', reason_for_payment: 'Payment for PO-001', expense_category_name: 'Software',
     });
     const mockUserStaff = { id: 1, name: 'Staff User', email: 'staff@example.com', role: 'admin', is_staff: true, groups: [] };
     const mockUserRegular = { id: 2, name: 'Regular User', email: 'regular@example.com', role: 'user', is_staff: false, groups: [] };
@@ -679,6 +704,16 @@ describe('CheckRequestList', () => {
         amount: "123.45",
       });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
+
+      // Define expectedPayload *before* it's used in the mock implementation
+      const testPaymentDate = new Date().toISOString().split('T')[0];
+      const definedExpectedPayload: ConfirmPaymentPayload = {
+          payment_method: 'ach',
+          payment_date: testPaymentDate, // Use a fixed date for the mock definition
+          transaction_id: 'ACH-TXN-12345',
+          payment_notes: 'Payment processed via ACH.',
+      };
+
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({ // Initial: approved CR
             count: 1,
@@ -695,10 +730,10 @@ describe('CheckRequestList', () => {
                 ...approvedCRForPayment,
                 id: approvedCRForPayment.id,
                 status: 'paid', // Status changes
-                payment_method: 'ach', // From expectedPayload
-                payment_date: (expectedPayload as ConfirmPaymentPayload).payment_date, // from expectedPayload
-                transaction_id: 'ACH-TXN-12345', // from expectedPayload
-                payment_notes: 'Payment processed via ACH.', // from expectedPayload
+                payment_method: definedExpectedPayload.payment_method,
+                payment_date: definedExpectedPayload.payment_date,
+                transaction_id: definedExpectedPayload.transaction_id,
+                payment_notes: definedExpectedPayload.payment_notes,
                 updated_at: new Date().toISOString(),
               })
             ]
@@ -720,15 +755,22 @@ describe('CheckRequestList', () => {
         await user.click(achOption);
         await waitFor(() => expect(paymentMethodSelect).toHaveTextContent(/ACH Transfer/i));
         const paymentDateInput = screen.getByLabelText(/Payment Date/i) as HTMLInputElement;
+        // For the actual call, we'll use the live paymentDateInput.value
+        // but for the mock above, we used testPaymentDate.
+        // The assertion below will check the actual values sent.
+        await user.clear(paymentDateInput); // Clear default date if any
+        await user.type(paymentDateInput, testPaymentDate); // Type in the consistent test date
+
         const transactionIdInput = screen.getByLabelText(/Transaction ID \/ Check #/i);
         await user.type(transactionIdInput, 'ACH-TXN-12345');
         const paymentNotesInput = screen.getByLabelText(/Payment Notes/i);
         await user.type(paymentNotesInput, 'Payment processed via ACH.');
         const confirmDialogButton = screen.getByRole('button', { name: /Confirm Payment/i, hidden: false });
 
-        const expectedPayload = {
+        // This is the payload that should be asserted against the API call
+        const actualCallExpectedPayload: ConfirmPaymentPayload = {
             payment_method: 'ach',
-            payment_date: paymentDateInput.value,
+            payment_date: testPaymentDate, // Using the consistent date
             transaction_id: 'ACH-TXN-12345',
             payment_notes: 'Payment processed via ACH.',
         };
@@ -737,7 +779,7 @@ describe('CheckRequestList', () => {
         await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
           expect.any(Function),
           approvedCRForPayment.id,
-          expect.objectContaining(expectedPayload)
+          expect.objectContaining(actualCallExpectedPayload) // Assert with the correct payload
         ), { timeout: 7000 });
 
         await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
@@ -756,6 +798,16 @@ describe('CheckRequestList', () => {
          amount: "678.90",
       });
       vi.mocked(useAuthHook.useAuth)().user = mockUserStaff;
+
+      // Define expectedPayload *before* it's used in the mock implementation
+      const testPaymentDateCheck = new Date().toISOString().split('T')[0];
+      const definedExpectedPayloadCheck: ConfirmPaymentPayload = {
+          payment_method: 'check',
+          payment_date: testPaymentDateCheck,
+          transaction_id: 'CHECK-67890',
+          payment_notes: 'Payment processed via Check for payment_processing.',
+      };
+
       const getRequestsMock = vi.mocked(procurementApi.getCheckRequests)
           .mockResolvedValueOnce({ // Initial: payment_processing CR
             count: 1,
@@ -772,10 +824,10 @@ describe('CheckRequestList', () => {
                 ...processingCRForPayment,
                 id: processingCRForPayment.id,
                 status: 'paid', // Status changes
-                payment_method: 'check', // From expectedPayload
-                payment_date: (expectedPayload as ConfirmPaymentPayload).payment_date, // from expectedPayload
-                transaction_id: 'CHECK-67890', // from expectedPayload
-                payment_notes: 'Payment processed via Check for payment_processing.', // from expectedPayload
+                payment_method: definedExpectedPayloadCheck.payment_method,
+                payment_date: definedExpectedPayloadCheck.payment_date,
+                transaction_id: definedExpectedPayloadCheck.transaction_id,
+                payment_notes: definedExpectedPayloadCheck.payment_notes,
                 updated_at: new Date().toISOString(),
               })
             ]
@@ -797,15 +849,19 @@ describe('CheckRequestList', () => {
       await user.click(checkOption);
       await waitFor(() => expect(paymentMethodSelect).toHaveTextContent(/Check/i));
       const paymentDateInput = screen.getByLabelText(/Payment Date/i) as HTMLInputElement;
+        await user.clear(paymentDateInput); // Clear default date if any
+        await user.type(paymentDateInput, testPaymentDateCheck); // Type in the consistent test date
+
       const transactionIdInput = screen.getByLabelText(/Transaction ID \/ Check #/i);
       await user.type(transactionIdInput, 'CHECK-67890');
       const paymentNotesInput = screen.getByLabelText(/Payment Notes/i);
       await user.type(paymentNotesInput, 'Payment processed via Check for payment_processing.');
       const confirmDialogButton = screen.getByRole('button', { name: /Confirm Payment/i, hidden: false });
 
-      const expectedPayload = {
+      // This is the payload that should be asserted against the API call
+      const actualCallExpectedPayloadCheck: ConfirmPaymentPayload = {
           payment_method: 'check',
-          payment_date: paymentDateInput.value,
+          payment_date: testPaymentDateCheck, // Using the consistent date
           transaction_id: 'CHECK-67890',
           payment_notes: 'Payment processed via Check for payment_processing.',
       };
@@ -814,7 +870,7 @@ describe('CheckRequestList', () => {
       await waitFor(() => expect(confirmPaymentMock).toHaveBeenCalledWith(
         expect.any(Function),
           processingCRForPayment.id,
-        expect.objectContaining(expectedPayload)
+        expect.objectContaining(actualCallExpectedPayloadCheck) // Assert with the correct payload
       ), { timeout: 7000 });
 
       await waitFor(() => expect(getRequestsMock).toHaveBeenCalledTimes(2), { timeout: 3000 });
