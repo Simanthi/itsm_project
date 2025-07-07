@@ -386,13 +386,21 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [{
-          ...mockMemos[0],
-          id: 101,
-          iom_id: 'IOM-101',
-          status: 'pending',
-          requested_by: 1, // mockUserStaff.id, but use literal to match pendingMemoIsRequester
-          requested_by_username: 'testuser', // mockUserStaff.name, but use literal
+        count: 1, next: null, previous: null,
+        results: [{
+          // Explicit definition for pendingMemoIsRequester
+          id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+          department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+          requested_by: 1, requested_by_username: 'testuser', // Overrides from pendingMemoIsRequester
+          request_date: mockMemos[0].request_date, status: 'pending' as PurchaseRequestStatus, // Override from pendingMemoIsRequester
+          estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+          project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+          required_delivery_date: mockMemos[0].required_delivery_date,
+          suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+          attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+          approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+          approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+          updated_at: mockMemos[0].updated_at,
         }],
       });
       const user = userEvent.setup();
@@ -411,8 +419,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
-        });
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
+        } as PaginatedResponse<PurchaseRequestMemo>);
         const user = userEvent.setup();
         renderWithProviders(<PurchaseRequestMemoList />);
 
@@ -430,8 +438,8 @@ describe('PurchaseRequestMemoList', () => {
         isAuthenticated: true,
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
 
       await screen.findByText(approvedMemo.iom_id as string);
@@ -446,8 +454,8 @@ describe('PurchaseRequestMemoList', () => {
             isAuthenticated: true,
         });
         vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-            count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
-        });
+            count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
+        } as PaginatedResponse<PurchaseRequestMemo>);
         renderWithProviders(<PurchaseRequestMemoList />);
 
         await screen.findByText(pendingMemoNotRequester.iom_id as string);
@@ -478,13 +486,40 @@ describe('PurchaseRequestMemoList', () => {
         hideSnackbar: vi.fn(),
       });
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-        .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingMemoIsRequester] // Assuming pendingMemoIsRequester is needed for the first call by the test logic
+        .mockResolvedValueOnce({ // For initial load in test
+          count: 1, next: null, previous: null,
+          results: [{
+            // Explicit definition for pendingMemoIsRequester
+            id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+            department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+            requested_by: 1, requested_by_username: 'testuser',
+            request_date: mockMemos[0].request_date, status: 'pending' as PurchaseRequestStatus,
+            estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+            project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+            required_delivery_date: mockMemos[0].required_delivery_date,
+            suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+            attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+            approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+            approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+            updated_at: mockMemos[0].updated_at,
+          }]
         })
-        .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{
-            ...pendingMemoIsRequester, // Keep pendingMemoIsRequester as base for status change
-            status: 'cancelled'
+        .mockResolvedValueOnce({ // For load after cancellation
+          count: 1, next: null, previous: null,
+          results: [{
+            // Explicit definition for pendingMemoIsRequester with status 'cancelled'
+            id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+            department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+            requested_by: 1, requested_by_username: 'testuser',
+            request_date: mockMemos[0].request_date, status: 'cancelled' as PurchaseRequestStatus, // Status changed
+            estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+            project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+            required_delivery_date: mockMemos[0].required_delivery_date,
+            suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+            attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+            approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+            approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+            updated_at: mockMemos[0].updated_at,
           }]
         });
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
@@ -524,11 +559,11 @@ describe('PurchaseRequestMemoList', () => {
         });
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [pendingMemoNotRequester]
-            })
+              count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo]
+            } as PaginatedResponse<PurchaseRequestMemo>)
             .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'cancelled'}]
-            });
+              count: 1, next: null, previous: null, results: [{...pendingMemoNotRequester, status: 'cancelled'} as PurchaseRequestMemo]
+            } as PaginatedResponse<PurchaseRequestMemo>);
         const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo).mockResolvedValue(undefined);
 
         const user = userEvent.setup();
@@ -547,8 +582,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -557,8 +592,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Cancel button if user is not requester and not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-         count: 1, next: null, previous: null, results: [pendingMemoNotRequester],
-      });
+         count: 1, next: null, previous: null, results: [pendingMemoNotRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoNotRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /cancel request/i })).not.toBeInTheDocument();
@@ -588,8 +623,8 @@ describe('PurchaseRequestMemoList', () => {
         hideSnackbar: vi.fn(),
       });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
-      });
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       const cancelMemoMock = vi.mocked(procurementApi.cancelPurchaseRequestMemo);
 
       const user = userEvent.setup();
@@ -610,13 +645,40 @@ describe('PurchaseRequestMemoList', () => {
       });
 
       const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-        .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [pendingMemoNotRequester] // Assuming pendingMemoNotRequester is needed for the first call
+        .mockResolvedValueOnce({ // For initial load
+          count: 1, next: null, previous: null,
+          results: [{
+            // Explicit definition for pendingMemoNotRequester
+            id: 102, iom_id: 'IOM-102', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+            department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+            requested_by: 99, requested_by_username: 'otheruser', // Overrides
+            request_date: mockMemos[0].request_date, status: 'pending' as PurchaseRequestStatus, // Override
+            estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+            project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+            required_delivery_date: mockMemos[0].required_delivery_date,
+            suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+            attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+            approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+            approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+            updated_at: mockMemos[0].updated_at,
+          }]
         })
-        .mockResolvedValueOnce({
-          count: 1, next: null, previous: null, results: [{
-            ...pendingMemoNotRequester, // Keep pendingMemoNotRequester as base
-            status: 'approved'
+        .mockResolvedValueOnce({ // For load after approval
+          count: 1, next: null, previous: null,
+          results: [{
+            // Explicit definition for pendingMemoNotRequester with status 'approved'
+            id: 102, iom_id: 'IOM-102', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+            department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+            requested_by: 99, requested_by_username: 'otheruser',
+            request_date: mockMemos[0].request_date, status: 'approved' as PurchaseRequestStatus, // Status changed
+            estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+            project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+            required_delivery_date: mockMemos[0].required_delivery_date,
+            suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+            attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+            approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+            approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+            updated_at: mockMemos[0].updated_at,
           }]
         });
       const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
@@ -652,13 +714,40 @@ describe('PurchaseRequestMemoList', () => {
         });
 
         const getMemosMock = vi.mocked(procurementApi.getPurchaseRequestMemos)
-            .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [pendingMemoIsRequester] // Assuming pendingMemoIsRequester is needed for the first call
+            .mockResolvedValueOnce({ // For initial load
+              count: 1, next: null, previous: null,
+              results: [{
+                // Explicit definition for pendingMemoIsRequester
+                id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+                department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+                requested_by: 1, requested_by_username: 'testuser',
+                request_date: mockMemos[0].request_date, status: 'pending' as PurchaseRequestStatus,
+                estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+                project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+                required_delivery_date: mockMemos[0].required_delivery_date,
+                suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+                attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+                approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+                approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+                updated_at: mockMemos[0].updated_at,
+              }]
             })
-            .mockResolvedValueOnce({
-              count: 1, next: null, previous: null, results: [{
-                ...pendingMemoIsRequester, // Keep pendingMemoIsRequester as base
-                status: 'rejected'
+            .mockResolvedValueOnce({ // For load after rejection
+              count: 1, next: null, previous: null,
+              results: [{
+                // Explicit definition for pendingMemoIsRequester with status 'rejected'
+                id: 101, iom_id: 'IOM-101', item_description: mockMemos[0].item_description, priority: mockMemos[0].priority,
+                department: mockMemos[0].department, department_name: mockMemos[0].department_name,
+                requested_by: 1, requested_by_username: 'testuser',
+                request_date: mockMemos[0].request_date, status: 'rejected' as PurchaseRequestStatus, // status changed
+                estimated_cost: mockMemos[0].estimated_cost, reason: mockMemos[0].reason, quantity: mockMemos[0].quantity,
+                project: mockMemos[0].project, project_name: mockMemos[0].project_name,
+                required_delivery_date: mockMemos[0].required_delivery_date,
+                suggested_vendor: mockMemos[0].suggested_vendor, suggested_vendor_name: mockMemos[0].suggested_vendor_name,
+                attachments: mockMemos[0].attachments, approver: mockMemos[0].approver,
+                approver_username: mockMemos[0].approver_username, decision_date: mockMemos[0].decision_date,
+                approver_comments: mockMemos[0].approver_comments, created_at: mockMemos[0].created_at,
+                updated_at: mockMemos[0].updated_at,
               }]
             });
         const decideMemoMock = vi.mocked(procurementApi.decidePurchaseRequestMemo).mockResolvedValue(undefined);
@@ -691,8 +780,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons if user is not staff', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserRegular });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [pendingMemoIsRequester],
-      });
+        count: 1, next: null, previous: null, results: [pendingMemoIsRequester as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(pendingMemoIsRequester.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
@@ -702,8 +791,8 @@ describe('PurchaseRequestMemoList', () => {
     it('does NOT show Approve/Reject buttons for non-pending memo', async () => {
       vi.mocked(useAuthHook.useAuth).mockReturnValue({ ...vi.mocked(useAuthHook.useAuth)(), user: mockUserStaff });
       vi.mocked(procurementApi.getPurchaseRequestMemos).mockResolvedValue({
-        count: 1, next: null, previous: null, results: [approvedMemo],
-      });
+        count: 1, next: null, previous: null, results: [approvedMemo as PurchaseRequestMemo],
+      } as PaginatedResponse<PurchaseRequestMemo>);
       renderWithProviders(<PurchaseRequestMemoList />);
       await screen.findByText(approvedMemo.iom_id as string);
       expect(screen.queryByRole('button', { name: /approve request/i })).not.toBeInTheDocument();
