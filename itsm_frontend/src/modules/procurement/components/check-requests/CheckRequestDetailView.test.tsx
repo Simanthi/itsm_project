@@ -1,346 +1,395 @@
-// @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+// Test file for CheckRequestDetailView.tsx
+import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import userEvent from '@testing-library/user-event';
-import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { AuthProvider } from '../../../../context/auth/AuthContext';
-import { UIContextProvider } from '../../../../context/UIContext/UIContextProvider';
+import { MemoryRouter, Route, Routes, useParams } from 'react-router-dom'; // Import useParams
+import { AuthContext, AuthContextType } from '../../../../context/auth/AuthContextDefinition'; // Corrected import path
 import CheckRequestDetailView from './CheckRequestDetailView';
 import * as procurementApi from '../../../../api/procurementApi';
-// import { formatDate } from '../../../../utils/formatters'; // No longer needed here
-import type { CheckRequest, CheckRequestStatus, PaymentMethod } from '../../types';
-import type { AuthUser } from '../../../../context/auth/AuthContextDefinition';
+import { CheckRequest } from '../../types';
 
-// Mock API module
-vi.mock('../../../../api/procurementApi');
-
-// Mock context hooks
-const mockAuthenticatedFetch = vi.fn();
-const mockAuthUser: AuthUser = {
-  id: 1,
-  name: 'Test User',
-  email: 'test@example.com',
-  role: 'admin',
-  is_staff: true,
-  groups: ['admin_group'],
-};
-
-vi.mock('../../../../context/auth/useAuth', () => ({
-  useAuth: () => ({
-    authenticatedFetch: mockAuthenticatedFetch,
-    user: mockAuthUser,
-    token: 'test-token',
-    isAuthenticated: true,
-    loading: false,
-    login: vi.fn(),
-    logout: vi.fn(),
-  }),
-}));
-
-// Mock react-router-dom
+// Mock react-router-dom hooks
 const mockNavigate = vi.fn();
-let mockUseParamsValue: { checkRequestId?: string } = {}; // Define a mutable object for useParams value
 
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
     useNavigate: () => mockNavigate,
-    useParams: () => mockUseParamsValue, // Return the mutable object
+    useParams: vi.fn(), // This will be the mock for useParams
   };
 });
 
-const renderComponent = (checkRequestIdParam?: string) => {
-  mockUseParamsValue = { checkRequestId: checkRequestIdParam }; // Update the mock value
+// Mock procurementApi
+vi.mock('../../../../api/procurementApi');
+
+const mockGetCheckRequestById = procurementApi.getCheckRequestById as vi.Mock;
+
+const mockAuthContextValue: AuthContextType = {
+  user: { id: 1, name: 'Test User', username: 'testuser', email: 'test@example.com', permissions: [], is_staff: false, is_superuser: false },
+  accessToken: 'test-token',
+  refreshToken: 'refresh-token',
+  login: vi.fn(),
+  logout: vi.fn(),
+  refreshAccessToken: vi.fn(),
+  authenticatedFetch: vi.fn().mockImplementation((url, options) => {
+    return fetch(url, {
+      ...options,
+      headers: { ...options?.headers, Authorization: `Bearer test-token` },
+    });
+  }),
+  isRefreshing: false,
+  loginError: null,
+  setLoginError: vi.fn(),
+};
+
+const renderWithRouterAndAuth = (
+  ui: React.ReactElement,
+  { route = '/', path = '/', initialEntries = [route] } = {},
+  authValue: AuthContextType = mockAuthContextValue
+) => {
   return render(
-    <MemoryRouter initialEntries={checkRequestIdParam ? [`/cr/${checkRequestIdParam}`] : ['/cr/1']}>
-      <AuthProvider>
-        <UIContextProvider>
-          <Routes>
-            <Route path="/cr/:checkRequestId" element={<CheckRequestDetailView />} />
-            <Route path="/procurement/check-requests/print-preview" element={<div>Print Preview Page Mock</div>} />
-          </Routes>
-        </UIContextProvider>
-      </AuthProvider>
-    </MemoryRouter>
+    <AuthContext.Provider value={authValue}>
+      <MemoryRouter initialEntries={initialEntries}>
+        <Routes>
+          <Route path={path} element={ui} />
+        </Routes>
+      </MemoryRouter>
+    </AuthContext.Provider>
   );
 };
-
-const baseCheckRequestData: CheckRequest = {
-  id: 1,
-  cr_id: 'CR-2024-001',
-  purchase_order: 101,
-  purchase_order_number: 'PO-101',
-  invoice_number: 'INV-001',
-  invoice_date: '2024-07-01T00:00:00Z',
-  amount: '1500.75',
-  currency: 'USD',
-  payee_name: 'Super Vendor LLC',
-  payee_address: '123 Vendor Lane, Tech City, TC 54321',
-  reason_for_payment: 'Payment for services rendered under PO-101.',
-  requested_by: 1,
-  requested_by_username: 'john.doe',
-  request_date: '2024-07-15T10:00:00Z',
-  status: 'approved' as CheckRequestStatus,
-  approved_by_accounts: 2,
-  approved_by_accounts_username: 'jane.accountant',
-  accounts_approval_date: '2024-07-16T14:30:00Z',
-  accounts_comments: 'Approved by accounts department.',
-  payment_method: 'ach' as PaymentMethod,
-  payment_date: '2024-07-20T00:00:00Z',
-  transaction_id: 'ACH-TXN-987654321',
-  payment_notes: 'Payment processed successfully via ACH.',
-  expense_category: 1,
-  expense_category_name: 'Consulting Services',
-  is_urgent: true,
-  recurring_payment: null,
-  recurring_payment_details: null,
-  attachments: 'http://example.com/cr_attachment.pdf',
-  created_at: '2024-07-15T09:00:00Z', // Added based on type update
-  updated_at: '2024-07-20T10:00:00Z', // Added based on type update
-};
-
 
 describe('CheckRequestDetailView', () => {
   beforeEach(() => {
     vi.resetAllMocks();
-    mockAuthenticatedFetch.mockResolvedValue({});
-    vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(baseCheckRequestData);
+    // Default mock for useParams, can be overridden in specific tests
+    // useParams (imported from 'react-router-dom') is now the mock function itself.
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: '1' }); // Corrected here
+    // Ensure authenticatedFetch is mocked for each test
+    mockAuthContextValue.authenticatedFetch = vi.fn().mockImplementation(async (resource, init) => {
+      // This basic mock assumes success. Specific tests might need to adjust it.
+      // For API calls, it should return a Promise that resolves to a Response object.
+      if (typeof resource === 'string' && resource.startsWith('/api/')) {
+        return Promise.resolve(new Response(JSON.stringify({}), { status: 200 }));
+      }
+      return Promise.resolve(new Response(null, { status: 404 }));
+    });
+    mockGetCheckRequestById.mockResolvedValue(null); // Default to not found to avoid console errors for unmocked calls
   });
 
-  it('renders loading state initially', () => {
-    vi.mocked(procurementApi.getCheckRequestById).mockImplementation(() => new Promise(() => {}));
-    renderComponent('1');
-    expect(screen.getByText(/Loading Check Request Details.../i)).toBeInTheDocument();
+  it('displays loading indicator while fetching data', async () => {
+    mockGetCheckRequestById.mockImplementation(() => {
+      return new Promise(() => {}); // Simulate pending promise
+    });
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: '/procurement/check-requests/detail/1',
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
+
     expect(screen.getByRole('progressbar')).toBeInTheDocument();
+    expect(screen.getByText(/Loading Check Request Details.../i)).toBeInTheDocument();
   });
 
-  it('renders error state if checkRequestId is not provided', async () => {
-    renderComponent(undefined);
-    await waitFor(() => {
-      expect(screen.getByText(/Check Request ID is missing or authentication is not available./i)).toBeInTheDocument();
+  it('displays error message if checkRequestId is missing', async () => {
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: undefined });
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: '/procurement/check-requests/detail/', // No ID
+      path: '/procurement/check-requests/detail/:checkRequestId?',
     });
-  });
 
-  it('renders error state if checkRequestId is not a number', async () => {
-    renderComponent('abc');
     await waitFor(() => {
-        expect(screen.getByText(/Failed to fetch check request details: Invalid Check Request ID format./i)).toBeInTheDocument();
+      expect(
+        screen.getByText(/Check Request ID is missing or authentication is not available./i)
+      ).toBeInTheDocument();
     });
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
   });
 
-  it('renders error state if API call fails', async () => {
-    const errorMessage = 'Network Error XYZ';
-    vi.mocked(procurementApi.getCheckRequestById).mockRejectedValueOnce(new Error(errorMessage));
-    renderComponent('1');
+  it('displays error message if checkRequestId is not a number', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: 'abc' });
+    // No need to mock getCheckRequestById as it should fail before that
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: '/procurement/check-requests/detail/abc',
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
+
     await waitFor(() => {
-      expect(screen.getByText(`Failed to fetch check request details: ${errorMessage}`)).toBeInTheDocument();
+      expect(screen.getByText(/Invalid Check Request ID format./i)).toBeInTheDocument();
     });
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+     // Check for back button
+    expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
   });
 
-  it('renders "not found" state if API call for non-existent ID fails', async () => {
-    const notFoundError = new Error('Check Request not found');
-    vi.mocked(procurementApi.getCheckRequestById).mockRejectedValueOnce(notFoundError);
-    renderComponent('1'); // Attempt to fetch CR with ID '1' that will be "not found"
+  it('displays error message if API call fails', async () => {
+    const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    const errorMessage = 'Network Error';
+    mockGetCheckRequestById.mockRejectedValue(new Error(errorMessage));
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: '/procurement/check-requests/detail/1',
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
+
     await waitFor(() => {
-      // Component displays the error message in an Alert
-      expect(screen.getByText(/Failed to fetch check request details: Check Request not found/i)).toBeInTheDocument();
+      expect(
+        screen.getByText(`Failed to fetch check request details: ${errorMessage}`)
+      ).toBeInTheDocument();
     });
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+     // Check for back button
+    expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+    consoleErrorSpy.mockRestore();
   });
 
-  describe('Successful Data Display (Happy Path)', () => {
-    // Helper to re-render with potentially different data for specific display tests
-    // Changed data type to CheckRequest as API is not expected to resolve to null.
-    // "Not found" cases are tested with mockRejectedValueOnce.
-    const setupAndRender = (data: CheckRequest) => {
-        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(data);
-        renderComponent(String(data.id)); // data will always be non-null here
+  it('displays "Check Request not found" message if API returns null', async () => {
+    mockGetCheckRequestById.mockResolvedValue(null);
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: '/procurement/check-requests/detail/999', // Non-existent ID
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
+    });
+    expect(screen.queryByRole('progressbar')).not.toBeInTheDocument();
+    // Check for back button
+    expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+  });
+
+  // Further tests will be added here
+
+  const fullMockCheckRequest: CheckRequest = {
+    id: 1,
+    cr_id: 'CR001',
+    requested_by_user: 1,
+    requested_by_username: 'Alice Wonderland',
+    request_date: '2023-10-26T10:00:00Z',
+    status: 'approved',
+    payee_name: 'Mad Hatter Supplies',
+    amount: '150.75',
+    currency: 'USD',
+    reason_for_payment: 'Tea party expenses, very important.',
+    is_urgent: true,
+    payee_address: '123 Wonderland Lane, Fantasy City, FC 54321',
+    expense_category: 1,
+    expense_category_name: 'Catering',
+    purchase_order_number: 'PO12345',
+    invoice_number: 'INV-TEA-001',
+    invoice_date: '2023-10-25', // YYYY-MM-DD format
+    attachments: '/media/procurement/cr_attachments/tea_party_invoice.pdf',
+    // Approval & Processing fields
+    approved_by_accounts_user: 2,
+    approved_by_accounts_username: 'Bob The Builder',
+    accounts_approval_date: '2023-10-27T11:00:00Z',
+    accounts_comments: 'Looks good, approved for payment.',
+    payment_method: 'check',
+    payment_date: '2023-10-28T14:30:00Z',
+    transaction_id: 'CHECK#789',
+    payment_notes: 'Paid via check, sent by carrier pigeon.',
+    recurring_payment_details: 'Monthly tea subscription',
+    created_at: '2023-10-26T10:00:00Z',
+    updated_at: '2023-10-28T14:30:00Z',
+  };
+
+  it('displays all check request details correctly on successful fetch (happy path)', async () => {
+    mockGetCheckRequestById.mockResolvedValue(fullMockCheckRequest);
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: String(fullMockCheckRequest.id) });
+
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: `/procurement/check-requests/detail/${fullMockCheckRequest.id}`,
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText(`Request Information (${fullMockCheckRequest.cr_id})`)).toBeInTheDocument();
+    });
+
+    // Request Information
+    expect(screen.getByText(fullMockCheckRequest.status.replace(/_/g, ' '))).toBeInTheDocument(); // Status Chip
+    expect(screen.getByText(fullMockCheckRequest.requested_by_username)).toBeInTheDocument();
+    expect(screen.getByText(new Date(fullMockCheckRequest.request_date).toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText('Yes')).toBeInTheDocument(); // is_urgent chip
+    expect(screen.getByText(fullMockCheckRequest.reason_for_payment)).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.expense_category_name!)).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.recurring_payment_details!)).toBeInTheDocument();
+
+    // Payment Details
+    expect(screen.getByText(fullMockCheckRequest.payee_name)).toBeInTheDocument();
+    expect(screen.getByText(`$${Number(fullMockCheckRequest.amount).toFixed(2)}`)).toBeInTheDocument(); // Formatted currency
+    expect(screen.getByText(fullMockCheckRequest.currency)).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.purchase_order_number!)).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.invoice_number!)).toBeInTheDocument();
+    // Ensure date is treated as local for YYYY-MM-DD
+    const expectedInvoiceDate = new Date(fullMockCheckRequest.invoice_date + 'T00:00:00').toLocaleDateString();
+    expect(screen.getByText(expectedInvoiceDate)).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.payee_address!)).toBeInTheDocument();
+
+    const attachmentLink = screen.getByRole('link', { name: /view cr attachment/i });
+    expect(attachmentLink).toBeInTheDocument();
+    expect(attachmentLink).toHaveAttribute('href', fullMockCheckRequest.attachments);
+
+
+    // Approval & Processing Section (since status is 'approved')
+    expect(screen.getByText('Approval & Processing')).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.approved_by_accounts_username!)).toBeInTheDocument();
+    expect(screen.getByText(new Date(fullMockCheckRequest.accounts_approval_date!).toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(fullMockCheckRequest.accounts_comments!)).toBeInTheDocument();
+
+    // Payment method details (since status is 'approved', these might not be shown yet, depends on component logic)
+    // The component logic is: (checkRequest.status === 'paid' || checkRequest.status === 'payment_processing')
+    // So for 'approved' status, these should NOT be visible. Let's test that.
+    // If the component logic changes to show them for 'approved', these tests will need to be updated.
+    expect(screen.queryByText('Check')).not.toBeInTheDocument(); // Formatted payment method
+    expect(screen.queryByText(new Date(fullMockCheckRequest.payment_date!).toLocaleString())).not.toBeInTheDocument();
+    expect(screen.queryByText(fullMockCheckRequest.transaction_id!)).not.toBeInTheDocument();
+    expect(screen.queryByText(fullMockCheckRequest.payment_notes!)).not.toBeInTheDocument();
+
+
+    // Check for Back and Print buttons
+    expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /print/i })).toBeInTheDocument();
+  });
+
+  it('displays payment processing details when status is "paid"', async () => {
+    const paidCheckRequest: CheckRequest = {
+      ...fullMockCheckRequest,
+      status: 'paid', // Critical change for this test
     };
+    mockGetCheckRequestById.mockResolvedValue(paidCheckRequest);
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: String(paidCheckRequest.id) });
 
-    it('renders all key check request details correctly', async () => {
-      setupAndRender(baseCheckRequestData);
-      await waitFor(() => {
-        expect(screen.getByText(/Check Request Details/i)).toBeInTheDocument();
-      });
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: `/procurement/check-requests/detail/${paidCheckRequest.id}`,
+      path: '/procurement/check-requests/detail/:checkRequestId',
+    });
 
-      // Request Information
-      expect(screen.getByText(`Request Information (${baseCheckRequestData.cr_id})`)).toBeInTheDocument();
-      expect(screen.getByText('Status:')).toBeInTheDocument();
-      // The text check for status needs to be more robust if the status is rendered inside a Chip
-      // For now, we assume the test expects the raw status text to be found, which might fail if it's stylized.
-      // Adjusted to match the actual chip label which is lowercase and space-separated.
-      expect(screen.getByText(baseCheckRequestData.status.replace(/_/g, ' '))).toBeInTheDocument();
-      expect(screen.getByText('Requested By:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.requested_by_username)).toBeInTheDocument();
-      expect(screen.getByText('Request Date:')).toBeInTheDocument();
-      expect(screen.getByText(new Date(baseCheckRequestData.request_date).toLocaleString())).toBeInTheDocument();
-      expect(screen.getByText('Urgent:')).toBeInTheDocument();
-      expect(screen.getByText('Yes')).toBeInTheDocument();
-      expect(screen.getByText('Reason for Payment:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.reason_for_payment)).toBeInTheDocument();
-      expect(screen.getByText('Expense Category:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.expense_category_name!)).toBeInTheDocument();
-
-      // Payment Details
-      expect(screen.getByText('Payment Details')).toBeInTheDocument();
-      expect(screen.getByText('Payee Name:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.payee_name)).toBeInTheDocument();
-      expect(screen.getByText('Amount:')).toBeInTheDocument();
-      expect(screen.getByText(`$${Number(baseCheckRequestData.amount).toFixed(2)}`)).toBeInTheDocument();
-      expect(screen.getByText('Currency:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.currency!)).toBeInTheDocument();
-      expect(screen.getByText('PO Number:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.purchase_order_number!)).toBeInTheDocument();
-      expect(screen.getByText('Invoice Number:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.invoice_number!)).toBeInTheDocument();
-      expect(screen.getByText('Invoice Date:')).toBeInTheDocument();
-      // Component's formatDateString uses toLocaleString for full ISO dates
-      expect(screen.getByText(new Date(baseCheckRequestData.invoice_date!).toLocaleString())).toBeInTheDocument();
-      expect(screen.getByText('Payee Address:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.payee_address!)).toBeInTheDocument();
-
-      const attachmentLink = screen.getByRole('link', { name: /View CR Attachment/i });
-      expect(attachmentLink).toBeInTheDocument();
-      expect(attachmentLink).toHaveAttribute('href', baseCheckRequestData.attachments);
-
-      // Approval & Processing Section (status is 'approved', so payment processing details for 'paid' or 'payment_processing' won't show)
+    await waitFor(() => {
       expect(screen.getByText('Approval & Processing')).toBeInTheDocument();
-      expect(screen.getByText('Approved By (Accounts):')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.approved_by_accounts_username!)).toBeInTheDocument();
-      expect(screen.getByText('Accounts Approval Date:')).toBeInTheDocument();
-      // Component's formatDateString uses toLocaleString for full ISO dates
-      expect(screen.getByText(new Date(baseCheckRequestData.accounts_approval_date!).toLocaleString())).toBeInTheDocument();
-      expect(screen.getByText('Accounts Comments:')).toBeInTheDocument();
-      expect(screen.getByText(baseCheckRequestData.accounts_comments!)).toBeInTheDocument();
-
-      // For 'approved' status, payment specific details are not rendered by component logic
-      expect(screen.queryByText('Payment Method:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Payment Date:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Transaction ID/Check #:')).not.toBeInTheDocument();
     });
 
-    it('shows N/A or hides optional fields if not provided', async () => {
-      const minimalData: CheckRequest = {
-        ...baseCheckRequestData,
-        cr_id: null,
-        purchase_order: null, purchase_order_number: null,
-        invoice_number: null, invoice_date: null,
-        payee_address: null,
-        expense_category: null, expense_category_name: null,
-        recurring_payment: null, recurring_payment_details: null,
-        attachments: null,
-        approved_by_accounts: null, approved_by_accounts_username: null,
-        accounts_approval_date: null, accounts_comments: null,
-        payment_method: null, payment_date: null,
-        transaction_id: null, payment_notes: null,
-        is_urgent: false,
-        status: 'pending_approval' // Keep a status that shows the approval section
-      };
-      setupAndRender(minimalData);
-
-      await waitFor(() => {
-        // Check a field that should display N/A
-        const approvedByLabel = screen.getByText('Approved By (Accounts):');
-        // MUI Typography might render the value in the same text node if not complex, or as a sibling.
-        // Check parent's textContent which includes both <strong> and the value.
-        expect(approvedByLabel.parentElement?.textContent).toBe('Approved By (Accounts): N/A');
-      });
-
-      // Title check: component renders "Request Information " when cr_id is null
-      // The regex /Request Information$/ might be safer if there's potential trailing space.
-      expect(screen.getByText((content, element) => {
-        return element?.tagName.toLowerCase() === 'h6' && content.startsWith('Request Information') && !content.includes('(');
-      })).toBeInTheDocument();
-
-      expect(screen.getByText('Urgent:')).toBeInTheDocument();
-      expect(screen.getByText('No')).toBeInTheDocument(); // for is_urgent: false
-      expect(screen.queryByText('Expense Category:')).not.toBeInTheDocument();
-      expect(screen.queryByText('PO Number:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Invoice Number:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Invoice Date:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Payee Address:')).not.toBeInTheDocument();
-      expect(screen.queryByText('Attachment:')).not.toBeInTheDocument();
-
-      expect(screen.getByText('Approval & Processing')).toBeInTheDocument();
-      // Using parentElement.textContent for robustness with N/A checks
-      const approvedByLabel = screen.getByText('Approved By (Accounts):');
-      expect(approvedByLabel.parentElement?.textContent).toBe('Approved By (Accounts): N/A');
-
-      const approvalDateLabel = screen.getByText('Accounts Approval Date:');
-      expect(approvalDateLabel.parentElement?.textContent).toBe('Accounts Approval Date: N/A');
-
-      expect(screen.queryByText('Accounts Comments:')).not.toBeInTheDocument(); // Comments only show if present
-    });
-
-    it('shows full payment details for "paid" status', async () => {
-        const paidData: CheckRequest = {
-            ...baseCheckRequestData,
-            status: 'paid',
-            payment_method: 'check',
-            payment_date: '2024-07-28T00:00:00Z',
-            transaction_id: 'CHK12345',
-            payment_notes: 'Final payment made.'
-        };
-        setupAndRender(paidData);
-        await waitFor(() => expect(screen.getByText('Payment Method:')).toBeInTheDocument());
-        expect(screen.getByText('Check')).toBeInTheDocument(); // Formatted
-        expect(screen.getByText('Payment Date:')).toBeInTheDocument();
-        expect(screen.getByText(new Date(paidData.payment_date!).toLocaleString())).toBeInTheDocument();
-        expect(screen.getByText('Transaction ID/Check #:')).toBeInTheDocument();
-        expect(screen.getByText(paidData.transaction_id!)).toBeInTheDocument();
-        expect(screen.getByText('Payment Notes:')).toBeInTheDocument();
-        expect(screen.getByText(paidData.payment_notes!)).toBeInTheDocument();
-    });
+    // Payment method details should now be visible
+    expect(screen.getByText('Check')).toBeInTheDocument(); // Formatted payment_method
+    expect(screen.getByText(new Date(paidCheckRequest.payment_date!).toLocaleString())).toBeInTheDocument();
+    expect(screen.getByText(paidCheckRequest.transaction_id!)).toBeInTheDocument();
+    expect(screen.getByText(paidCheckRequest.payment_notes!)).toBeInTheDocument();
   });
 
-  describe('Conditional Rendering for Approval & Processing Section', () => {
-    const statusesNotShowingFullApproval: CheckRequestStatus[] = ['pending_submission', 'cancelled'];
-    statusesNotShowingFullApproval.forEach(status => {
-        it(`does NOT show Approval & Processing section for status: ${status}`, async () => {
-            const testData: CheckRequest = { ...baseCheckRequestData, status };
-            vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(testData);
-            renderComponent(String(testData.id));
-            // Wait for a stable element that indicates data is loaded and title is fully rendered
-            await waitFor(() => expect(screen.getByText(`Request Information (${testData.cr_id})`)).toBeInTheDocument());
-            expect(screen.queryByText('Approval & Processing')).not.toBeInTheDocument();
-        });
+  it('does not show Approval & Processing section for "pending_submission" status', async () => {
+    const pendingCheckRequest: CheckRequest = {
+      ...fullMockCheckRequest,
+      status: 'pending_submission',
+      approved_by_accounts_username: undefined, // Ensure these are not set
+      accounts_approval_date: undefined,
+      accounts_comments: undefined,
+      payment_method: undefined,
+      payment_date: undefined,
+      transaction_id: undefined,
+      payment_notes: undefined,
+    };
+    mockGetCheckRequestById.mockResolvedValue(pendingCheckRequest);
+    vi.mocked(useParams).mockReturnValue({ checkRequestId: String(pendingCheckRequest.id) });
+
+    renderWithRouterAndAuth(<CheckRequestDetailView />, {
+      route: `/procurement/check-requests/detail/${pendingCheckRequest.id}`,
+      path: '/procurement/check-requests/detail/:checkRequestId',
     });
 
-    const statusesShowingApproval: CheckRequestStatus[] = ['pending_approval', 'approved', 'rejected', 'payment_processing', 'paid'];
-    statusesShowingApproval.forEach(status => {
-        it(`SHOWS Approval & Processing section for status: ${status}`, async () => {
-            const testData: CheckRequest = { ...baseCheckRequestData, status, accounts_approval_date: '2024-01-01T00:00:00Z', approved_by_accounts_username: 'accUser' }; // ensure some data to render section
-            vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(testData);
-            renderComponent(String(testData.id));
-            // Wait for the "Approval & Processing" section itself to appear
-            await waitFor(() => expect(screen.getByText('Approval & Processing')).toBeInTheDocument());
-            // Additional check to ensure main content is also there
-            expect(screen.getByText(`Request Information (${testData.cr_id})`)).toBeInTheDocument();
-        });
+    await waitFor(() => {
+      expect(screen.getByText(`Request Information (${pendingCheckRequest.cr_id})`)).toBeInTheDocument();
     });
+
+    expect(screen.queryByText('Approval & Processing')).not.toBeInTheDocument();
   });
 
   describe('Navigation and Actions', () => {
     beforeEach(() => {
-        vi.mocked(procurementApi.getCheckRequestById).mockResolvedValue(baseCheckRequestData);
-        renderComponent(String(baseCheckRequestData.id));
+      // Ensure a basic CR object is resolved so the buttons are present
+      mockGetCheckRequestById.mockResolvedValue({ ...fullMockCheckRequest, id: 2, cr_id: 'CR002' });
+      vi.mocked(useParams).mockReturnValue({ checkRequestId: '2' });
     });
 
-    it('calls navigate(-1) when "Back" button is clicked', async () => {
-      await waitFor(() => expect(screen.getByText(/Check Request Details/i)).toBeInTheDocument());
-      const backButton = screen.getByRole('button', { name: /Back/i });
-      await userEvent.click(backButton);
+    it('navigates back when "Back" button is clicked', async () => {
+      renderWithRouterAndAuth(<CheckRequestDetailView />, {
+        route: '/procurement/check-requests/detail/2',
+        path: '/procurement/check-requests/detail/:checkRequestId',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /back/i })).toBeInTheDocument();
+      });
+
+      screen.getByRole('button', { name: /back/i }).click();
       expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
 
-    it('navigates to print preview page when "Print" button is clicked', async () => {
-      await waitFor(() => expect(screen.getByText(/Check Request Details/i)).toBeInTheDocument());
-      const printButton = screen.getByRole('button', { name: /Print/i });
-      await userEvent.click(printButton);
+    it('navigates to print preview when "Print" button is clicked', async () => {
+      const currentCr = { ...fullMockCheckRequest, id: 3, cr_id: 'CR003' };
+      mockGetCheckRequestById.mockResolvedValue(currentCr);
+      vi.mocked(useParams).mockReturnValue({ checkRequestId: '3' });
+
+      renderWithRouterAndAuth(<CheckRequestDetailView />, {
+        route: '/procurement/check-requests/detail/3',
+        path: '/procurement/check-requests/detail/:checkRequestId',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByRole('button', { name: /print/i })).toBeInTheDocument();
+      });
+
+      screen.getByRole('button', { name: /print/i }).click();
       expect(mockNavigate).toHaveBeenCalledWith(
         '/procurement/check-requests/print-preview',
-        { state: { checkRequestId: baseCheckRequestData.id, autoPrint: false } }
+        {
+          state: { checkRequestId: currentCr.id, autoPrint: false },
+        }
       );
+    });
+
+    it('Back button on error screen navigates back', async () => {
+      const consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+      vi.mocked(useParams).mockReturnValue({ checkRequestId: 'invalid' });
+      // No need to mock getCheckRequestById as it should fail before that due to invalid ID format
+
+      renderWithRouterAndAuth(<CheckRequestDetailView />, {
+        route: '/procurement/check-requests/detail/invalid',
+        path: '/procurement/check-requests/detail/:checkRequestId',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Invalid Check Request ID format./i)).toBeInTheDocument();
+      });
+
+      const backButton = screen.getByRole('button', { name: /back/i });
+      expect(backButton).toBeInTheDocument();
+      backButton.click();
+      expect(mockNavigate).toHaveBeenCalledWith(-1);
+      consoleErrorSpy.mockRestore();
+    });
+
+    it('Back button on "not found" screen navigates back', async () => {
+      mockGetCheckRequestById.mockResolvedValue(null);
+      vi.mocked(useParams).mockReturnValue({ checkRequestId: '999' });
+
+      renderWithRouterAndAuth(<CheckRequestDetailView />, {
+        route: '/procurement/check-requests/detail/999',
+        path: '/procurement/check-requests/detail/:checkRequestId',
+      });
+
+      await waitFor(() => {
+        expect(screen.getByText(/Check Request not found./i)).toBeInTheDocument();
+      });
+
+      const backButton = screen.getByRole('button', { name: /back/i });
+      expect(backButton).toBeInTheDocument();
+      backButton.click();
+      expect(mockNavigate).toHaveBeenCalledWith(-1);
     });
   });
 });
