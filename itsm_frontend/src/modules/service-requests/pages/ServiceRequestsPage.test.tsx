@@ -1,6 +1,6 @@
 // @vitest-environment happy-dom
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen, waitFor } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
+import { render, screen, waitFor, act } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 import { AuthProvider } from '../../../context/auth/AuthContext';
@@ -12,6 +12,25 @@ import * as useAuthHook from '../../../context/auth/useAuth';
 import * as useUIHook from '../../../context/UIContext/useUI';
 import type { ServiceRequest } from '../types/ServiceRequestTypes';
 import type { PaginatedResponse } from '../../../modules/assets/types/assetTypes'; // Corrected import
+
+// Mock ResizeObserver for DataGrid
+const MockResizeObserver = vi.fn(() => ({
+  observe: vi.fn(),
+  unobserve: vi.fn(),
+  disconnect: vi.fn(),
+}));
+
+let originalResizeObserver: any;
+
+beforeAll(() => {
+  originalResizeObserver = window.ResizeObserver;
+  window.ResizeObserver = MockResizeObserver as any;
+});
+
+afterAll(() => {
+  window.ResizeObserver = originalResizeObserver;
+});
+
 
 // Mock API module
 vi.mock('../../../api/serviceRequestApi');
@@ -135,6 +154,10 @@ describe('ServiceRequestsPage.tsx', () => {
 
   it('renders the main title and create button', async () => {
     renderServiceRequestsPage();
+    // Check if the main container renders first
+    expect(await screen.findByTestId('service-requests-page-container')).toBeInTheDocument();
+
+    // Then check for specific elements
     expect(await screen.findByRole('heading', { name: /Service Requests/i })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: /Create New Request/i })).toBeInTheDocument();
   });

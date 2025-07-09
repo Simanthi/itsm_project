@@ -1,15 +1,17 @@
 /// <reference types="vitest" />
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import path from 'path'; // Import path
 
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
     include: [
-      '@mui/material/node/styles/index.js',
-      '@mui/x-data-grid',
-      '@mui/material',
+      '@mui/material/node/styles/index.js', // Target of the alias
+      '@mui/material', // General MUI
+      '@mui/x-data-grid', // Main package for data grid
+      '@mui/x-data-grid/esm/material/index.js', // The file causing the problematic import
       '@emotion/react',
       '@emotion/styled'
     ],
@@ -21,7 +23,7 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@mui/material/styles': '@mui/material/node/styles/index.js',
+      '@mui/material/styles': path.resolve(__dirname, 'node_modules/@mui/material/node/styles/index.js'),
     },
   },
 });

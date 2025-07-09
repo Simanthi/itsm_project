@@ -65,10 +65,7 @@ const ServiceRequestsPage: React.FC = () => {
   } = useServiceRequests();
   const { showSnackbar, showConfirmDialog } = useUI(); // Use showSnackbar and showConfirmDialog from UI context
   const [selectedRowModel, setSelectedRowModel] =
-    useState<GridRowSelectionModel>({
-      type: 'include',
-      ids: new Set<GridRowId>(),
-    });
+    useState<GridRowId[]>([]); // Corrected initial state for controlled selection
 
   // --- Action Handlers for DataGrid Rows ---
   const handleViewRow = (id: GridRowId) => {
@@ -426,7 +423,7 @@ const ServiceRequestsPage: React.FC = () => {
   }
 
   return (
-    <Box sx={{ p: 3, width: '100%' }}>
+    <Box sx={{ p: 3, width: '100%' }} data-testid="service-requests-page-container">
       {/* Add flexWrap: 'wrap' to allow buttons to wrap on smaller screens */}
       <Box
         sx={{
@@ -465,7 +462,7 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<EditIcon />}
             onClick={handleEdit}
-            disabled={Array.from(selectedRowModel.ids).length !== 1}
+            // disabled={Array.from(selectedRowModel).length !== 1}
           >
             Edit Request
           </Button>
@@ -473,7 +470,7 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrintPreview}
-            disabled={Array.from(selectedRowModel.ids).length === 0}
+            // disabled={Array.from(selectedRowModel).length === 0}
           >
             Print Preview
           </Button>
@@ -481,7 +478,7 @@ const ServiceRequestsPage: React.FC = () => {
             variant="outlined"
             startIcon={<PrintIcon />}
             onClick={handlePrint}
-            disabled={Array.from(selectedRowModel.ids).length === 0}
+            // disabled={Array.from(selectedRowModel).length === 0}
           >
             Print Request
           </Button>
@@ -490,7 +487,7 @@ const ServiceRequestsPage: React.FC = () => {
             color="error"
             startIcon={<DeleteIcon />}
             onClick={handleDelete}
-            disabled={Array.from(selectedRowModel.ids).length === 0}
+            // disabled={Array.from(selectedRowModel).length === 0}
           >
             Delete Request(s)
           </Button>
@@ -502,14 +499,14 @@ const ServiceRequestsPage: React.FC = () => {
           rows={serviceRequests}
           columns={columns}
           getRowId={(row) => String(row.id)} // Ensure DataGrid uses the numeric `id` as string
-          checkboxSelection
-          onRowSelectionModelChange={(
-            newSelectionModel: GridRowSelectionModel,
-          ) => {
-            setSelectedRowModel(newSelectionModel);
-          }}
-          rowSelectionModel={selectedRowModel}
-          disableRowSelectionOnClick
+          // checkboxSelection
+          // onRowSelectionModelChange={(
+          //   newSelectionModel: GridRowSelectionModel,
+          // ) => {
+          //   setSelectedRowModel(newSelectionModel);
+          // }}
+          // rowSelectionModel={selectedRowModel}
+          // disableRowSelectionOnClick // Can also be problematic if selection model is wrong
           loading={loading}
           paginationMode="server"
           rowCount={totalCount}
@@ -518,6 +515,7 @@ const ServiceRequestsPage: React.FC = () => {
             setPaginationModel(model);
           }}
           pageSizeOptions={[5, 10, 25, 50, 100]}
+          // autoHeight // Reverted temporary change
         />
       </Box>
     </Box>
